@@ -490,7 +490,7 @@ function renderHome(){
     <div class="o3">${S.acctInitDone?'':`<div class="card ask"><div style="font-weight:700">💡 先告訴小帳：每個帳戶現在有多少錢？</div><div class="small muted" style="margin:4px 0 10px">輸入起始餘額後，小帳才能幫你算出每個帳戶還剩多少。</div>
       <div class="row"><button class="primary" onclick="go('accounts')">去輸入</button><button onclick="S.acctInitDone=true;persist();renderHome()">先不用</button></div></div>`}</div>
     <div id="askBox" class="o4"></div>
-    <div class="card o7"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">🧾 最近記帳紀錄</h2><span class="spacer"></span>
+    <div class="card o7"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">🧾 最近記帳紀錄</h2><span class="spacer"></span><button onclick="mg.view='find';go('manage')" style="padding:6px 12px">🔍 搜尋</button>
       <select style="width:auto" onchange="S.recentN=+this.value;persist();renderHome()">${[10,20,30].map(x=>`<option value="${x}" ${n===x?'selected':''}>${x} 筆</option>`).join('')}</select></div>
       ${recent.length?recent.map(recRow).join(''):'<div class="empty">還沒有紀錄喔，在上面打一筆試試看 ✦</div>'}
       ${live().length>n?'<div class="muted small" style="margin-top:6px">更早的紀錄請到「帳務管理」選日期或月份查看。</div>':''}</div>
