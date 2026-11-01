@@ -51,7 +51,7 @@ label.f{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;font-w
 .quick button{padding:0 22px;font-size:17px;border-radius:16px}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .stat{border-radius:18px;padding:12px 8px;text-align:center;background:var(--brand-soft)}
-.stat .n{font-size:clamp(15px,5vw,22px);font-weight:800;line-height:1.2}
+.stat .n{font-size:clamp(14px,4.6vw,22px);font-weight:800;line-height:1.2;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat .l{font-size:13px;font-weight:700;color:var(--muted)}
 .stat.in .n{color:var(--ok)} .stat.out .n{color:var(--bad)}
 .stat.in{background:var(--ok-soft)} .stat.out{background:var(--bad-soft)}
@@ -74,6 +74,9 @@ label.f{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;font-w
 .acc .ops button{padding:4px 10px;font-size:13px}
 .total{text-align:center;padding:6px 0}
 .total .n{font-size:clamp(22px,7vw,30px);font-weight:800}
+.cmp{display:block;font-size:11px;font-weight:700;margin-top:2px}
+.bs{display:flex;justify-content:space-between;padding:3px 0;font-size:14px}
+.bs.sum{font-weight:800;border-top:1px solid var(--line);margin-top:4px;padding-top:6px}
 .tag{display:inline-block;background:var(--brand-soft);color:var(--brand-d);border-radius:999px;padding:0 8px;font-size:12px;font-weight:700;margin-left:4px}
 .ask{border:2px dashed var(--brand);background:#fff7f4}
 .empty{text-align:center;padding:26px;color:var(--muted)}
@@ -137,6 +140,8 @@ function fmtMD(s){const [,m,d]=s.split('-');return `${+m}/${+d}`;}
 function fmtFull(s){const [y,m,d]=s.split('-');return `${y}/${+m}/${+d}`;}
 function money(n){return '$'+(Math.round(Number(n)*100)/100).toLocaleString('en-US');}
 function bm(n){return n<0?'-'+money(-n):money(n);}
+/* 小格子用：太長就改成「萬」，完整金額放在 title */
+function bmS(n){ const a=Math.abs(n); if(a<100000) return bm(n); const w=Math.round(a/1000)/10; return (n<0?'-$':'$')+(w>=1000?Math.round(w).toLocaleString('en-US'):w)+'萬'; }
 function flash(t){const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#e9695a;color:#fff;padding:9px 20px;border-radius:999px;z-index:99;box-shadow:0 3px 10px rgba(0,0,0,.2);font-weight:700;max-width:92vw;text-align:center';document.body.appendChild(d);setTimeout(()=>d.remove(),2200);}
 function download(content,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
 
@@ -147,7 +152,7 @@ function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stri
   s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0,dueDay:dayOk(a.dueDay)})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0,dueDay:0});
   if(!Array.isArray(s.debts)) s.debts=[];
   s.debts=s.debts.filter(d=>d&&/^[\w-]{1,40}$/.test(String(d.id))&&String(d.name||'').trim()&&['loan','person'].includes(d.kind)).map(d=>({id:String(d.id),name:String(d.name).trim().slice(0,20),kind:d.kind,
-    init:Number.isFinite(Number(d.init))?Number(d.init):0,monthly:Number(d.monthly)>0?Number(d.monthly):0,dueDay:dayOk(d.dueDay),payAcct:/^[\w-]{1,40}$/.test(String(d.payAcct||''))?String(d.payAcct):''}));
+    init:Number.isFinite(Number(d.init))?Number(d.init):0,monthly:Number(d.monthly)>0?Number(d.monthly):0,dueDay:dayOk(d.dueDay),payAcct:/^[\w-]{1,40}$/.test(String(d.payAcct||''))?String(d.payAcct):'',created:/^\d{4}-\d{2}-\d{2}$/.test(String(d.created||''))?d.created:''}));
   if(!Array.isArray(s.goals)) s.goals=[];
   s.goals=s.goals.filter(g=>g&&/^[\w-]{1,40}$/.test(String(g.id))&&String(g.name||'').trim()).map(g=>({id:String(g.id),name:String(g.name).trim().slice(0,20),target:Number(g.target)>0?Number(g.target):0,
     mode:g.mode==='acct'?'acct':'manual',acct:/^[\w-]{1,40}$/.test(String(g.acct||''))?String(g.acct):'',deadline:/^\d{4}-\d{2}-\d{2}$/.test(String(g.deadline||''))?g.deadline:'',done:g.done===true,doneAt:/^\d{4}-\d{2}-\d{2}$/.test(String(g.doneAt||''))?g.doneAt:''}));
@@ -181,9 +186,9 @@ function findAccts(t){
   return out.sort((a,b)=>a.idx-b.idx);
 }
 function cutSpans(t,hs){ hs.slice().sort((a,b)=>b.idx-a.idx).forEach(h=>{t=t.slice(0,h.idx)+' '+t.slice(h.idx+h.len);}); return t; }
-function balances(){
+function balances(upto){
   const b={}; S.accounts.forEach(a=>b[a.id]=Number(a.init)||0);
-  live().forEach(r=>{ const g=okAcct;
+  live().forEach(r=>{ const g=okAcct; if(upto&&r.date>upto) return;
     if(r.type==='income') b[g(r.acct)]+=r.amount;
     else if(r.type==='expense') b[g(r.acct)]-=r.amount;
     else if(r.type==='transfer'){ b[g(r.from)]-=r.amount; b[g(r.to)]+=r.amount; }
@@ -205,10 +210,36 @@ function findGoal(tt){ if(!/存/.test(tt)) return null; const lt=tt.toLowerCase(
 const DEBT_OP={pay:-1,borrow:1,lend:-1,collect:1};
 function debtById(id){return S.debts.find(d=>d.id===id);}
 /* 貸款：正數 = 還欠多少。朋友：正數 = 我欠對方，負數 = 對方欠我 */
-function debtBal(){
-  const d={}; S.debts.forEach(x=>d[x.id]=Number(x.init)||0);
-  live().forEach(r=>{ if(r.type==='debt'&&r.debt in d) d[r.debt]+=DEBT_OP[r.op]*r.amount; });
+function debtBal(upto){
+  const d={}; S.debts.forEach(x=>d[x.id]=(upto&&x.created&&x.created>upto)?0:(Number(x.init)||0));
+  live().forEach(r=>{ if(upto&&r.date>upto) return; if(r.type==='debt'&&r.debt in d) d[r.debt]+=DEBT_OP[r.op]*r.amount; });
   Object.keys(d).forEach(k=>d[k]=Math.round(d[k]*100)/100); return d;
+}
+/* 資產負債：帳戶正數＋別人欠我 = 資產；帳戶負數（信用卡）＋貸款＋我欠別人 = 負債 */
+function netWorth(upto){
+  const b=balances(upto), d=debtBal(upto), r2=n=>Math.round(n*100)/100; let A=0,L=0; const assets=[], liabs=[];
+  S.accounts.forEach(a=>{ const v=b[a.id]; if(v>0){A+=v;assets.push([`${a.icon||'💳'} ${a.name}`,v]);} else if(v<0){L+=-v;liabs.push([`${a.icon||'💳'} ${a.name}`,-v]);} });
+  S.debts.forEach(x=>{ const v=d[x.id]; if(x.kind==='loan'){ if(v>0){L+=v;liabs.push([`🏦 ${x.name}`,v]);} }
+    else if(v>0){L+=v;liabs.push([`📤 欠${x.name}`,v]);} else if(v<0){A+=-v;assets.push([`📥 ${x.name}欠我`,-v]);} });
+  return {assets:r2(A),liab:r2(L),net:r2(A-L),assetList:assets,liabList:liabs};
+}
+function monthEnd(ym){const [y,m]=ym.split('-').map(Number);return `${ym}-${p2(new Date(y,m,0).getDate())}`;}
+function prevYM(ym){const [y,m]=ym.split('-').map(Number);return m===1?`${y-1}-12`:`${y}-${p2(m-1)}`;}
+function cmpLine(cur,prev,goodUp){ const d=Math.round((cur-prev)*100)/100; if(!prev&&!cur) return '<span class="cmp">上月也是 $0</span>';
+  if(d===0) return '<span class="cmp">跟上月一樣</span>';
+  const up=d>0, pct=prev?Math.round(Math.abs(d)/Math.abs(prev)*100):null, good=up===goodUp;
+  return `<span class="cmp" style="color:${good?'var(--ok)':'var(--bad)'}">比上月 ${up?'▲':'▼'}${money(Math.abs(d))}${pct!==null?`（${pct}%）`:''}</span>`; }
+function nwChart(n){
+  const end=today().slice(0,7), firstRec=live().reduce((m,r)=>r.date<m?r.date:m,today()).slice(0,7); let ym=end; const months=[ym];
+  while(months.length<n&&ym>firstRec){ ym=prevYM(ym); months.unshift(ym); }
+  const vals=months.map(m=>netWorth(m===end?today():monthEnd(m)).net), hi=Math.max(0,...vals), lo=Math.min(0,...vals), span=Math.max(1,hi-lo);
+  const W=320, H=140, bw=W/months.length, base=8+(hi/span)*(H-16), sc=(H-16)/span;
+  return `<svg viewBox="0 0 ${W} ${H+34}" style="width:100%;height:auto" role="img" aria-label="每月淨資產變化">
+    <line x1="0" y1="${base}" x2="${W}" y2="${base}" stroke="var(--muted)" stroke-width="1" opacity=".5"/>
+    ${vals.map((v,i)=>{const h=Math.max(2,Math.abs(v)*sc), x=i*bw+bw*0.2, w=Math.min(bw*0.6,46), y=v>=0?base-h:base;
+      return `<rect x="${x+(bw*0.6-w)/2}" y="${y}" width="${w}" height="${h}" rx="3" fill="${v>=0?'var(--ok)':'var(--bad)'}"><title>${months[i]}：${bm(v)}</title></rect>
+      <text x="${i*bw+bw/2}" y="${H+14}" font-size="10" text-anchor="middle" fill="var(--muted)">${+months[i].slice(5)}月</text>`;}).join('')}
+    <text x="${W}" y="${H+30}" font-size="10" text-anchor="end" fill="var(--muted)">最新：${bm(vals[vals.length-1])}</text></svg>`;
 }
 function nextDue(day){ if(!day) return null; const t=today(), [y,m]=t.split('-').map(Number);
   const mk=(yy,mm)=>{const last=new Date(yy,mm,0).getDate();return `${yy}-${p2(mm)}-${p2(Math.min(day,last))}`;};
@@ -425,7 +456,7 @@ function monthTotals(ym){
 }
 function renderHome(){
   page='home'; nav();
-  const ym=today().slice(0,7), t=monthTotals(ym), n=S.recentN||10, recent=sortRecs(live()).slice(0,n);
+  const ym=today().slice(0,7), t=monthTotals(ym), pt=monthTotals(prevYM(ym)), nw=netWorth(), n=S.recentN||10, recent=sortRecs(live()).slice(0,n);
   $('#app').innerHTML=`<div class="card"><h2>✏️ 快速記帳</h2>
       <div class="quick"><input type="text" id="qin" placeholder="例如：吃飯100" onkeydown="if(event.key==='Enter')quickAdd()"><button class="primary" onclick="quickAdd()">記</button></div>
       <div class="paysel"><label class="f" for="paySel" style="margin:0">付款方式</label><select id="paySel" onchange="this.dataset.t='1'">${acctOpts('cash')}</select></div>
@@ -434,10 +465,15 @@ function renderHome(){
     ${S.acctInitDone?'':`<div class="card ask"><div style="font-weight:700">💡 先告訴小帳：每個帳戶現在有多少錢？</div><div class="small muted" style="margin:4px 0 10px">輸入起始餘額後，小帳才能幫你算出每個帳戶還剩多少。</div>
       <div class="row"><button class="primary" onclick="go('accounts')">去輸入</button><button onclick="S.acctInitDone=true;persist();renderHome()">先不用</button></div></div>`}
     <div id="askBox"></div>
+    <div class="card"><h2>💰 資金總覽</h2><div class="stats">
+      <div class="stat in"><div class="n" title="${bm(nw.assets)}">${bmS(nw.assets)}</div><div class="l">總資產</div></div>
+      <div class="stat out"><div class="n" title="${money(nw.liab)}">${bmS(nw.liab)}</div><div class="l">總負債</div></div>
+      <div class="stat"><div class="n" title="${bm(nw.net)}" style="color:${nw.net<0?'var(--bad)':'var(--ink)'}">${bmS(nw.net)}</div><div class="l">淨資產</div></div></div>
+      <div class="muted small" style="margin-top:6px">淨資產 = 總資產 － 總負債。明細請看「帳戶」頁的資產負債表。</div></div>
     <div class="card"><h2>🌸 ${+ym.slice(5)} 月總覽</h2><div class="stats">
-      <div class="stat in"><div class="n">${money(t.i)}</div><div class="l">本月收入</div></div>
-      <div class="stat out"><div class="n">${money(t.o)}</div><div class="l">本月支出</div></div>
-      <div class="stat"><div class="n" style="color:${t.b<0?'var(--bad)':'var(--ink)'}">${t.b<0?'-':''}${money(Math.abs(t.b))}</div><div class="l">本月結餘</div></div></div></div>
+      <div class="stat in"><div class="n" title="${money(t.i)}">${bmS(t.i)}</div><div class="l">本月收入</div>${cmpLine(t.i,pt.i,true)}</div>
+      <div class="stat out"><div class="n" title="${money(t.o)}">${bmS(t.o)}</div><div class="l">本月支出</div>${cmpLine(t.o,pt.o,false)}</div>
+      <div class="stat"><div class="n" title="${bm(t.b)}" style="color:${t.b<0?'var(--bad)':'var(--ink)'}">${bmS(t.b)}</div><div class="l">本月結餘</div>${cmpLine(t.b,pt.b,true)}</div></div></div>
     <div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">🧾 最近記帳紀錄</h2><span class="spacer"></span>
       <select style="width:auto" onchange="S.recentN=+this.value;persist();renderHome()">${[10,20,30].map(x=>`<option value="${x}" ${n===x?'selected':''}>${x} 筆</option>`).join('')}</select></div>
       ${recent.length?recent.map(recRow).join(''):'<div class="empty">還沒有紀錄喔，在上面打一筆試試看 ✦</div>'}
@@ -585,7 +621,13 @@ function pickIcon(cb,allowReset){
 /* ---------- 帳戶頁 ---------- */
 function renderAccounts(){
   page='accounts'; nav(); const b=balances(), total=S.accounts.reduce((s,a)=>s+b[a.id],0);
-  $('#app').innerHTML=`<div class="card total"><div class="muted small" style="font-weight:700">總資產（所有帳戶加總）</div><div class="n" style="color:${total<0?'var(--bad)':'var(--ink)'}">${bm(Math.round(total*100)/100)}</div></div>
+  const nw=netWorth(), li=(l)=>l.length?l.map(([k,v])=>`<div class="bs"><span>${esc(k)}</span><span>${money(v)}</span></div>`).join(''):'<div class="bs muted"><span>沒有</span><span></span></div>';
+  $('#app').innerHTML=`<div class="card"><h2>📊 資產負債表</h2>
+     <div class="dayh"><span>資產</span></div>${li(nw.assetList)}<div class="bs sum"><span>總資產</span><span style="color:var(--ok)">${money(nw.assets)}</span></div>
+     <div class="dayh"><span>負債</span></div>${li(nw.liabList)}<div class="bs sum"><span>總負債</span><span style="color:var(--bad)">${money(nw.liab)}</span></div>
+     <div class="bs sum" style="font-size:17px"><span>淨資產</span><span style="color:${nw.net<0?'var(--bad)':'var(--ok)'}">${bm(nw.net)}</span></div>
+     <div class="dayh" style="margin-top:14px"><span>每月淨資產變化（月底）</span></div>${nwChart(12)}
+     <div class="muted small">「帳戶所有紀錄加總」的帳戶總額是 ${bm(Math.round(total*100)/100)}。信用卡等負數帳戶算在負債。在加入「建立日期」之前建立的貸款，過去月份會一律算進去，所以早期月份可能不準。</div></div>
    <div class="card"><h2>👛 我的帳戶</h2>
     ${S.accounts.map(a=>`<div class="acc"><div class="ic">${a.icon||'💳'}</div><div class="mid"><div style="font-weight:700">${esc(a.name)}</div><div class="small muted">起始餘額 ${bm(Number(a.init)||0)}${a.dueDay?`・每月 ${a.dueDay} 號繳款`:''}</div></div>
       <div class="bal" style="color:${b[a.id]<0?'var(--bad)':'var(--ink)'}">${bm(b[a.id])}</div>
@@ -690,9 +732,9 @@ function renderDebts(){
   const pRow=(d,amt)=>`<div class="acc"><div class="ic">${amt>0?'📤':'📥'}</div><div class="mid"><div style="font-weight:700">${esc(d.name)}</div></div><div class="bal">${money(Math.abs(amt))}</div>
     <div class="ops"><button onclick="debtDetail('${d.id}')">明細</button><button class="danger" onclick="delDebt('${d.id}')">刪除</button></div></div>`;
   $('#app').innerHTML=`<div class="card"><div class="stats">
-      <div class="stat out"><div class="n">${money(loanTotal+oweTotal+cardTotal)}</div><div class="l">我總共欠</div></div>
-      <div class="stat in"><div class="n">${money(lentTotal)}</div><div class="l">別人欠我</div></div>
-      <div class="stat"><div class="n">${money(cardTotal)}</div><div class="l">信用卡欠款</div></div></div></div>
+      <div class="stat out"><div class="n" title="${money(loanTotal+oweTotal+cardTotal)}">${bmS(loanTotal+oweTotal+cardTotal)}</div><div class="l">我總共欠</div></div>
+      <div class="stat in"><div class="n" title="${money(lentTotal)}">${bmS(lentTotal)}</div><div class="l">別人欠我</div></div>
+      <div class="stat"><div class="n" title="${money(cardTotal)}">${bmS(cardTotal)}</div><div class="l">信用卡欠款</div></div></div></div>
    <div class="card"><h2>🏦 貸款／分期</h2>
     ${loans.length?loans.map(d=>{ const rem=db[d.id], init=Number(d.init)||0, paid=Math.min(Math.max(init-rem,0),init), pct=init>0?Math.round(paid/init*100):0, n=nextDue(d.dueDay);
       return `<div class="acc"><div class="ic">🏦</div><div class="mid"><div style="font-weight:700">${esc(d.name)}</div>
@@ -729,7 +771,7 @@ function readLoanForm(pre){
 function loanNameTaken(name,selfId){ return S.debts.some(d=>d.id!==selfId&&d.name.toLowerCase()===name.toLowerCase()); }
 function addLoan(){
   const f=readLoanForm('#nl'); if(!f) return; if(loanNameTaken(f.name,null)){alert('已經有同名的負債了');return;}
-  const o=JSON.stringify(S); S.debts.push(Object.assign({id:newId(),kind:'loan'},f)); if(!persist()){S=JSON.parse(o);return;} renderDebts(); flash(`已新增「${f.name}」✦`);
+  const o=JSON.stringify(S); S.debts.push(Object.assign({id:newId(),kind:'loan',created:today()},f)); if(!persist()){S=JSON.parse(o);return;} renderDebts(); flash(`已新增「${f.name}」✦`);
 }
 function editLoan(id){
   const d=debtById(id); if(!d) return; const m=document.createElement('div'); m.className='modal';
