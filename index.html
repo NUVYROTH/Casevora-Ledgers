@@ -203,12 +203,13 @@ function parseInput(raw){
   /* 帳戶與轉帳：先把帳戶名稱找出來、從文字中拿掉，避免影響金額與項目判斷 */
   const hitsAll=findAccts(t), tk=t.match(/領|轉|加值|\+值/);
   let transfer=null, acct='';
-  if(tk && hitsAll.length && !/薪|獎金|紅包|利息|退款|收入/.test(t) && !/轉帳?給/.test(t)){
+  const bare=!hitsAll.filter(h=>h.id!=='cash').length && /(領|加值|\+值)\s*\d/.test(t);
+  if(tk && (hitsAll.length||bare) && !/薪|獎金|紅包|利息|退款|收入/.test(t) && !/轉帳?給/.test(t)){
     const k=tk.index, kw=tk[0], bef=hitsAll.filter(h=>h.idx<k), aft=hitsAll.filter(h=>h.idx>k), nc=hitsAll.filter(h=>h.id!=='cash');
     let from='', to='';
-    if(kw==='領'){ if(nc.length){ from=(bef.find(h=>h.id!=='cash')||nc[0]).id; const o=aft.find(h=>h.id!==from); to=o?o.id:'cash'; } }
+    if(kw==='領'){ if(nc.length){ from=(bef.find(h=>h.id!=='cash')||nc[0]).id; const o=aft.find(h=>h.id!==from); to=o?o.id:'cash'; } else if(bare){ from=''; to='cash'; } }
     else if(kw==='轉'){ if(nc.length||(bef.length&&aft.length)){ from=bef.length?bef[bef.length-1].id:''; to=aft.length?aft[0].id:''; } }
-    else { if(bef.length&&aft.length){from=bef[bef.length-1].id;to=aft[0].id;} else if(bef.length){to=bef[bef.length-1].id;from='cash';} else {to=aft[0].id;from='cash';} }
+    else { if(bef.length&&aft.length){from=bef[bef.length-1].id;to=aft[0].id;} else if(bef.length){to=bef[bef.length-1].id;from='cash';} else if(aft.length){to=aft[0].id;from='cash';} else {from='cash';to='';} }
     if(from||to){ transfer={from,to}; t=cutSpans(t,hitsAll).replace(/領|轉|加值|\+值/,' '); }
   }
   if(!transfer){ const hs=hitsAll.filter(h=>h.id!=='easycard'); if(hs.length){ acct=hs[0].id; t=cutSpans(t,hs); } }
@@ -276,7 +277,7 @@ function showAskAcct(){
 function showAskTransfer(){
   const box=$('#askBox'); if(!box) return; const t=pending.transfer;
   const sel=(id,v)=>`<select id="${id}"><option value="">（請選擇）</option>${acctOpts(v)}</select>`;
-  box.innerHTML=`<div class="card ask"><div style="font-weight:700;margin-bottom:8px">小帳想問你：這筆轉帳 ${money(pending.amount)}，是從哪裡轉到哪裡？</div>
+  box.innerHTML=`<div class="card ask"><div style="font-weight:700;margin-bottom:8px">小帳想問你：${!t.from&&t.to==='cash'?`這筆 ${money(pending.amount)} 是從哪個帳戶領出來的？`:t.from&&!t.to?`這筆 ${money(pending.amount)} 要加值到哪裡？`:`這筆轉帳 ${money(pending.amount)}，是從哪裡轉到哪裡？`}</div>
     <div class="grid"><div><label class="f">從（轉出）</label>${sel('askFrom',t.from)}</div><div><label class="f">到（轉入）</label>${sel('askTo',t.to)}</div></div>
     <div class="row" style="margin-top:10px"><button class="primary" onclick="answerTransfer()">好</button><button onclick="cancelAsk()">取消</button></div></div>`;
 }
