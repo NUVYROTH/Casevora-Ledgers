@@ -87,6 +87,26 @@ label.f{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;font-w
 .dayh{display:flex;justify-content:space-between;font-weight:800;margin:10px 0 2px;color:var(--brand-d)}
 .savebar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:2px solid var(--line);padding:10px 16px}
 .savebar .in{max-width:760px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* 首頁儀表板：手機照原本順序一欄；電腦兩欄 */
+.dash{display:flex;flex-direction:column}
+.dash .col{display:contents}
+.o1{order:1}.o2{order:2}.o3{order:3}.o4{order:4}.o5{order:5}.o6{order:6}.o7{order:7}.o8{order:8}
+.desk{display:none}
+.card h2 .sub{font-size:12px;font-weight:700;color:var(--muted);margin-left:6px}
+@media (min-width:900px){
+  header .t{max-width:1180px}
+  main{max-width:1180px;display:grid;grid-template-columns:200px minmax(0,1fr);gap:22px;align-items:start}
+  nav{grid-template-columns:1fr;position:sticky;top:14px;gap:6px;background:var(--card);border:2px solid var(--line);border-radius:20px;padding:10px;box-shadow:0 3px 10px rgba(233,105,90,.07)}
+  nav button{text-align:left;padding:11px 16px;border-radius:14px;border-color:transparent;font-size:15px}
+  nav button:not(.on):hover{background:var(--brand-soft)}
+  #app{margin-top:14px}
+  .dash{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:0 16px;align-items:start}
+  .dash .col{display:block}
+  .desk{display:block}
+  .stat{padding:16px 8px}
+  .stat .n{font-size:clamp(16px,1.6vw,22px)}
+  .savebar .in{max-width:1180px}
+}
 .dirty{color:#b45309;font-weight:700;font-size:14px}
 .icgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;max-height:50vh;overflow:auto}
 .icgrid button{font-size:24px;padding:4px}
@@ -237,7 +257,7 @@ function nwChart(n){
   while(months.length<n&&ym>firstRec){ ym=prevYM(ym); months.unshift(ym); }
   const vals=months.map(m=>netWorth(m===end?today():monthEnd(m)).net), hi=Math.max(0,...vals), lo=Math.min(0,...vals), span=Math.max(1,hi-lo);
   const W=320, H=140, bw=W/months.length, base=8+(hi/span)*(H-16), sc=(H-16)/span;
-  return `<svg viewBox="0 0 ${W} ${H+34}" style="width:100%;height:auto" role="img" aria-label="每月淨資產變化">
+  return `<svg viewBox="0 0 ${W} ${H+34}" style="width:100%;height:auto;max-height:200px" role="img" aria-label="每月淨資產變化">
     <line x1="0" y1="${base}" x2="${W}" y2="${base}" stroke="var(--muted)" stroke-width="1" opacity=".5"/>
     ${vals.map((v,i)=>{const h=Math.max(2,Math.abs(v)*sc), x=i*bw+bw*0.2, w=Math.min(bw*0.6,46), y=v>=0?base-h:base;
       return `<rect x="${x+(bw*0.6-w)/2}" y="${y}" width="${w}" height="${h}" rx="3" fill="${v>=0?'var(--ok)':'var(--bad)'}"><title>${months[i]}：${bm(v)}</title></rect>
@@ -431,7 +451,7 @@ function answerAsk(kind){
 let page='home', back='home', mg={view:'mrep',day:today(),month:today().slice(0,7),year:today().slice(0,4),cat:''};
 let cur=null, dirty=false;
 function nav(){
-  $('#nav').innerHTML=[['home','首頁'],['accounts','帳戶'],['debts','負債'],['savings','儲蓄'],['manage','帳務管理'],['settings','設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}</button>`).join('');
+  $('#nav').innerHTML=[['home','🏠 首頁'],['accounts','👛 帳戶'],['debts','💳 負債'],['savings','🎯 儲蓄'],['manage','📊 帳務管理'],['settings','⚙️ 設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}</button>`).join('');
 }
 function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function applyBg(){
@@ -460,27 +480,33 @@ function monthTotals(ym){
 function renderHome(){
   page='home'; nav();
   const ym=today().slice(0,7), t=monthTotals(ym), pt=monthTotals(prevYM(ym)), nw=netWorth(), n=S.recentN||10, recent=sortRecs(live()).slice(0,n);
-  $('#app').innerHTML=`<div class="card"><h2>✏️ 快速記帳</h2>
+  const mc=catTotals(live().filter(r=>r.date.startsWith(ym)));
+  $('#app').innerHTML=`<div class="dash"><div class="col">
+    <div class="card o1"><h2>✏️ 快速記帳</h2>
       <div class="quick"><input type="text" id="qin" placeholder="例如：吃飯100" onkeydown="if(event.key==='Enter')quickAdd()"><button class="primary" onclick="quickAdd()">記</button></div>
       <div class="paysel"><label class="f" for="paySel" style="margin:0">付款方式</label><select id="paySel" onchange="this.dataset.t='1'">${acctOpts('cash')}</select></div>
       <div class="muted small" style="margin-top:6px">試試看：早餐65、午餐120 LINE Pay、薪水50000 台新、台新領3000現金、悠遊卡加值500　（沒說日期就記今天；沒說付款方式就算現金）</div></div>
-    ${dueReminders()}
-    ${S.acctInitDone?'':`<div class="card ask"><div style="font-weight:700">💡 先告訴小帳：每個帳戶現在有多少錢？</div><div class="small muted" style="margin:4px 0 10px">輸入起始餘額後，小帳才能幫你算出每個帳戶還剩多少。</div>
-      <div class="row"><button class="primary" onclick="go('accounts')">去輸入</button><button onclick="S.acctInitDone=true;persist();renderHome()">先不用</button></div></div>`}
-    <div id="askBox"></div>
-    <div class="card"><h2>💰 資金總覽</h2><div class="stats">
+    <div class="o2">${dueReminders()}</div>
+    <div class="o3">${S.acctInitDone?'':`<div class="card ask"><div style="font-weight:700">💡 先告訴小帳：每個帳戶現在有多少錢？</div><div class="small muted" style="margin:4px 0 10px">輸入起始餘額後，小帳才能幫你算出每個帳戶還剩多少。</div>
+      <div class="row"><button class="primary" onclick="go('accounts')">去輸入</button><button onclick="S.acctInitDone=true;persist();renderHome()">先不用</button></div></div>`}</div>
+    <div id="askBox" class="o4"></div>
+    <div class="card o7"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">🧾 最近記帳紀錄</h2><span class="spacer"></span>
+      <select style="width:auto" onchange="S.recentN=+this.value;persist();renderHome()">${[10,20,30].map(x=>`<option value="${x}" ${n===x?'selected':''}>${x} 筆</option>`).join('')}</select></div>
+      ${recent.length?recent.map(recRow).join(''):'<div class="empty">還沒有紀錄喔，在上面打一筆試試看 ✦</div>'}
+      ${live().length>n?'<div class="muted small" style="margin-top:6px">更早的紀錄請到「帳務管理」選日期或月份查看。</div>':''}</div>
+   </div><div class="col">
+    <div class="card o5"><h2>💰 資金總覽</h2><div class="stats">
       <div class="stat in"><div class="n" title="${bm(nw.assets)}">${bmS(nw.assets)}</div><div class="l">總資產</div></div>
       <div class="stat out"><div class="n" title="${money(nw.liab)}">${bmS(nw.liab)}</div><div class="l">總負債</div></div>
       <div class="stat"><div class="n" title="${bm(nw.net)}" style="color:${nw.net<0?'var(--bad)':'var(--ink)'}">${bmS(nw.net)}</div><div class="l">淨資產</div></div></div>
       <div class="muted small" style="margin-top:6px">淨資產 = 總資產 － 總負債。明細請看「帳戶」頁的資產負債表。</div></div>
-    <div class="card"><h2>🌸 ${+ym.slice(5)} 月總覽</h2><div class="stats">
+    <div class="card o6"><h2>🌸 ${+ym.slice(5)} 月總覽</h2><div class="stats">
       <div class="stat in"><div class="n" title="${money(t.i)}">${bmS(t.i)}</div><div class="l">本月收入</div>${cmpLine(t.i,pt.i,true)}</div>
       <div class="stat out"><div class="n" title="${money(t.o)}">${bmS(t.o)}</div><div class="l">本月支出</div>${cmpLine(t.o,pt.o,false)}</div>
       <div class="stat"><div class="n" title="${bm(t.b)}" style="color:${t.b<0?'var(--bad)':'var(--ink)'}">${bmS(t.b)}</div><div class="l">本月結餘</div>${cmpLine(t.b,pt.b,true)}</div></div></div>
-    <div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">🧾 最近記帳紀錄</h2><span class="spacer"></span>
-      <select style="width:auto" onchange="S.recentN=+this.value;persist();renderHome()">${[10,20,30].map(x=>`<option value="${x}" ${n===x?'selected':''}>${x} 筆</option>`).join('')}</select></div>
-      ${recent.length?recent.map(recRow).join(''):'<div class="empty">還沒有紀錄喔，在上面打一筆試試看 ✦</div>'}
-      ${live().length>n?'<div class="muted small" style="margin-top:6px">更早的紀錄請到「帳務管理」選日期或月份查看。</div>':''}</div>`;
+    <div class="card o8 desk"><h2>🍩 本月支出分類<span class="sub">點這裡看完整月報表 →</span></h2><div onclick="mg.view='mrep';mg.month=today().slice(0,7);go('manage')" style="cursor:pointer">${donut(mc)}</div></div>
+    <div class="card o8 desk"><h2>📈 淨資產變化</h2>${nwChart(6)}</div>
+   </div></div>`;
 }
 
 /* ---------- 帳務管理 ---------- */
