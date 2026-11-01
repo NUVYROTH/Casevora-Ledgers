@@ -601,16 +601,23 @@ function renderYearReport(){
 mg.q=''; mg.ft=''; mg.from=''; mg.to='';
 function recText(r){ const m=recMeta(r); return [m.name,r.item,r.category,r.who,acctName(r.acct),r.from?acctName(r.from):'',r.to?acctName(r.to):'',r.debtName,r.goalName,String(r.amount)].filter(Boolean).join(' ').toLowerCase(); }
 function renderSearch(){
-  const q=mg.q.trim().toLowerCase(), words=q.split(/\s+/).filter(Boolean), TY={'':'全部類型',income:'收入',expense:'支出',transfer:'轉帳',debt:'負債',save:'儲蓄',adjust:'校正'};
+  return `<input type="search" id="fq" enterkeyhint="search" placeholder="搜尋：項目、分類、帳戶、對象、金額…（空格可以多個關鍵字）" value="${esc(mg.q)}"
+      oninput="mg.q=this.value; if(!event.isComposing) updSearch()" oncompositionend="mg.q=this.value; updSearch()">
+    <div class="grid" style="margin-top:8px;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+      <select onchange="mg.ft=this.value;updSearch()">${Object.entries(FIND_TY).map(([k,n])=>`<option value="${k}" ${mg.ft===k?'selected':''}>${n}</option>`).join('')}</select>
+      <label class="f" style="margin:0">從<input type="date" value="${mg.from}" onchange="mg.from=this.value;updSearch()"></label>
+      <label class="f" style="margin:0">到<input type="date" value="${mg.to}" onchange="mg.to=this.value;updSearch()"></label></div>
+    <div id="fres">${searchResults()}</div>`;
+}
+const FIND_TY={'':'全部類型',income:'收入',expense:'支出',transfer:'轉帳',debt:'負債',save:'儲蓄',adjust:'校正'};
+function updSearch(){ const el=$('#fres'); if(el) el.innerHTML=searchResults(); }
+function clearSearch(){ mg.q='';mg.ft='';mg.from='';mg.to=''; renderManage(); }
+function searchResults(){
+  const q=mg.q.trim().toLowerCase(), words=q.split(/\s+/).filter(Boolean);
   const any=words.length||mg.ft||mg.from||mg.to;
   const rs=any?sortRecs(live().filter(r=>(!mg.ft||r.type===mg.ft)&&(!mg.from||r.date>=mg.from)&&(!mg.to||r.date<=mg.to)&&words.every(w=>recText(r).includes(w)))):[];
   const tot=rs.reduce((a,r)=>{ if(r.type==='income')a.i+=r.amount; else if(isExp(r))a.o+=r.amount; return a; },{i:0,o:0});
-  return `<input type="text" id="fq" placeholder="搜尋：項目、分類、帳戶、對象、金額…（空格可以多個關鍵字）" value="${esc(mg.q)}" oninput="mg.q=this.value;renderManage()">
-    <div class="grid" style="margin-top:8px;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
-      <select onchange="mg.ft=this.value;renderManage()">${Object.entries(TY).map(([k,n])=>`<option value="${k}" ${mg.ft===k?'selected':''}>${n}</option>`).join('')}</select>
-      <label class="f" style="margin:0">從<input type="date" value="${mg.from}" onchange="mg.from=this.value;renderManage()"></label>
-      <label class="f" style="margin:0">到<input type="date" value="${mg.to}" onchange="mg.to=this.value;renderManage()"></label></div>
-    ${any?`<div class="muted small" style="margin:8px 0">找到 <b>${rs.length}</b> 筆・其中收入 ${money(tot.i)}・支出 ${money(tot.o)}${(mg.q||mg.ft||mg.from||mg.to)?` <a href="#" onclick="mg.q='';mg.ft='';mg.from='';mg.to='';renderManage();return false">清除條件</a>`:''}</div>
+  return `${any?`<div class="muted small" style="margin:8px 0">找到 <b>${rs.length}</b> 筆・其中收入 ${money(tot.i)}・支出 ${money(tot.o)}${(mg.q||mg.ft||mg.from||mg.to)?` <a href="#" onclick="clearSearch();return false">清除條件</a>`:''}</div>
       ${rs.slice(0,200).map(recRow).join('')||'<div class="empty">找不到符合的紀錄</div>'}${rs.length>200?'<div class="muted small">只顯示前 200 筆，請加條件縮小範圍。</div>':''}`
       :'<div class="empty">輸入關鍵字，或選類型、日期範圍開始搜尋 ✦</div>'}`;
 }
@@ -644,7 +651,7 @@ function renderManage(){
       ${mg.cat?`<div class="dayh"><span>${iconOf(mg.cat)} ${esc(mg.cat)} 明細</span></div>${sortRecs(rs.filter(r=>r.category===mg.cat)).map(recRow).join('')}`:''}`;
   }
   $('#app').innerHTML=`<div class="card"><div class="row tabs" style="margin-bottom:12px">${vt('mrep','📊 月報表')}${vt('yrep','📈 年報表')}${vt('day','每日')}${vt('month','每月')}${vt('cat','依分類看支出')}${vt('acct','依帳戶看支出')}${vt('find','🔍 搜尋')}</div>${body}</div>`;
-  if(v==='find'){ const q=$('#fq'); if(q){ q.focus(); q.setSelectionRange(q.value.length,q.value.length); } }
+  if(v==='find'){ const q=$('#fq'); if(q&&!q.value) q.focus(); }
 }
 
 /* ---------- 修改／刪除單筆 ---------- */
