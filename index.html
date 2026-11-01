@@ -142,12 +142,15 @@ function download(content,name,type){const a=document.createElement('a');a.href=
 
 /* ---------- 資料 ---------- */
 let R=loadR(), S=loadS();
-function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[]};}
+function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[]};}
 function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stringify(DEF_ACCTS));
   s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0,dueDay:dayOk(a.dueDay)})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0,dueDay:0});
   if(!Array.isArray(s.debts)) s.debts=[];
   s.debts=s.debts.filter(d=>d&&/^[\w-]{1,40}$/.test(String(d.id))&&String(d.name||'').trim()&&['loan','person'].includes(d.kind)).map(d=>({id:String(d.id),name:String(d.name).trim().slice(0,20),kind:d.kind,
     init:Number.isFinite(Number(d.init))?Number(d.init):0,monthly:Number(d.monthly)>0?Number(d.monthly):0,dueDay:dayOk(d.dueDay),payAcct:/^[\w-]{1,40}$/.test(String(d.payAcct||''))?String(d.payAcct):''}));
+  if(!Array.isArray(s.goals)) s.goals=[];
+  s.goals=s.goals.filter(g=>g&&/^[\w-]{1,40}$/.test(String(g.id))&&String(g.name||'').trim()).map(g=>({id:String(g.id),name:String(g.name).trim().slice(0,20),target:Number(g.target)>0?Number(g.target):0,
+    mode:g.mode==='acct'?'acct':'manual',acct:/^[\w-]{1,40}$/.test(String(g.acct||''))?String(g.acct):'',deadline:/^\d{4}-\d{2}-\d{2}$/.test(String(g.deadline||''))?g.deadline:'',done:g.done===true,doneAt:/^\d{4}-\d{2}-\d{2}$/.test(String(g.doneAt||''))?g.doneAt:''}));
   return s; }
 function dayOk(v){const n=Math.floor(Number(v));return n>=1&&n<=31?n:0;}
 function loadR(){try{const a=JSON.parse(localStorage.getItem(KEY_R));return Array.isArray(a)?a:[];}catch(e){return [];}}
@@ -189,6 +192,14 @@ function balances(){
   Object.keys(b).forEach(k=>b[k]=Math.round(b[k]*100)/100); return b;
 }
 function isExp(r){return r.type==='expense'||(r.type==='debt'&&r.exp===true);}
+
+/* ---------- 儲蓄目標 ---------- */
+function goalById(id){return S.goals.find(g=>g.id===id);}
+function goalSaved(g,b){ if(g.mode==='acct') return acctById(g.acct)?Math.max((b||balances())[g.acct],0):0;
+  return Math.round(live().filter(r=>r.type==='save'&&r.goal===g.id).reduce((a,r)=>a+r.amount,0)*100)/100; }
+/* 「旅遊基金存5000」：文字裡有『自己標記』目標的名稱＋「存」 */
+function findGoal(tt){ if(!/存/.test(tt)) return null; const lt=tt.toLowerCase();
+  return S.goals.filter(g=>g.mode==='manual').sort((a,b)=>(a.done-b.done)).sort((a,b)=>b.name.length-a.name.length).find(g=>lt.includes(g.name.toLowerCase()))||null; }
 
 /* ---------- 負債 ---------- */
 const DEBT_OP={pay:-1,borrow:1,lend:-1,collect:1};
@@ -259,13 +270,14 @@ function parseInput(raw){
   t=t.replace(/(\d),(?=\d{3})/g,'$1').replace(/[$元塊圓]/g,' ');
   let amount=null; const nums=[...t.matchAll(/\d+(?:\.\d+)?/g)];
   if(nums.length){const last=nums[nums.length-1]; amount=Number(last[0]); t=t.slice(0,last.index)+' '+t.slice(last.index+last[0].length);}
-  const debt=transfer?null:findDebt(t.replace(/\s+/g,'').replace(/^買/,''));
+  const goal=transfer?null:findGoal(t.replace(/\s+/g,''));
+  const debt=(transfer||goal)?null:findDebt(t.replace(/\s+/g,'').replace(/^買/,''));
   let who=''; for(const p of S.people.slice().sort((a,b)=>b.length-a.length)){ if(p&&t.includes(p)){who=p;t=t.replace(p,' ');break;} }
   let item=t.replace(/\s+/g,' ').trim().replace(/^買/,'').trim();
   if(!who){ const m=item.match(/^([還借])\s*(\S+)$/); if(m){ const c=S.people.filter(x=>x.startsWith(m[2])); if(c.length===1){ who=c[0]; item=m[1]; } } }
   if(who&&(item==='還'||item==='借')) item=item+'錢';
   if(transfer) return {date,amount,item:item.replace(/^(現金|錢)$/,''),who:'',acct:'',transfer};
-  return {date,amount,item,who,acct,transfer:null,debt};
+  return {date,amount,item,who,acct,transfer:null,debt,goal};
 }
 const WHO_KW=['還錢','借','欠','轉帳','請客','代墊','分攤'];
 let pending=null;
@@ -289,6 +301,14 @@ function continueAdd(){
     if(t.from===t.to){ alert('轉出和轉入是同一個帳戶，請再選一次。'); t.to=''; showAskTransfer(); return; }
     const rec={id:newId(),type:'transfer',amount:p.amount,item:p.item||'',category:'轉帳',date:p.date,who:'',icon:'',from:t.from,to:t.to,createdAt:new Date().toISOString()};
     commitAdd(rec,null,`已記好 ✦ ${fmtMD(rec.date)} 轉帳 ${acctName(t.from)} → ${acctName(t.to)} ${money(rec.amount)}`); return;
+  }
+  if(p.goal){
+    const g=goalById(p.goal.id); if(!g){ pending.goal=null; continueAdd(); return; }
+    if(g.done){ if(!confirm(`「${g.name}」已經標記完成了。\n要把它移回「進行中」並記這筆嗎？`)){ cancelAsk(); return; } g.done=false; g.doneAt=''; }
+    const acct=p.acct||(p.selTouched?p.sel:'')||'';
+    const rec={id:newId(),type:'save',goal:g.id,goalName:g.name,amount:p.amount,item:`${g.name}存錢`,category:'儲蓄',date:p.date,who:'',icon:'',acct:acct&&acctById(acct)?acct:'',createdAt:new Date().toISOString()};
+    commitAdd(rec,null,`已記好 ✦ ${g.name} +${money(rec.amount)}${rec.acct?`（放在${acctName(rec.acct)}）`:''}・帳戶餘額不變、不算支出`);
+    return;
   }
   if(p.debt){
     const d=p.debt;
@@ -377,9 +397,9 @@ function answerAsk(kind){
 let page='home', back='home', mg={view:'month',day:today(),month:today().slice(0,7),cat:''};
 let cur=null, dirty=false;
 function nav(){
-  $('#nav').innerHTML=[['home','首頁'],['accounts','帳戶'],['debts','負債'],['manage','帳務管理'],['settings','設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}</button>`).join('');
+  $('#nav').innerHTML=[['home','首頁'],['accounts','帳戶'],['debts','負債'],['savings','儲蓄'],['manage','帳務管理'],['settings','設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}</button>`).join('');
 }
-function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,accounts:renderAccounts,debts:renderDebts,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function applyBg(){
   const b=S.bg||{}; document.body.classList.remove('bgpage','bgboth'); const h=$('#hd'); h.classList.remove('custom'); h.style.backgroundImage='';
   if(!b.url) return;
@@ -389,6 +409,7 @@ function applyBg(){
 }
 function recMeta(r){
   if(r.type==='transfer') return {icon:r.icon||'🔁',name:r.item||'帳戶轉移',sub:`轉帳・${esc(acctName(r.from))} → ${esc(acctName(r.to))}`,cls:'mv',sign:''};
+  if(r.type==='save'){ const g=goalById(r.goal); return {icon:r.icon||'🎯',name:`${g?g.name:(r.goalName||'')}存錢`,sub:`儲蓄・${r.acct&&acctById(r.acct)?'放在'+esc(acctName(r.acct))+'・':''}不算收支`,cls:'mv',sign:'+'}; }
   if(r.type==='debt'){ const io=r.op==='borrow'||r.op==='collect', d=debtById(r.debt), nm=d?d.name:(r.debtName||'');
     return {icon:r.icon||(r.debtKind==='loan'?'🏦':io?'📥':'📤'),name:debtLabel(r.op,nm),sub:`${r.exp?'還款・算支出':'借還・不算收支'}・${esc(acctName(r.acct))}`,cls:r.exp?'out':'mv',sign:io?'+':'-'}; }
   if(r.type==='adjust') return {icon:r.icon||'⚖️',name:r.item||'餘額校正',sub:`校正・${esc(acctName(r.acct))}`,cls:r.sign<0?'out':'in',sign:r.sign<0?'-':'+'};
@@ -463,6 +484,13 @@ function renderEdit(){
   const foot=`<div class="savebar"><div class="in"><button class="primary" onclick="saveEdit()">儲存</button><button onclick="leaveEdit()">返回</button><span id="dm"></span></div></div>`;
   const dateF=`<div><label class="f">日期</label><input type="date" value="${esc(r.date)}" oninput="setEdit('date',this.value)"></div>`;
   const amtF=`<div><label class="f">金額</label><input type="number" inputmode="decimal" value="${esc(r.amount)}" oninput="setEdit('amount',this.value)"></div>`;
+  if(r.type==='save'){
+    const g=goalById(r.goal);
+    const body=`<div><label class="f">類型</label><div style="padding:9px 0;font-weight:700">🎯 ${esc(g?g.name:(r.goalName||''))} 存錢（不算收支、帳戶餘額不變）</div></div>${dateF}${amtF}
+      <div><label class="f">錢放在哪裡（只是備註）</label><select onchange="setEdit('acct',this.value)"><option value="">（不指定）</option>${acctOpts(r.acct&&acctById(r.acct)?r.acct:'')}</select></div>`;
+    $('#app').innerHTML=`${head}<div class="card"><div class="grid">${body}</div></div>${foot}`;
+    const dm=$('#dm'); if(dm) dm.innerHTML=dirty?'<span class="dirty">● 有尚未儲存的修改</span>':''; return;
+  }
   if(r.type==='debt'){
     const d=debtById(r.debt), nm=d?d.name:(r.debtName||'');
     const ops=r.debtKind==='loan'?[['pay',`還${nm}`]]:[['pay',`我還${nm}`],['borrow',`我跟${nm}借錢`],['lend',`我借給${nm}`],['collect',`${nm}還我錢`]];
@@ -505,9 +533,15 @@ function setEdit(f,v){
   const dm=$('#dm'); if(dm) dm.innerHTML='<span class="dirty">● 有尚未儲存的修改</span>';
 }
 function leaveEdit(){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; go2(back); }
-function go2(k){ page=k; ({home:renderHome,accounts:renderAccounts,debts:renderDebts,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function go2(k){ page=k; ({home:renderHome,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function saveEdit(){
   const r=cur, amt=Number(r.amount);
+  if(r.type==='save'){
+    if(!(amt>0)){alert('金額要是大於 0 的數字');return;} if(!r.date){alert('請先填寫：日期');return;}
+    const j=R.findIndex(x=>x.id===r.id), o=R[j];
+    R[j]=Object.assign({},o,{amount:amt,date:r.date,acct:r.acct&&acctById(r.acct)?r.acct:''});
+    if(!persist()){R[j]=o;return;} dirty=false; cur=null; go2(back); flash('已儲存 ✦'); return;
+  }
   if(r.type==='debt'){
     if(!(amt>0)){alert('金額要是大於 0 的數字');return;} if(!r.date){alert('請先填寫：日期');return;}
     const j=R.findIndex(x=>x.id===r.id), o=R[j], d=debtById(r.debt), nm=d?d.name:(r.debtName||'');
@@ -610,8 +644,8 @@ function calibAcct(id){
 }
 function delAcct(id){
   if(id==='cash') return; const a=acctById(id); if(!a) return;
-  const refs=live().filter(r=>r.acct===id||r.from===id||r.to===id);
-  const finish=(apply,msg)=>{ const oR=JSON.stringify(R), oS=JSON.stringify(S); apply(); S.accounts=S.accounts.filter(x=>x.id!==id);
+  const refs=live().filter(r=>r.type!=='save'&&(r.acct===id||r.from===id||r.to===id));
+  const finish=(apply,msg)=>{ const oR=JSON.stringify(R), oS=JSON.stringify(S); apply(); live().forEach(r=>{ if(r.type==='save'&&r.acct===id) r.acct=''; }); S.accounts=S.accounts.filter(x=>x.id!==id);
     if(!persist()){R=JSON.parse(oR);S=JSON.parse(oS);return false;} renderAccounts(); flash(msg); return true; };
   if(!refs.length){ if(confirm(`確定要刪除帳戶「${a.name}」嗎？`)) finish(()=>{},'已刪除帳戶'); return; }
   const others=S.accounts.filter(x=>x.id!==id);
@@ -722,8 +756,78 @@ function debtDetail(id){
 function delDebt(id){
   const d=debtById(id); if(!d) return; const refs=live().filter(r=>r.type==='debt'&&r.debt===id);
   if(!confirm(refs.length?`確定刪除「${d.name}」嗎？\n它的 ${refs.length} 筆紀錄會一起放進「最近刪除」，30 天內可以救回。`:`確定刪除「${d.name}」嗎？`)) return;
-  const oR=JSON.stringify(R), oS=JSON.stringify(S); refs.forEach(r=>{r.deleted=true;r.deletedAt=today();}); S.debts=S.debts.filter(x=>x.id!==id);
+  const oR=JSON.stringify(R), oS=JSON.stringify(S); refs.forEach(r=>{r.deleted=true;r.deletedAt=today();r.debtDef={name:d.name,kind:d.kind,init:d.init,monthly:d.monthly,dueDay:d.dueDay,payAcct:d.payAcct};}); S.debts=S.debts.filter(x=>x.id!==id);
   if(!persist()){R=JSON.parse(oR);S=JSON.parse(oS);return;} renderDebts(); flash(refs.length?`已刪除，${refs.length} 筆紀錄移到「最近刪除」`:'已刪除');
+}
+
+/* ---------- 儲蓄頁 ---------- */
+function monthsUntil(ymd){ const t=today(); if(ymd<=t) return 0; const [y1,m1,d1]=t.split('-').map(Number),[y2,m2,d2]=ymd.split('-').map(Number);
+  let m=(y2-y1)*12+(m2-m1); if(d2<d1) m--; return Math.max(m,1); }
+function goalRow(g,b){
+  const saved=goalSaved(g,b), tg=Number(g.target)||0, pct=tg>0?Math.min(Math.round(saved/tg*100),100):0, left=Math.max(tg-saved,0);
+  const lost=g.mode==='acct'&&!acctById(g.acct);
+  let plan='';
+  if(!g.done&&left>0&&g.deadline){ const mo=monthsUntil(g.deadline); plan=mo>0?`・${fmtFull(g.deadline)} 前每月要存約 ${money(Math.ceil(left/mo))}`:'・已超過預定日期'; }
+  return `<div class="acc"><div class="ic">${pct>=100?'🎉':'🎯'}</div><div class="mid"><div style="font-weight:700">${esc(g.name)}</div>
+    <div class="small muted">${g.mode==='acct'?(lost?'⚠️ 綁定的帳戶已刪除，請按「修改」重新選':`綁定帳戶：${esc(acctName(g.acct))}`):'自己標記'}${g.done?`・${fmtFull(g.doneAt||today())} 完成`:(left>0?`・還差 ${money(left)}`:'・🎉 已達成！')}${plan}</div></div>
+    <div class="bal">${money(saved)} <span class="small muted">/ ${money(tg)}</span></div>
+    <div style="width:100%"><div class="bar" style="grid-template-columns:1fr 52px;cursor:default;margin:2px 0"><div class="b"><i style="width:${pct}%;background:${pct>=100?'var(--ok)':'var(--brand)'}"></i></div><div class="v small">${pct}%</div></div></div>
+    <div class="ops">${g.mode==='manual'?`<button onclick="goalDetail('${g.id}')">明細</button>`:''}${g.done?`<button onclick="goalDone('${g.id}',false)">移回進行中</button>`:`<button onclick="editGoal('${g.id}')">修改</button><button onclick="goalDone('${g.id}',true)">完成</button>`}<button class="danger" onclick="delGoal('${g.id}')">刪除</button></div></div>`;
+}
+function goalFormHTML(pre,g){ g=g||{};
+  return `<div class="grid"><div><label class="f">名稱</label><input type="text" id="${pre}Name" maxlength="20" value="${esc(g.name||'')}" placeholder="例如：旅遊基金"></div>
+    <div><label class="f">目標金額</label><input type="number" id="${pre}Tg" inputmode="decimal" value="${g.target||''}" placeholder="例如：50000"></div>
+    <div><label class="f">進度怎麼算</label><select id="${pre}Mode" onchange="$('#${pre}AcctW').style.display=this.value==='acct'?'':'none'">
+      <option value="manual" ${g.mode!=='acct'?'selected':''}>自己標記（打「${esc(g.name||'旅遊基金')}存5000」）</option><option value="acct" ${g.mode==='acct'?'selected':''}>綁定帳戶（進度 = 帳戶餘額）</option></select></div>
+    <div id="${pre}AcctW" style="${g.mode==='acct'?'':'display:none'}"><label class="f">綁定哪個帳戶</label><select id="${pre}Acct">${acctOpts(g.acct&&acctById(g.acct)?g.acct:'')}</select></div>
+    <div><label class="f">希望哪天存到（選填）</label><input type="date" id="${pre}Dl" value="${esc(g.deadline||'')}"></div></div>`;
+}
+function readGoalForm(pre,selfId){
+  const name=$('#'+pre+'Name').value.trim(), tg=parseInit($('#'+pre+'Tg').value), mode=$('#'+pre+'Mode').value, acct=$('#'+pre+'Acct').value, dl=$('#'+pre+'Dl').value;
+  if(!name){alert('請填寫名稱');return null;} if(/\d/.test(name)){alert('名稱裡不要有數字（會跟金額搞混）');return null;}
+  if(/領|轉|加值|\+值|借|還/.test(name)){alert('名稱裡不能有「領、轉、加值、借、還」這些字，小帳會判斷錯');return null;}
+  if(S.accounts.some(a=>a.name.toLowerCase()===name.toLowerCase())){alert('名稱不能跟帳戶一樣');return null;}
+  if(S.goals.some(g=>g.id!==selfId&&g.name.toLowerCase()===name.toLowerCase())){alert('已經有同名的目標了');return null;}
+  if(Number.isNaN(tg)||!(tg>0)){alert('目標金額要是大於 0 的數字');return null;}
+  if(mode==='acct'&&!acctById(acct)){alert('請選擇要綁定的帳戶');return null;}
+  return {name,target:tg,mode,acct:mode==='acct'?acct:'',deadline:dl||''};
+}
+function renderSavings(){
+  page='savings'; nav(); const b=balances(), act=S.goals.filter(g=>!g.done), dn=S.goals.filter(g=>g.done);
+  const total=act.reduce((s,g)=>s+goalSaved(g,b),0);
+  $('#app').innerHTML=`<div class="card total"><div class="muted small" style="font-weight:700">進行中的目標，總共已存</div><div class="n">${money(total)}</div></div>
+   <div class="card"><h2>🎯 儲蓄目標</h2>${act.length?act.map(g=>goalRow(g,b)).join(''):'<div class="muted small">還沒有目標。在下面新增一個吧 ✦</div>'}
+    <details style="margin-top:10px"><summary>➕ 新增目標</summary><div style="margin-top:8px">${goalFormHTML('ng')}</div><button class="primary" style="margin-top:10px" onclick="addGoal()">新增</button></details>
+    <div class="muted small" style="margin-top:8px">「自己標記」：在首頁打「旅遊基金存5000」或「旅遊基金存到台新5000」，進度會增加，但<b>帳戶餘額不變、不算支出</b>。花錢照平常記帳就好，不會扣目標。<br>「綁定帳戶」：用轉帳存錢，例如「台新轉儲蓄專戶5000」。</div></div>
+   ${dn.length?`<div class="card"><details><summary>✅ 已完成（${dn.length}）</summary>${dn.map(g=>goalRow(g,b)).join('')}</details></div>`:''}`;
+}
+function addGoal(){ const f=readGoalForm('ng',null); if(!f) return; const o=JSON.stringify(S);
+  S.goals.push(Object.assign({id:newId(),done:false,doneAt:''},f)); if(!persist()){S=JSON.parse(o);return;} renderSavings(); flash(`已新增目標「${f.name}」✦`); }
+function editGoal(id){
+  const g=goalById(id); if(!g) return; const m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="box"><h2 style="margin:0 0 10px;font-size:17px">修改「${esc(g.name)}」</h2>${goalFormHTML('eg',g)}
+    ${g.mode==='manual'?'<div class="muted small" style="margin:8px 0">改成「綁定帳戶」後，原本標記的存錢紀錄會保留，但進度改成看帳戶餘額。</div>':''}
+    <div class="row" style="margin-top:10px"><button class="primary" id="egOk">儲存</button><button id="egNo">取消</button></div></div>`;
+  document.body.appendChild(m); m.querySelector('#egNo').onclick=()=>m.remove();
+  m.querySelector('#egOk').onclick=()=>{ const f=readGoalForm('eg',id); if(!f) return; const o=JSON.stringify(S); Object.assign(g,f);
+    if(!persist()){S=JSON.parse(o);return;} m.remove(); renderSavings(); flash('已儲存 ✦'); };
+}
+function goalDone(id,v){ const g=goalById(id); if(!g) return;
+  if(v&&!confirm(`確定把「${g.name}」標記為完成嗎？\n會收進「已完成」，紀錄都會保留。`)) return;
+  const o=JSON.stringify(S); g.done=v; g.doneAt=v?today():''; if(!persist()){S=JSON.parse(o);return;} renderSavings(); flash(v?'🎉 恭喜完成！':'已移回進行中'); }
+function goalDetail(id){
+  const g=goalById(id); if(!g) return; const rs=sortRecs(live().filter(r=>r.type==='save'&&r.goal===id));
+  const m=document.createElement('div'); m.className='modal'; m.onclick=e=>{if(e.target===m)m.remove();};
+  m.innerHTML=`<div class="box" style="max-height:80vh;overflow:auto"><div class="row" style="margin-bottom:8px"><b>${esc(g.name)} 的存錢紀錄</b><span class="spacer"></span><button id="gdX">關閉</button></div>
+    ${rs.length?rs.map(recRow).join(''):'<div class="empty">還沒有紀錄</div>'}</div>`;
+  document.body.appendChild(m); m.querySelector('#gdX').onclick=()=>m.remove();
+  m.querySelectorAll('.rec').forEach(el=>el.addEventListener('click',()=>m.remove()));
+}
+function delGoal(id){
+  const g=goalById(id); if(!g) return; const refs=live().filter(r=>r.type==='save'&&r.goal===id);
+  if(!confirm(refs.length?`確定刪除目標「${g.name}」嗎？\n它的 ${refs.length} 筆存錢紀錄會一起放進「最近刪除」，30 天內可以救回。`:`確定刪除目標「${g.name}」嗎？`)) return;
+  const oR=JSON.stringify(R), oS=JSON.stringify(S); refs.forEach(r=>{r.deleted=true;r.deletedAt=today();r.goalDef={name:g.name,target:g.target,mode:g.mode,acct:g.acct,deadline:g.deadline};}); S.goals=S.goals.filter(x=>x.id!==id);
+  if(!persist()){R=JSON.parse(oR);S=JSON.parse(oS);return;} renderSavings(); flash(refs.length?`已刪除，${refs.length} 筆紀錄移到「最近刪除」`:'已刪除');
 }
 
 /* ---------- 設定 ---------- */
@@ -783,6 +887,8 @@ function renderTrash(){
 function trashRestore(){ const ids=[...selT]; if(!ids.length) return; const oR=JSON.stringify(R); let fixed=0;
   R.forEach(r=>{ if(ids.includes(r.id)&&r.deleted){ r.deleted=false; delete r.deletedAt;
     let f=false; ['acct','from','to'].forEach(k=>{ if(r[k]&&!acctById(r[k])){ r[k]='cash'; f=true; } }); if(f) fixed++;
+    if(r.type==='save'&&!goalById(r.goal)){ const D=r.goalDef||{}; S.goals.push(fixS({accounts:S.accounts,goals:[Object.assign({id:r.goal,name:r.goalName||'未命名目標',target:0,mode:'manual',acct:'',deadline:''},D,{done:false,doneAt:''})]}).goals[0]); }
+    if(r.type==='debt'&&!debtById(r.debt)&&r.debtDef){ S.debts.push(fixS({accounts:S.accounts,debts:[Object.assign({id:r.debt},r.debtDef)]}).debts[0]); }
     if(r.type==='debt'&&!debtById(r.debt)) S.debts.push({id:r.debt,name:r.debtName||'未命名',kind:r.debtKind==='loan'?'loan':'person',init:0,monthly:0,dueDay:0,payAcct:''}); } });
   if(!persist()){R=JSON.parse(oR);return;} selT=new Set(); renderTrash();
   if(fixed) alert(`已還原。其中 ${fixed} 筆原本的帳戶已經刪除，已自動改成「現金」。`); else flash('已還原 ✦'); }
@@ -794,8 +900,8 @@ function purgeExpired(){ const old=R, n=R.length; R=R.filter(r=>!(r.deleted&&r.d
 function exportCSV(){
   const rs=sortRecs(live()).reverse(); if(!rs.length){alert('目前沒有紀錄可匯出。');return;}
   const head=['日期','類型','分類','項目','對象','帳戶','轉出帳戶','轉入帳戶','金額'];
-  const TL={income:'收入',expense:'支出',transfer:'轉帳',adjust:'校正',debt:'負債'};
-  const rows=rs.map(r=>[r.date,r.type==='debt'?(r.exp?'負債（還款・算支出）':'負債（借還）'):(TL[r.type]||''),r.category,r.type==='debt'?recMeta(r).name:r.item,r.who||'',r.type!=='transfer'?acctName(r.acct):'',r.type==='transfer'?acctName(r.from):'',r.type==='transfer'?acctName(r.to):'',r.type==='adjust'&&r.sign<0?-r.amount:r.amount]);
+  const TL={income:'收入',expense:'支出',transfer:'轉帳',adjust:'校正',debt:'負債',save:'儲蓄（不算收支）'};
+  const rows=rs.map(r=>[r.date,r.type==='debt'?(r.exp?'負債（還款・算支出）':'負債（借還）'):(TL[r.type]||''),r.category,(r.type==='debt'||r.type==='save')?recMeta(r).name:r.item,r.who||'',r.type!=='transfer'?acctName(r.acct):'',r.type==='transfer'?acctName(r.from):'',r.type==='transfer'?acctName(r.to):'',r.type==='adjust'&&r.sign<0?-r.amount:r.amount]);
   const csv=[head,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
   download('﻿'+csv,`xiaozhang_${today()}.csv`,'text/csv;charset=utf-8');
 }
@@ -803,12 +909,14 @@ function backup(){ download(JSON.stringify({app:'casevoraXiaozhang',version:1,ex
 function restore(inp){
   const f=inp.files[0]; inp.value=''; if(!f) return; const fr=new FileReader();
   fr.onload=()=>{ let d; try{ d=JSON.parse(fr.result); if(!d||d.app!=='casevoraXiaozhang'||!Array.isArray(d.records)) throw 0; }catch(e){ alert('無法讀取：這不是本工具的備份檔。'); return; }
-    const bad=d.records.some(r=>!r||!/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')||!(Number(r.amount)>0)||!['income','expense','transfer','adjust','debt'].includes(r.type)||(r.type==='debt'&&(!DEBT_OP[r.op]||!/^[\w-]{1,40}$/.test(String(r.debt))))); if(bad){ alert('無法還原：備份檔內有格式不正確的紀錄。'); return; }
+    const bad=d.records.some(r=>!r||!/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')||!(Number(r.amount)>0)||!['income','expense','transfer','adjust','debt','save'].includes(r.type)||(r.type==='save'&&!/^[\w-]{1,40}$/.test(String(r.goal)))||(r.type==='debt'&&(!DEBT_OP[r.op]||!/^[\w-]{1,40}$/.test(String(r.debt))))); if(bad){ alert('無法還原：備份檔內有格式不正確的紀錄。'); return; }
     if(!confirm(`備份檔內有 ${d.records.length} 筆紀錄。\n還原會「取代」目前瀏覽器中的 ${live().length} 筆紀錄和設定，目前「最近刪除」裡的 ${trashList().length} 筆也會一併被取代，確定嗎？`)) return;
     const oR=R,oS=S; R=d.records.map(r=>({id:/^[\w-]{1,40}$/.test(String(r.id))?String(r.id):newId(),type:r.type,amount:Number(r.amount),item:String(r.item||''),category:r.category||(r.type==='income'?'其他收入':r.type==='transfer'?'轉帳':r.type==='adjust'?'校正':'其他'),date:r.date,who:r.who||'',icon:r.icon||'',createdAt:r.createdAt||'',
       ...(r.type==='transfer'?{from:String(r.from||'cash'),to:String(r.to||'cash')}:{acct:String(r.acct||'cash')}),...(r.type==='adjust'?{sign:Number(r.sign)<0?-1:1}:{}),
-      ...(r.type==='debt'?{op:r.op,debt:String(r.debt),debtName:String(r.debtName||'').slice(0,20),debtKind:r.debtKind==='loan'?'loan':'person',exp:r.debtKind==='loan'&&r.op==='pay'}:{})}));
+      ...(r.type==='debt'?{op:r.op,debt:String(r.debt),debtName:String(r.debtName||'').slice(0,20),debtKind:r.debtKind==='loan'?'loan':'person',exp:r.debtKind==='loan'&&r.op==='pay'}:{}),
+      ...(r.type==='save'?{acct:String(r.acct||''),goal:String(r.goal),goalName:String(r.goalName||'').slice(0,20)}:{})}));
     S=fixS(Object.assign(defaultS(),d.settings||{}));
+    R.forEach(r=>{ if(r.type==='save'&&!S.goals.some(x=>x.id===r.goal)) S.goals.push({id:r.goal,name:r.goalName||'未命名目標',target:0,mode:'manual',acct:'',deadline:'',done:false,doneAt:''}); });
     R.forEach(r=>{ if(r.type==='debt'&&!S.debts.some(x=>x.id===r.debt)) S.debts.push({id:r.debt,name:r.debtName||'未命名',kind:r.debtKind,init:0,monthly:0,dueDay:0,payAcct:''}); }); if(!persist()){R=oR;S=oS;return;} applyBg(); flash('還原完成 ✦'); go2('home'); };
   fr.readAsText(f);
 }
