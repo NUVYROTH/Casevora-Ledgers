@@ -170,12 +170,15 @@ function download(content,name,type){const a=document.createElement('a');a.href=
 
 /* ---------- 資料 ---------- */
 let R=loadR(), S=loadS();
-function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[]};}
+function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{}};}
 function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stringify(DEF_ACCTS));
   s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0,dueDay:dayOk(a.dueDay),atype:ACCT_TYPES[a.atype]?a.atype:defType(a.id)})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0,dueDay:0});
   if(!Array.isArray(s.debts)) s.debts=[];
   s.debts=s.debts.filter(d=>d&&/^[\w-]{1,40}$/.test(String(d.id))&&String(d.name||'').trim()&&['loan','person'].includes(d.kind)).map(d=>({id:String(d.id),name:String(d.name).trim().slice(0,20),kind:d.kind,
-    init:Number.isFinite(Number(d.init))?Number(d.init):0,monthly:Number(d.monthly)>0?Number(d.monthly):0,dueDay:dayOk(d.dueDay),payAcct:/^[\w-]{1,40}$/.test(String(d.payAcct||''))?String(d.payAcct):'',created:/^\d{4}-\d{2}-\d{2}$/.test(String(d.created||''))?d.created:'',sub:['loan','inst','other'].includes(d.sub)?d.sub:'loan'}));
+    init:Number.isFinite(Number(d.init))?Number(d.init):0,monthly:Number(d.monthly)>0?Number(d.monthly):0,dueDay:dayOk(d.dueDay),payAcct:/^[\w-]{1,40}$/.test(String(d.payAcct||''))?String(d.payAcct):'',created:/^\d{4}-\d{2}-\d{2}$/.test(String(d.created||''))?d.created:'',sub:['loan','inst','other'].includes(d.sub)?d.sub:'loan',orig:Number(d.orig)>0?Number(d.orig):0,end:/^\d{4}-\d{2}-\d{2}$/.test(String(d.end||''))?d.end:''}));
+  if(!Array.isArray(s.recurring)) s.recurring=[];
+  s.recurring=s.recurring.filter(x=>x&&/^[\w-]{1,40}$/.test(String(x.id))&&String(x.name||'').trim()&&Number(x.amount)>0&&/^\d{4}-\d{2}$/.test(String(x.start||''))).map(x=>({id:String(x.id),name:String(x.name).trim().slice(0,20),kind:['income','expense','debt'].includes(x.kind)?x.kind:'expense',amount:Math.round(Number(x.amount)*100)/100,day:dayOk(x.day)||1,start:x.start,end:/^\d{4}-\d{2}$/.test(String(x.end||''))?x.end:'',acct:/^[\w-]{1,40}$/.test(String(x.acct||''))?String(x.acct):'',debt:/^[\w-]{1,40}$/.test(String(x.debt||''))?String(x.debt):''}));
+  if(!s.recurDone||typeof s.recurDone!=='object'||Array.isArray(s.recurDone)) s.recurDone={};
   if(!Array.isArray(s.goals)) s.goals=[];
   s.goals=s.goals.filter(g=>g&&/^[\w-]{1,40}$/.test(String(g.id))&&String(g.name||'').trim()).map(g=>({id:String(g.id),name:String(g.name).trim().slice(0,20),target:Number(g.target)>0?Number(g.target):0,
     mode:g.mode==='acct'?'acct':'manual',acct:/^[\w-]{1,40}$/.test(String(g.acct||''))?String(g.acct):'',deadline:/^\d{4}-\d{2}-\d{2}$/.test(String(g.deadline||''))?g.deadline:'',done:g.done===true,doneAt:/^\d{4}-\d{2}-\d{2}$/.test(String(g.doneAt||''))?g.doneAt:''}));
@@ -486,7 +489,7 @@ function renderHome(){
       <div class="quick"><input type="text" id="qin" placeholder="例如：吃飯100" onkeydown="if(event.key==='Enter')quickAdd()"><button class="primary" onclick="quickAdd()">記</button></div>
       <div class="paysel"><label class="f" for="paySel" style="margin:0">付款方式</label><select id="paySel" onchange="this.dataset.t='1'">${acctOpts('cash')}</select></div>
       <div class="muted small" style="margin-top:6px">試試看：早餐65、午餐120 LINE Pay、薪水50000 台新、台新領3000現金、悠遊卡加值500　（沒說日期就記今天；沒說付款方式就算現金）</div></div>
-    <div class="o2">${dueReminders()}</div>
+    <div class="o2">${dueReminders()}${recurCard()}</div>
     <div class="o3">${S.acctInitDone?'':`<div class="card ask"><div style="font-weight:700">💡 先告訴小帳：每個帳戶現在有多少錢？</div><div class="small muted" style="margin:4px 0 10px">輸入起始餘額後，小帳才能幫你算出每個帳戶還剩多少。</div>
       <div class="row"><button class="primary" onclick="go('accounts')">去輸入</button><button onclick="S.acctInitDone=true;persist();renderHome()">先不用</button></div></div>`}</div>
     <div id="askBox" class="o4"></div>
@@ -898,8 +901,8 @@ function renderDebts(){
       <div class="stat in"><div class="n" title="${money(lentTotal)}">${bmS(lentTotal)}</div><div class="l">別人欠我</div></div>
       <div class="stat"><div class="n" title="${money(cardTotal)}">${bmS(cardTotal)}</div><div class="l">信用卡欠款</div></div></div></div>
    <div class="card"><h2>🏦 貸款／分期／其他債務</h2>
-    ${loans.length?loans.map(d=>{ const rem=db[d.id], init=Number(d.init)||0, paid=Math.min(Math.max(init-rem,0),init), pct=init>0?Math.round(paid/init*100):0, n=nextDue(d.dueDay);
-      return `<div class="acc"><div class="ic">${(LOAN_SUB[d.sub]||'🏦').slice(0,2)}</div><div class="mid"><div style="font-weight:700">${esc(d.name)} <span class="tag">${(LOAN_SUB[d.sub]||'貸款').slice(2).trim()}</span></div><div class="small muted">原始金額 ${money(Number(d.init)||0)}・已還 ${money(Math.max((Number(d.init)||0)-rem,0))}</div>
+    ${loans.length?loans.map(d=>{ const rem=db[d.id], init=Number(d.orig)||Number(d.init)||0, paid=Math.min(Math.max(init-rem,0),init), pct=init>0?Math.round(paid/init*100):0, n=nextDue(d.dueDay);
+      return `<div class="acc"><div class="ic">${(LOAN_SUB[d.sub]||'🏦').slice(0,2)}</div><div class="mid"><div style="font-weight:700">${esc(d.name)} <span class="tag">${(LOAN_SUB[d.sub]||'貸款').slice(2).trim()}</span></div><div class="small muted">原始金額 ${money(init)}・已還 ${money(paid)}${d.end?`・${fmtFull(d.end)} 到期`:''}</div>
         <div class="small muted">${rem<=0?'🎉 已還清':`${d.monthly?`每月 ${money(d.monthly)}・剩約 ${Math.ceil(rem/d.monthly)} 期`:'未設定每月金額'}${n?`・下次繳款 ${fmtMD(n.date)}`:''}`}${d.payAcct&&acctById(d.payAcct)?`・從${esc(acctName(d.payAcct))}繳`:''}</div></div>
         <div class="bal" style="color:${rem>0?'var(--bad)':'var(--ok)'}">${rem>0?'還欠 '+money(rem):'$0'}</div>
         <div style="width:100%"><div class="bar" style="grid-template-columns:1fr 52px;cursor:default;margin:2px 0"><div class="b"><i style="width:${pct}%;background:var(--ok)"></i></div><div class="v small">${pct}%</div></div></div>
@@ -1038,6 +1041,180 @@ function delGoal(id){
   if(!persist()){R=JSON.parse(oR);S=JSON.parse(oS);return;} renderSavings(); flash(refs.length?`已刪除，${refs.length} 筆紀錄移到「最近刪除」`:'已刪除');
 }
 
+/* ---------- 每月固定收支 ---------- */
+const RC_KIND={income:'💰 收入',expense:'💸 支出',debt:'🏦 還負債'};
+function recById(id){return S.recurring.find(x=>x.id===id);}
+function ymAdd(ym,n){let [y,m]=ym.split('-').map(Number);m+=n;while(m>12){m-=12;y++;}while(m<1){m+=12;y--;}return `${y}-${p2(m)}`;}
+function dueDate(ym,day){const [y,m]=ym.split('-').map(Number);return `${ym}-${p2(Math.min(day,new Date(y,m,0).getDate()))}`;}
+/* 到期（日期 ≤ 今天）但還沒按「記好」或「略過」的項目，含之前沒處理的月份 */
+function recurDue(){
+  const out=[], t=today(), cur=t.slice(0,7);
+  S.recurring.forEach(x=>{ let ym=x.start, guard=0; while(ym<=cur&&guard++<240){ if(x.end&&ym>x.end) break; const d=dueDate(ym,x.day);
+    if(d<=t&&!S.recurDone[x.id+'|'+ym]) out.push({x,ym,date:d}); ym=ymAdd(ym,1); } });
+  return out.sort((a,b)=>a.date.localeCompare(b.date));
+}
+function recurCard(){
+  const due=recurDue(); if(!due.length) return '';
+  return `<div class="card" style="border-color:#8a6bd1;background:#f6f2ff"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">📅 固定收支到期（${due.length} 筆）</h2><span class="spacer"></span><button class="primary" onclick="recurDoAll()">全部記好</button></div>
+    ${due.map((d,i)=>{const x=d.x;return `<div class="acc" style="flex-wrap:nowrap"><div class="mid"><div style="font-weight:700">${esc(x.name)} <span class="tag">${RC_KIND[x.kind].slice(2).trim()}</span></div>
+      <div class="small muted">${fmtFull(d.date)}・${esc(acctName(x.acct))}${x.kind==='debt'&&debtById(x.debt)?'・'+esc(debtById(x.debt).name):''}</div></div>
+      <input type="number" inputmode="decimal" id="rc${i}" value="${x.amount}" style="width:96px;padding:6px 8px" aria-label="金額">
+      <div style="display:flex;flex-direction:column;gap:4px"><button class="primary" style="padding:4px 10px" onclick="recurDo(${i})">記好</button><button style="padding:4px 10px" onclick="recurSkip(${i})">略過</button></div></div>`;}).join('')}
+    <div class="muted small" style="margin-top:6px">金額不一樣可以先改再按「記好」。 <a href="#" onclick="go('settings');return false">管理固定收支</a></div></div>`;
+}
+function recurRecord(x,ym,date,amt){
+  const base={id:newId(),amount:amt,date,who:'',icon:'',acct:okAcct(x.acct),recur:x.id,recurMonth:ym,createdAt:new Date().toISOString()};
+  if(x.kind==='debt'){ const d=debtById(x.debt); if(d){ const loan=d.kind==='loan';
+      return Object.assign(base,{type:'debt',op:'pay',debt:d.id,debtName:d.name,debtKind:d.kind,exp:loan,item:debtLabel('pay',d.name),category:loan?'還款':'借還'}); } }
+  const c=classify(x.name), inc=x.kind==='income';
+  return Object.assign(base,{type:inc?'income':'expense',item:x.name,category:inc?(INC.includes(c.category)?c.category:'其他收入'):(EXP.includes(c.category)?c.category:'其他')});
+}
+function recurApply(list){ /* list: [{d, amt}] */
+  const oR=R.length, oD=JSON.stringify(S.recurDone);
+  for(const {d,amt} of list){ if(!(amt>0)){alert(`「${d.x.name}」的金額要大於 0`);R.length=oR;S.recurDone=JSON.parse(oD);return false;}
+    R.push(recurRecord(d.x,d.ym,d.date,amt)); S.recurDone[d.x.id+'|'+d.ym]='done'; }
+  if(!persist()){R.length=oR;S.recurDone=JSON.parse(oD);return false;} return true;
+}
+function recurDo(i){ const due=recurDue(), d=due[i]; if(!d) return; const amt=Math.round(Number($('#rc'+i).value)*100)/100;
+  if(recurApply([{d,amt}])){ renderHome(); flash(`已記好 ✦ ${d.x.name} ${money(amt)}`); } }
+function recurDoAll(){ const due=recurDue(); const list=due.map((d,i)=>({d,amt:Math.round(Number(($('#rc'+i)||{}).value)*100)/100}));
+  if(!confirm(`要把這 ${list.length} 筆固定收支全部記好嗎？`)) return;
+  if(recurApply(list)){ renderHome(); flash(`已記好 ${list.length} 筆 ✦`); } }
+function recurSkip(i){ const d=recurDue()[i]; if(!d) return; if(!confirm(`這個月（${d.ym}）的「${d.x.name}」要略過、不記帳嗎？`)) return;
+  const o=JSON.stringify(S.recurDone); S.recurDone[d.x.id+'|'+d.ym]='skip'; if(!persist()){S.recurDone=JSON.parse(o);return;} renderHome(); flash('已略過'); }
+function recurListHTML(){
+  if(!S.recurring.length) return '<div class="muted small">還沒有固定收支。可以在下面新增，或用「匯入 Excel」一次匯入。</div>';
+  return S.recurring.map(x=>`<div class="acc"><div class="mid"><div style="font-weight:700">${esc(x.name)} <span class="tag">${RC_KIND[x.kind].slice(2).trim()}</span></div>
+    <div class="small muted">每月 ${x.day} 號・${esc(acctName(x.acct))}${x.kind==='debt'&&debtById(x.debt)?'・'+esc(debtById(x.debt).name):''}・${x.start.replace('-','/')} 起${x.end?'～'+x.end.replace('-','/'):''}</div></div>
+    <div class="bal" style="color:${x.kind==='income'?'var(--ok)':'var(--bad)'}">${x.kind==='income'?'+':'-'}${money(x.amount)}</div>
+    <div class="ops"><button onclick="editRecur('${x.id}')">修改</button><button class="danger" onclick="delRecur('${x.id}')">刪除</button></div></div>`).join('');
+}
+function recurFormHTML(pre,x){ x=x||{kind:'expense',day:10,start:today().slice(0,7)};
+  const debtOpts=S.debts.map(d=>`<option value="${d.id}" ${d.id===x.debt?'selected':''}>${esc(d.name)}</option>`).join('');
+  return `<div class="grid"><div><label class="f">項目</label><input type="text" id="${pre}Name" maxlength="20" value="${esc(x.name||'')}" placeholder="例如：房租、貸款1"></div>
+    <div><label class="f">類型</label><select id="${pre}Kind" onchange="$('#${pre}DebtW').style.display=this.value==='debt'?'':'none'">${Object.entries(RC_KIND).map(([k,n])=>`<option value="${k}" ${k===x.kind?'selected':''}>${n}</option>`).join('')}</select></div>
+    <div id="${pre}DebtW" style="${x.kind==='debt'?'':'display:none'}"><label class="f">連到哪筆負債</label><select id="${pre}Debt">${debtOpts||'<option value="">（請先到「負債」新增）</option>'}</select></div>
+    <div><label class="f">金額</label><input type="number" id="${pre}Amt" inputmode="decimal" value="${x.amount||''}"></div>
+    <div><label class="f">每月幾號</label><input type="number" id="${pre}Day" inputmode="numeric" value="${x.day||''}"></div>
+    <div><label class="f">帳戶</label><select id="${pre}Acct">${acctOpts(x.acct&&acctById(x.acct)?x.acct:'cash')}</select></div>
+    <div><label class="f">從哪個月開始</label><input type="month" id="${pre}Start" value="${x.start||''}"></div>
+    <div><label class="f">到哪個月結束（選填）</label><input type="month" id="${pre}End" value="${x.end||''}"></div></div>`;
+}
+function readRecurForm(pre){
+  const g=k=>$('#'+pre+k).value.trim(), name=g('Name'), kind=g('Kind'), amt=parseInit(g('Amt')), day=dayOk(g('Day')), start=g('Start'), end=g('End'), debt=kind==='debt'?g('Debt'):'';
+  if(!name){alert('請填寫項目');return null;} if(Number.isNaN(amt)||!(amt>0)){alert('金額要是大於 0 的數字');return null;}
+  if(!day){alert('「每月幾號」要是 1 到 31');return null;} if(!/^\d{4}-\d{2}$/.test(start)){alert('請選擇從哪個月開始');return null;}
+  if(end&&end<start){alert('結束月份不能早於開始月份');return null;} if(kind==='debt'&&!debtById(debt)){alert('請選擇要連到哪一筆負債');return null;}
+  return {name,kind,amount:amt,day,start,end:end||'',acct:g('Acct'),debt};
+}
+function addRecur(){ const f=readRecurForm('nr'); if(!f) return; const o=JSON.stringify(S); S.recurring.push(Object.assign({id:newId()},f));
+  if(!persist()){S=JSON.parse(o);return;} renderSettings(); flash(`已新增「${f.name}」✦`); }
+function editRecur(id){ const x=recById(id); if(!x) return; const m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="box" style="max-height:85vh;overflow:auto"><h2 style="margin:0 0 10px;font-size:17px">修改固定收支</h2>${recurFormHTML('er',x)}
+    <div class="muted small" style="margin:8px 0">改金額只影響之後的提醒，已經記好的不會變。</div>
+    <div class="row"><button class="primary" id="erOk">儲存</button><button id="erNo">取消</button></div></div>`;
+  document.body.appendChild(m); m.querySelector('#erNo').onclick=()=>m.remove();
+  m.querySelector('#erOk').onclick=()=>{ const f=readRecurForm('er'); if(!f) return; const o=JSON.stringify(S); Object.assign(x,f); if(!persist()){S=JSON.parse(o);return;} m.remove(); renderSettings(); flash('已儲存 ✦'); }; }
+function delRecur(id){ const x=recById(id); if(!x) return; if(!confirm(`確定刪除固定收支「${x.name}」嗎？\n已經記好的紀錄會保留，只是之後不再提醒。`)) return;
+  const o=JSON.stringify(S); S.recurring=S.recurring.filter(y=>y.id!==id); Object.keys(S.recurDone).forEach(k=>{ if(k.startsWith(id+'|')) delete S.recurDone[k]; });
+  if(!persist()){S=JSON.parse(o);return;} renderSettings(); flash('已刪除'); }
+
+/* ---------- 匯入 Excel ---------- */
+let XLSXP=null;
+function loadXLSX(){ if(window.XLSX) return Promise.resolve(window.XLSX); if(XLSXP) return XLSXP;
+  XLSXP=new Promise((ok,no)=>{ const sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.onload=()=>ok(window.XLSX); sc.onerror=()=>{XLSXP=null;no(new Error('load'));}; document.head.appendChild(sc); }); return XLSXP; }
+const TPL={
+  帳戶:[['名稱','類型','目前餘額'],['測試銀行','銀行','52000'],['現金','現金','3000']],
+  負債:[['名稱','種類','總額','已還','每月','到期日','從哪個帳戶繳'],['測試貸款','貸款','600000','120000','12000','2030/5/27','測試銀行'],['王小明','借人','50000','10000','','',''],['李小華','借出','3000','0','','','']],
+  固定收支:[['項目','類型','金額','每月幾號','開始','結束','帳戶','連到哪筆負債'],['薪水','收入','45000','10','115.11','','測試銀行',''],['房租','支出','8000','5','115.11','','測試銀行',''],['測試貸款','還負債','12000','10','115.11','119.5','測試銀行','測試貸款']],
+  記帳紀錄:[['日期','收入或支出','項目','金額','帳戶','分類（可不填）'],['115.11.1','支出','早餐','65','現金',''],['2026/11/2','收入','獎金','3000','測試銀行','']]
+};
+async function downloadTemplate(){
+  let X; try{ X=await loadXLSX(); }catch(e){ alert('需要網路才能產生 Excel 範本，請連上網路再試一次。'); return; }
+  const wb=X.utils.book_new();
+  X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet([['小帳匯入範本：照各工作表的欄位填，第一列（標題）不要改。範例都是假資料，請換成你的資料或刪掉。'],['日期可寫 115.11.10 或 2026/11/10；月份可寫 115.11 或 2026/11。'],['負債的「種類」：貸款、分期、其他債務、借人（我欠別人）、借出（別人欠我）。'],['固定收支的「類型」：收入、支出、還負債（要填「連到哪筆負債」）。'],['帳戶的「類型」：現金、銀行、電子支付、信用卡、其他；信用卡欠款請填負數。']]),'說明');
+  Object.entries(TPL).forEach(([n,a])=>X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(a),n));
+  X.writeFile(wb,'xiaozhang_import_template.xlsx');
+}
+function numOf(v){ if(v===null||v===undefined||v==='') return NaN; if(typeof v==='number') return v; const n=Number(String(v).replace(/[,\s$元＄]/g,'')); return Number.isFinite(n)?n:NaN; }
+function ymd(y,m,d){ if(y<1911) y+=1911; return validYMD(y,m,d)?`${y}-${p2(m)}-${p2(d)}`:''; }
+function parseDateAny(v){
+  if(v instanceof Date&&!isNaN(v)) return `${v.getFullYear()}-${p2(v.getMonth()+1)}-${p2(v.getDate())}`;
+  const s=String(v??'').trim(); const m=s.match(/^(\d{2,4})\s*[.\/\-年]\s*(\d{1,2})\s*[.\/\-月]\s*(\d{1,2})\s*日?$/); return m?ymd(+m[1],+m[2],+m[3]):'';
+}
+function parseYM(v){
+  if(v instanceof Date&&!isNaN(v)) return `${v.getFullYear()}-${p2(v.getMonth()+1)}`;
+  if(typeof v==='number'){ const r=Math.round(v*100)%100; if(r%10===0&&r/10===1) return 'AMBIG'; v=Math.floor(v)+'.'+(r%10===0?r/10:r); }
+  const s=String(v??'').trim(); let m=s.match(/^(\d{2,4})\s*[.\/\-年]\s*(\d{1,2})\s*(?:月|[.\/\-]\s*\d{1,2}\s*日?)?$/);
+  if(!m) return ''; let y=+m[1]; const mo=+m[2]; if(y<1911) y+=1911; return mo>=1&&mo<=12?`${y}-${p2(mo)}`:'';
+}
+function findAcctByName(n){ n=String(n??'').trim().toLowerCase(); return n?S.accounts.find(a=>a.name.toLowerCase()===n):null; }
+function rowsOf(X,wb,name){ const ws=wb.Sheets[name]; if(!ws) return [];
+  const a=X.utils.sheet_to_json(ws,{header:1,defval:'',raw:true}); if(!a.length) return [];
+  const head=a[0].map(h=>String(h).trim()); return a.slice(1).map((r,i)=>({n:i+2,get:k=>{const j=head.findIndex(h=>h.startsWith(k));return j<0?'':r[j];},empty:r.every(c=>String(c).trim()==='')})).filter(r=>!r.empty); }
+let PENDING_IMPORT=null;
+async function importExcel(inp){
+  const f=inp.files[0]; inp.value=''; if(!f) return;
+  let X; try{ X=await loadXLSX(); }catch(e){ alert('需要網路才能讀 Excel，請連上網路再試一次。'); return; }
+  let wb; try{ wb=X.read(await f.arrayBuffer(),{type:'array',cellDates:true}); }catch(e){ alert('讀不出這個檔案，請確認是 Excel（.xlsx）檔。'); return; }
+  const plan={accts:[],debts:[],recs:[],recur:[],skip:[]}, skip=(sh,n,why)=>plan.skip.push(`${sh} 第 ${n} 列：${why}`);
+  const newAcctNames=new Set(), newDebtNames=new Set();
+  const TYPEMAP={現金:'cash',銀行:'bank',銀行帳戶:'bank',電子支付:'epay',信用卡:'card',其他:'other',其他帳戶:'other'};
+  rowsOf(X,wb,'帳戶').forEach(r=>{ const name=String(r.get('名稱')).trim(), bal=numOf(r.get('目前餘額'));
+    if(!name) return skip('帳戶',r.n,'沒有名稱'); if(/\d{6,}/.test(name.replace(/[\s-]/g,''))) return skip('帳戶',r.n,'名稱像帳號或卡號，請只寫暱稱');
+    if(findAcctByName(name)||newAcctNames.has(name.toLowerCase())) return skip('帳戶',r.n,`「${name}」已經有了`);
+    if(Number.isNaN(bal)&&String(r.get('目前餘額')).trim()!=='') return skip('帳戶',r.n,'餘額不是數字');
+    newAcctNames.add(name.toLowerCase()); const at=TYPEMAP[String(r.get('類型')).trim()]||'other';
+    plan.accts.push({id:newId(),name:name.slice(0,20),icon:{cash:'💵',bank:'🏦',epay:'📱',card:'💳',other:'🗂️'}[at],init:Number.isNaN(bal)?0:Math.round(bal),dueDay:0,atype:at}); });
+  const acctId=n=>{ const s=String(n??'').trim(); if(!s) return ''; const a=findAcctByName(s); if(a) return a.id; const p=plan.accts.find(x=>x.name.toLowerCase()===s.toLowerCase()); return p?p.id:null; };
+  const KIND={貸款:['loan','loan'],分期:['loan','inst'],分期付款:['loan','inst'],其他債務:['loan','other'],借人:['person',1],借出:['person',-1]};
+  rowsOf(X,wb,'負債').forEach(r=>{ const name=String(r.get('名稱')).trim(), k=KIND[String(r.get('種類')).trim()], tot=numOf(r.get('總額')), paidRaw=numOf(r.get('已還')), paid=Number.isNaN(paidRaw)?0:paidRaw, mon=numOf(r.get('每月'));
+    if(!name) return skip('負債',r.n,'沒有名稱'); if(!k) return skip('負債',r.n,'「種類」要寫：貸款、分期、其他債務、借人、借出');
+    if(Number.isNaN(tot)||tot<=0) return skip('負債',r.n,'「總額」要是大於 0 的數字');
+    if(S.debts.some(d=>d.name.toLowerCase()===name.toLowerCase())||newDebtNames.has(name.toLowerCase())) return skip('負債',r.n,`「${name}」已經有了`);
+    const rem=Math.round(tot-paid); if(rem<0) return skip('負債',r.n,'已還比總額還多');
+    newDebtNames.add(name.toLowerCase());
+    const endRaw=r.get('到期日'), end=parseDateAny(endRaw); const pa=acctId(r.get('從哪個帳戶繳'));
+    if(k[0]==='loan') plan.debts.push({id:newId(),name:name.slice(0,20),kind:'loan',sub:k[1],init:rem,orig:Math.round(tot),monthly:Number.isNaN(mon)?0:Math.round(mon),dueDay:end?+end.slice(8,10):0,payAcct:pa||'',created:today(),end});
+    else plan.debts.push({id:newId(),name:name.slice(0,20),kind:'person',init:k[1]*rem,orig:Math.round(tot),monthly:0,dueDay:0,payAcct:'',created:today(),end:''}); });
+  const debtId=n=>{ const s=String(n??'').trim().toLowerCase(); if(!s) return ''; const d=S.debts.find(x=>x.name.toLowerCase()===s)||plan.debts.find(x=>x.name.toLowerCase()===s); return d?d.id:null; };
+  const RK={收入:'income',支出:'expense',還負債:'debt',還款:'debt'};
+  rowsOf(X,wb,'固定收支').forEach(r=>{ const name=String(r.get('項目')).trim(), kind=RK[String(r.get('類型')).trim()], amt=numOf(r.get('金額')), day=dayOk(numOf(r.get('每月幾號'))), start=parseYM(r.get('開始')), endS=String(r.get('結束')).trim(), end=endS?parseYM(r.get('結束')):'';
+    if(!name) return skip('固定收支',r.n,'沒有項目名稱'); if(!kind) return skip('固定收支',r.n,'「類型」要寫：收入、支出、還負債');
+    if(Number.isNaN(amt)||Math.abs(amt)<=0) return skip('固定收支',r.n,'金額要是數字'); if(!day) return skip('固定收支',r.n,'「每月幾號」要是 1～31');
+    if(start==='AMBIG'||end==='AMBIG') return skip('固定收支',r.n,'月份寫成數字 115.1，Excel 會把 115.10 變成 115.1，分不出是 1 月還是 10 月。請在格子前面加一個單引號，寫成 \'115.10，或寫 2026/10');
+    if(!start) return skip('固定收支',r.n,'「開始」看不懂，請寫 115.11 或 2026/11'); if(endS&&!end) return skip('固定收支',r.n,'「結束」看不懂');
+    const a=acctId(r.get('帳戶')); if(a===null) return skip('固定收支',r.n,`找不到帳戶「${r.get('帳戶')}」`);
+    let d=''; if(kind==='debt'){ d=debtId(r.get('連到哪筆負債')); if(!d) return skip('固定收支',r.n,`找不到負債「${r.get('連到哪筆負債')}」`); }
+    plan.recur.push({id:newId(),name:name.slice(0,20),kind,amount:Math.round(Math.abs(amt)),day,start,end,acct:a||'cash',debt:d}); });
+  rowsOf(X,wb,'記帳紀錄').forEach(r=>{ const date=parseDateAny(r.get('日期')), t=String(r.get('收入或支出')).trim(), item=String(r.get('項目')).trim(), amt=numOf(r.get('金額'));
+    if(!date) return skip('記帳紀錄',r.n,'日期看不懂，請寫 115.11.10 或 2026/11/10'); if(!item) return skip('記帳紀錄',r.n,'沒有項目');
+    if(Number.isNaN(amt)||amt===0) return skip('記帳紀錄',r.n,'金額要是數字'); const type=t==='收入'?'income':t==='支出'?'expense':(amt<0?'expense':null);
+    if(!type) return skip('記帳紀錄',r.n,'「收入或支出」要寫：收入 或 支出');
+    const a=acctId(r.get('帳戶')); if(a===null) return skip('記帳紀錄',r.n,`找不到帳戶「${r.get('帳戶')}」`);
+    const cIn=String(r.get('分類')).trim(), c=classify(item), cats=type==='income'?INC:EXP;
+    const cat=cats.includes(cIn)?cIn:(c.type===type&&cats.includes(c.category)?c.category:(type==='income'?'其他收入':'其他'));
+    plan.recs.push({id:newId(),type,amount:Math.round(Math.abs(amt)),item:item.slice(0,40),category:cat,date,who:'',icon:'',acct:a||'cash',createdAt:new Date().toISOString(),imported:true}); });
+  PENDING_IMPORT=plan; showImportPreview(plan);
+}
+function showImportPreview(p){
+  const n=p.accts.length+p.debts.length+p.recur.length+p.recs.length, m=document.createElement('div'); m.className='modal';
+  const sec=(t,list,fmt)=>list.length?`<div class="dayh"><span>${t}（${list.length}）</span></div>${list.slice(0,30).map(x=>`<div class="bs" style="font-size:13px">${fmt(x)}</div>`).join('')}${list.length>30?`<div class="muted small">…還有 ${list.length-30} 筆</div>`:''}`:'';
+  m.innerHTML=`<div class="box" style="max-height:85vh;overflow:auto"><h2 style="margin:0 0 6px;font-size:17px">📥 匯入預覽</h2>
+    <div class="small muted" style="margin-bottom:6px">${n?`將新增 <b>${n}</b> 項。這些會「加進去」，不會蓋掉原本的資料。`:'沒有可以匯入的資料。'}</div>
+    ${sec('👛 帳戶',p.accts,x=>`<span>${esc(x.name)}</span><span>${bm(x.init)}</span>`)}
+    ${sec('💳 負債',p.debts,x=>`<span>${esc(x.name)}・${x.kind==='loan'?LOAN_SUB[x.sub].slice(2).trim():(x.init>=0?'我欠':'欠我')}</span><span>${x.init>=0?'還欠':'對方還欠'} ${money(Math.abs(x.init))} / 總額 ${money(x.orig)}</span>`)}
+    ${sec('📅 固定收支',p.recur,x=>`<span>${esc(x.name)}・每月 ${x.day} 號・${x.start.replace('-','/')} 起</span><span>${x.kind==='income'?'+':'-'}${money(x.amount)}</span>`)}
+    ${sec('🧾 記帳紀錄',p.recs,x=>`<span>${fmtFull(x.date)} ${esc(x.item)}</span><span>${x.type==='income'?'+':'-'}${money(x.amount)}</span>`)}
+    ${p.skip.length?`<div class="notice small" style="margin-top:10px"><b>⚠️ 這些列沒有匯入（${p.skip.length}）：</b><br>${p.skip.map(esc).join('<br>')}</div>`:''}
+    <div class="row" style="margin-top:12px">${n?'<button class="primary" id="ipOk">確定匯入</button>':''}<button id="ipNo">${n?'取消':'關閉'}</button></div></div>`;
+  document.body.appendChild(m); m.querySelector('#ipNo').onclick=()=>{PENDING_IMPORT=null;m.remove();};
+  const ok=m.querySelector('#ipOk'); if(ok) ok.onclick=()=>{ const oR=JSON.stringify(R), oS=JSON.stringify(S);
+    S.accounts.push(...p.accts); S.debts.push(...p.debts); S.recurring.push(...p.recur); R.push(...p.recs); if(p.accts.length) S.acctInitDone=true;
+    if(!persist()){R=JSON.parse(oR);S=JSON.parse(oS);return;} PENDING_IMPORT=null; m.remove(); renderSettings(); flash(`匯入完成 ✦ 新增 ${n} 項`); };
+}
+
 /* ---------- 設定 ---------- */
 function renderSettings(){
   page='settings'; nav();
@@ -1054,6 +1231,13 @@ function renderSettings(){
        <select style="width:auto" ${S.bg.url?'':'disabled'} onchange="S.bg.mode=this.value;persist();applyBg()"><option value="both" ${S.bg.mode==='both'?'selected':''}>兩個都套用（滿版）</option><option value="page" ${S.bg.mode==='page'?'selected':''}>整頁背景</option><option value="banner" ${S.bg.mode==='banner'?'selected':''}>頂部橫幅</option></select>
        <button ${S.bg.url?'':'disabled'} onclick="resetBg()">換回預設</button></div>
      <div class="muted small" style="margin-top:6px">只放一張，上傳後會自動縮小。圖存在這個瀏覽器裡，不會上傳。${S.bg.url?'':'目前使用預設的可愛橫幅。'}</div></div>
+   <div class="card"><h2>📅 每月固定收支</h2>${recurListHTML()}
+     <details style="margin-top:10px"><summary>➕ 新增固定收支</summary><div style="margin-top:8px">${recurFormHTML('nr')}</div><button class="primary" style="margin-top:10px" onclick="addRecur()">新增</button></details>
+     <div class="muted small" style="margin-top:8px">到了每月指定的日期，首頁會提醒你，按「記好」才會真的記帳；當月不一樣可以先改金額，或按「略過」。</div></div>
+   <div class="card"><h2>📥 匯入 Excel</h2>
+     <div class="small" style="margin-bottom:8px">1. 先下載範本，照範本的欄位把資料貼進去（不用的工作表可以留空）　2. 選檔案匯入，會先給你預覽，按「確定匯入」才會加進去</div>
+     <div class="row"><button onclick="downloadTemplate()">下載範本</button><button class="primary" onclick="$('#xlsFile').click()">選擇 Excel 檔匯入</button><input type="file" id="xlsFile" accept=".xlsx,.xls,.csv" hidden onchange="importExcel(this)"></div>
+     <div class="muted small" style="margin-top:8px">匯入是「加進去」，不會蓋掉原本的資料。讀檔需要網路（會從 cdnjs 載入 SheetJS 工具），但檔案只在這台裝置上讀，<b>不會上傳</b>。日期可以寫民國（115.11.10）或西元（2026/11/10）。</div></div>
    <div class="card"><h2>📦 資料</h2><div class="row"><button onclick="go2('trash')">最近刪除（${trashN}）</button><button onclick="exportCSV()">匯出 CSV（Excel 可開）</button><button onclick="backup()">下載備份</button><button onclick="$('#restoreFile').click()">從備份還原</button><input type="file" id="restoreFile" accept=".json" hidden onchange="restore(this)"></div></div>
    <div class="card"><details><summary>資料保存方式與限制（請務必閱讀）</summary><ul class="small">
      <li><b>本機儲存 · 僅在此裝置此瀏覽器有效 · 可匯出備份。</b>資料存在這台裝置、這個瀏覽器裡，不會上傳，也不會同步。</li>
