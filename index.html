@@ -28,7 +28,7 @@ header .sub .lead{font-size:16px;font-weight:800;letter-spacing:1px;text-shadow:
 header .sub .note{display:inline-block;margin-top:6px;background:rgba(255,255,255,.92);color:var(--ink);text-shadow:none;font-weight:700;border-radius:999px;padding:2px 12px;box-shadow:0 1px 4px rgba(233,105,90,.2)}
 header.custom .sub{color:var(--ink);text-shadow:none}
 main{max-width:760px;margin:0 auto;padding:14px 16px 90px}
-nav{display:flex;gap:8px;margin:14px 0}
+nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
 nav button{flex:1;border-radius:999px;padding:9px 6px;font-weight:700}
 nav button.on{background:var(--brand);border-color:var(--brand);color:#fff}
 .card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:16px 18px;margin-bottom:14px;box-shadow:0 3px 10px rgba(233,105,90,.07)}
@@ -142,9 +142,14 @@ function download(content,name,type){const a=document.createElement('a');a.href=
 
 /* ---------- 資料 ---------- */
 let R=loadR(), S=loadS();
-function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false};}
+function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[]};}
 function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stringify(DEF_ACCTS));
-  s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0}); return s; }
+  s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0,dueDay:dayOk(a.dueDay)})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0,dueDay:0});
+  if(!Array.isArray(s.debts)) s.debts=[];
+  s.debts=s.debts.filter(d=>d&&/^[\w-]{1,40}$/.test(String(d.id))&&String(d.name||'').trim()&&['loan','person'].includes(d.kind)).map(d=>({id:String(d.id),name:String(d.name).trim().slice(0,20),kind:d.kind,
+    init:Number.isFinite(Number(d.init))?Number(d.init):0,monthly:Number(d.monthly)>0?Number(d.monthly):0,dueDay:dayOk(d.dueDay),payAcct:/^[\w-]{1,40}$/.test(String(d.payAcct||''))?String(d.payAcct):''}));
+  return s; }
+function dayOk(v){const n=Math.floor(Number(v));return n>=1&&n<=31?n:0;}
 function loadR(){try{const a=JSON.parse(localStorage.getItem(KEY_R));return Array.isArray(a)?a:[];}catch(e){return [];}}
 function loadS(){try{return fixS(Object.assign(defaultS(),JSON.parse(localStorage.getItem(KEY_S))||{}));}catch(e){return defaultS();}}
 function persist(){try{localStorage.setItem(KEY_R,JSON.stringify(R));localStorage.setItem(KEY_S,JSON.stringify(S));
@@ -179,8 +184,35 @@ function balances(){
     if(r.type==='income') b[g(r.acct)]+=r.amount;
     else if(r.type==='expense') b[g(r.acct)]-=r.amount;
     else if(r.type==='transfer'){ b[g(r.from)]-=r.amount; b[g(r.to)]+=r.amount; }
-    else if(r.type==='adjust') b[g(r.acct)]+=(r.sign<0?-1:1)*r.amount; });
+    else if(r.type==='adjust') b[g(r.acct)]+=(r.sign<0?-1:1)*r.amount;
+    else if(r.type==='debt') b[g(r.acct)]+=(r.op==='borrow'||r.op==='collect'?1:-1)*r.amount; });
   Object.keys(b).forEach(k=>b[k]=Math.round(b[k]*100)/100); return b;
+}
+function isExp(r){return r.type==='expense'||(r.type==='debt'&&r.exp===true);}
+
+/* ---------- 負債 ---------- */
+const DEBT_OP={pay:-1,borrow:1,lend:-1,collect:1};
+function debtById(id){return S.debts.find(d=>d.id===id);}
+/* 貸款：正數 = 還欠多少。朋友：正數 = 我欠對方，負數 = 對方欠我 */
+function debtBal(){
+  const d={}; S.debts.forEach(x=>d[x.id]=Number(x.init)||0);
+  live().forEach(r=>{ if(r.type==='debt'&&r.debt in d) d[r.debt]+=DEBT_OP[r.op]*r.amount; });
+  Object.keys(d).forEach(k=>d[k]=Math.round(d[k]*100)/100); return d;
+}
+function nextDue(day){ if(!day) return null; const t=today(), [y,m]=t.split('-').map(Number);
+  const mk=(yy,mm)=>{const last=new Date(yy,mm,0).getDate();return `${yy}-${p2(mm)}-${p2(Math.min(day,last))}`;};
+  let s=mk(y,m); if(s<t){ s=m===12?mk(y+1,1):mk(y,m+1); } return {date:s,days:daysBetween(t,s)}; }
+function debtLabel(op,name){return {pay:`還${name}`,borrow:`跟${name}借錢`,lend:`借給${name}`,collect:`${name}還錢`}[op]||name;}
+/* 從文字判斷是不是借還錢（在找「對象」之前判斷，才分得出「還小明」跟「小明還」） */
+function findDebt(tt){
+  const lt=tt.toLowerCase();
+  const loan=S.debts.filter(d=>d.kind==='loan').sort((a,b)=>b.name.length-a.name.length).find(d=>lt.includes(d.name.toLowerCase()));
+  if(loan) return {id:loan.id,op:'pay',kind:'loan',name:loan.name};
+  const pats=[[/^(?:跟|向)(.{1,10}?)借錢?$/,'borrow'],[/^還錢?(.{1,10}?)錢?$/,'pay'],[/^借錢?(?:給)?(.{1,10}?)錢?$/,'lend'],[/^(.{1,10}?)還錢?$/,'collect'],[/^(.{1,10}?)借錢?$/,'lend']];
+  for(const [re,op] of pats){ const m=tt.match(re); if(!m) continue; const nm=m[1].trim();
+    if(!nm||/\d/.test(nm)||/借|還|跟|向/.test(nm)||/^(錢|款|貸款?|卡費?|書|車|錢包|給)$/.test(nm)) return null;
+    const ex=S.debts.find(d=>d.kind==='person'&&d.name===nm); return {id:ex?ex.id:'',op,kind:'person',name:nm}; }
+  return null;
 }
 
 /* ---------- 自動判斷（關鍵字規則，不是 AI，不會上網） ---------- */
@@ -227,12 +259,13 @@ function parseInput(raw){
   t=t.replace(/(\d),(?=\d{3})/g,'$1').replace(/[$元塊圓]/g,' ');
   let amount=null; const nums=[...t.matchAll(/\d+(?:\.\d+)?/g)];
   if(nums.length){const last=nums[nums.length-1]; amount=Number(last[0]); t=t.slice(0,last.index)+' '+t.slice(last.index+last[0].length);}
+  const debt=transfer?null:findDebt(t.replace(/\s+/g,'').replace(/^買/,''));
   let who=''; for(const p of S.people.slice().sort((a,b)=>b.length-a.length)){ if(p&&t.includes(p)){who=p;t=t.replace(p,' ');break;} }
   let item=t.replace(/\s+/g,' ').trim().replace(/^買/,'').trim();
   if(!who){ const m=item.match(/^([還借])\s*(\S+)$/); if(m){ const c=S.people.filter(x=>x.startsWith(m[2])); if(c.length===1){ who=c[0]; item=m[1]; } } }
   if(who&&(item==='還'||item==='借')) item=item+'錢';
   if(transfer) return {date,amount,item:item.replace(/^(現金|錢)$/,''),who:'',acct:'',transfer};
-  return {date,amount,item,who,acct,transfer:null};
+  return {date,amount,item,who,acct,transfer:null,debt};
 }
 const WHO_KW=['還錢','借','欠','轉帳','請客','代墊','分攤'];
 let pending=null;
@@ -257,6 +290,21 @@ function continueAdd(){
     const rec={id:newId(),type:'transfer',amount:p.amount,item:p.item||'',category:'轉帳',date:p.date,who:'',icon:'',from:t.from,to:t.to,createdAt:new Date().toISOString()};
     commitAdd(rec,null,`已記好 ✦ ${fmtMD(rec.date)} 轉帳 ${acctName(t.from)} → ${acctName(t.to)} ${money(rec.amount)}`); return;
   }
+  if(p.debt){
+    const d=p.debt;
+    if(!d.id&&!p.debtOk){ showAskDebt(); return; }
+    let acct=p.acct||(p.selTouched?p.sel:'');
+    if(!acct&&d.kind==='loan'){ const L=debtById(d.id); if(L&&L.payAcct&&acctById(L.payAcct)) acct=L.payAcct; }
+    acct=okAcct(acct||'cash');
+    const oS=JSON.stringify(S); let id=d.id;
+    if(!id){ id=newId(); S.debts.push({id,name:d.name,kind:'person',init:0,monthly:0,dueDay:0,payAcct:''}); }
+    const isLoanPay=d.kind==='loan'&&d.op==='pay';
+    const rec={id:newId(),type:'debt',op:d.op,debt:id,debtName:d.name,debtKind:d.kind,exp:isLoanPay,amount:p.amount,item:debtLabel(d.op,d.name),
+      category:d.kind==='loan'?'還款':'借還',date:p.date,who:'',icon:'',acct,createdAt:new Date().toISOString()};
+    const io=d.op==='borrow'||d.op==='collect';
+    commitAdd(rec,()=>{S=JSON.parse(oS);},`已記好 ✦ ${fmtMD(rec.date)} ${rec.item} ${io?'+':'-'}${money(rec.amount)} · ${acctName(acct)}${isLoanPay?'（算支出）':'（不算收支）'}`);
+    return;
+  }
   if(!p.item){ showAsk('item',`${money(p.amount)} 是花在什麼地方呢？`); return; }
   const c=classify(p.item);
   if(!p.who&&!p.whoAsked&&((c.learned&&c.who)||WHO_KW.some(k=>p.item.includes(k))||(/^還/.test(p.item)&&!/^還[款貸]/.test(p.item)))){ showAskWho(c.who||''); return; }
@@ -280,6 +328,14 @@ function showAskTransfer(){
   box.innerHTML=`<div class="card ask"><div style="font-weight:700;margin-bottom:8px">小帳想問你：${!t.from&&t.to==='cash'?`這筆 ${money(pending.amount)} 是從哪個帳戶領出來的？`:t.from&&!t.to?`這筆 ${money(pending.amount)} 要加值到哪裡？`:`這筆轉帳 ${money(pending.amount)}，是從哪裡轉到哪裡？`}</div>
     <div class="grid"><div><label class="f">從（轉出）</label>${sel('askFrom',t.from)}</div><div><label class="f">到（轉入）</label>${sel('askTo',t.to)}</div></div>
     <div class="row" style="margin-top:10px"><button class="primary" onclick="answerTransfer()">好</button><button onclick="cancelAsk()">取消</button></div></div>`;
+}
+function showAskDebt(){
+  const box=$('#askBox'); if(!box) return; const d=pending.debt;
+  const what={pay:`你還給${d.name}`,borrow:`你跟${d.name}借錢`,lend:`你借給${d.name}`,collect:`${d.name}還你錢`}[d.op];
+  const after={pay:`你欠${d.name}的會變少`,borrow:`你會欠${d.name} ${money(pending.amount)}`,lend:`${d.name}會欠你 ${money(pending.amount)}`,collect:`${d.name}欠你的會變少`}[d.op];
+  box.innerHTML=`<div class="card ask"><div style="font-weight:700;margin-bottom:6px">小帳想問你：「${esc(d.name)}」還不在負債名單裡，要新增嗎？</div>
+    <div class="small muted" style="margin-bottom:10px">這筆是：${esc(what)} ${money(pending.amount)} → ${esc(after)}</div>
+    <div class="row"><button class="primary" onclick="pending.debtOk=true;continueAdd()">新增並記好</button><button onclick="pending.debt=null;continueAdd()">不是，當一般帳記</button><button onclick="cancelAsk()">取消</button></div></div>`;
 }
 function answerTransfer(){ const f=$('#askFrom').value, t=$('#askTo').value; if(!f||!t){flash('轉出和轉入都要選喔');return;} pending.transfer={from:f,to:t}; continueAdd(); }
 function showAsk(kind,q){
@@ -321,9 +377,9 @@ function answerAsk(kind){
 let page='home', back='home', mg={view:'month',day:today(),month:today().slice(0,7),cat:''};
 let cur=null, dirty=false;
 function nav(){
-  $('#nav').innerHTML=[['home','首頁'],['accounts','帳戶'],['manage','帳務管理'],['settings','設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}</button>`).join('');
+  $('#nav').innerHTML=[['home','首頁'],['accounts','帳戶'],['debts','負債'],['manage','帳務管理'],['settings','設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}</button>`).join('');
 }
-function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,accounts:renderAccounts,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,accounts:renderAccounts,debts:renderDebts,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function applyBg(){
   const b=S.bg||{}; document.body.classList.remove('bgpage','bgboth'); const h=$('#hd'); h.classList.remove('custom'); h.style.backgroundImage='';
   if(!b.url) return;
@@ -333,6 +389,8 @@ function applyBg(){
 }
 function recMeta(r){
   if(r.type==='transfer') return {icon:r.icon||'🔁',name:r.item||'帳戶轉移',sub:`轉帳・${esc(acctName(r.from))} → ${esc(acctName(r.to))}`,cls:'mv',sign:''};
+  if(r.type==='debt'){ const io=r.op==='borrow'||r.op==='collect', d=debtById(r.debt), nm=d?d.name:(r.debtName||'');
+    return {icon:r.icon||(r.debtKind==='loan'?'🏦':io?'📥':'📤'),name:debtLabel(r.op,nm),sub:`${r.exp?'還款・算支出':'借還・不算收支'}・${esc(acctName(r.acct))}`,cls:r.exp?'out':'mv',sign:io?'+':'-'}; }
   if(r.type==='adjust') return {icon:r.icon||'⚖️',name:r.item||'餘額校正',sub:`校正・${esc(acctName(r.acct))}`,cls:r.sign<0?'out':'in',sign:r.sign<0?'-':'+'};
   return {icon:recIcon(r),name:r.item,sub:`${esc(r.category)}・${esc(acctName(r.acct))}`,cls:r.type==='income'?'in':'out',sign:r.type==='income'?'+':'-'};
 }
@@ -342,7 +400,7 @@ function recRow(r){
     <div class="sb">${fmtMD(r.date)}・${m.sub}</div></div><div class="am ${m.cls}">${m.sign}${money(r.amount)}</div></div>`;
 }
 function monthTotals(ym){
-  let i=0,o=0; live().filter(r=>r.date.startsWith(ym)).forEach(r=>{ if(r.type==='income') i+=r.amount; else if(r.type==='expense') o+=r.amount; }); return {i,o,b:i-o};
+  let i=0,o=0; live().filter(r=>r.date.startsWith(ym)).forEach(r=>{ if(r.type==='income') i+=r.amount; else if(isExp(r)) o+=r.amount; }); return {i,o,b:i-o};
 }
 function renderHome(){
   page='home'; nav();
@@ -351,6 +409,7 @@ function renderHome(){
       <div class="quick"><input type="text" id="qin" placeholder="例如：吃飯100" onkeydown="if(event.key==='Enter')quickAdd()"><button class="primary" onclick="quickAdd()">記</button></div>
       <div class="paysel"><label class="f" for="paySel" style="margin:0">付款方式</label><select id="paySel" onchange="this.dataset.t='1'">${acctOpts('cash')}</select></div>
       <div class="muted small" style="margin-top:6px">試試看：早餐65、午餐120 LINE Pay、薪水50000 台新、台新領3000現金、悠遊卡加值500　（沒說日期就記今天；沒說付款方式就算現金）</div></div>
+    ${dueReminders()}
     ${S.acctInitDone?'':`<div class="card ask"><div style="font-weight:700">💡 先告訴小帳：每個帳戶現在有多少錢？</div><div class="small muted" style="margin:4px 0 10px">輸入起始餘額後，小帳才能幫你算出每個帳戶還剩多少。</div>
       <div class="row"><button class="primary" onclick="go('accounts')">去輸入</button><button onclick="S.acctInitDone=true;persist();renderHome()">先不用</button></div></div>`}
     <div id="askBox"></div>
@@ -373,20 +432,20 @@ function renderManage(){
   const msel=`<select style="width:auto" onchange="mg.month=this.value;mg.cat='';mg.acct='';renderManage()">${months.map(m=>`<option value="${m}" ${m===mg.month?'selected':''}>${m.slice(0,4)} 年 ${+m.slice(5)} 月</option>`).join('')}</select>`;
   let body='';
   if(v==='day'){
-    const rs=sortRecs(live().filter(r=>r.date===mg.day)), i=rs.filter(r=>r.type==='income').reduce((a,r)=>a+r.amount,0), o=rs.filter(r=>r.type==='expense').reduce((a,r)=>a+r.amount,0);
+    const rs=sortRecs(live().filter(r=>r.date===mg.day)), i=rs.filter(r=>r.type==='income').reduce((a,r)=>a+r.amount,0), o=rs.filter(isExp).reduce((a,r)=>a+r.amount,0);
     body=`<div class="row" style="margin-bottom:8px"><input type="date" style="width:auto" value="${mg.day}" onchange="mg.day=this.value||today();renderManage()"><span class="muted small">收入 ${money(i)}｜支出 ${money(o)}</span></div>${rs.length?rs.map(recRow).join(''):'<div class="empty">這天沒有紀錄</div>'}`;
   } else if(v==='month'){
     const rs=sortRecs(live().filter(r=>r.date.startsWith(mg.month))), t=monthTotals(mg.month); let h='', last='';
-    rs.forEach(r=>{ if(r.date!==last){ last=r.date; const dr=rs.filter(x=>x.date===r.date), dt=dr.reduce((a,x)=>a+(x.type==='income'?x.amount:x.type==='expense'?-x.amount:0),0); h+=`<div class="dayh"><span>${fmtFull(r.date)}</span><span>${dt<0?'-':'+'}${money(Math.abs(dt))}</span></div>`; } h+=recRow(r); });
+    rs.forEach(r=>{ if(r.date!==last){ last=r.date; const dr=rs.filter(x=>x.date===r.date), dt=dr.reduce((a,x)=>a+(x.type==='income'?x.amount:isExp(x)?-x.amount:0),0); h+=`<div class="dayh"><span>${fmtFull(r.date)}</span><span>${dt<0?'-':'+'}${money(Math.abs(dt))}</span></div>`; } h+=recRow(r); });
     body=`<div class="row" style="margin-bottom:8px">${msel}<span class="muted small">收入 ${money(t.i)}｜支出 ${money(t.o)}｜結餘 ${t.b<0?'-':''}${money(Math.abs(t.b))}</span></div>${rs.length?h:'<div class="empty">這個月沒有紀錄</div>'}`;
   } else if(v==='acct'){
-    const rs=live().filter(r=>r.date.startsWith(mg.month)&&r.type==='expense'), tot={}; rs.forEach(r=>{const a=okAcct(r.acct);tot[a]=(tot[a]||0)+r.amount;});
+    const rs=live().filter(r=>r.date.startsWith(mg.month)&&isExp(r)), tot={}; rs.forEach(r=>{const a=okAcct(r.acct);tot[a]=(tot[a]||0)+r.amount;});
     const list=Object.entries(tot).sort((a,b)=>b[1]-a[1]), mx=list.length?list[0][1]:1, sum=list.reduce((a,x)=>a+x[1],0);
     body=`<div class="row" style="margin-bottom:8px">${msel}<span class="muted small">本月支出 ${money(sum)}（點帳戶看明細）</span></div>
       ${list.length?list.map(([a,n])=>`<div class="bar" onclick="mg.acct=mg.acct==='${a}'?'':'${a}';renderManage()"><div>${acctIcon(a)} ${esc(acctName(a))}</div><div class="b"><i style="width:${Math.round(n/mx*100)}%"></i></div><div class="v">${money(n)}</div></div>`).join(''):'<div class="empty">這個月沒有支出</div>'}
       ${mg.acct?`<div class="dayh"><span>${acctIcon(mg.acct)} ${esc(acctName(mg.acct))} 明細</span></div>${sortRecs(rs.filter(r=>okAcct(r.acct)===mg.acct)).map(recRow).join('')}`:''}`;
   } else {
-    const rs=live().filter(r=>r.date.startsWith(mg.month)&&r.type==='expense'), tot={}; rs.forEach(r=>tot[r.category]=(tot[r.category]||0)+r.amount);
+    const rs=live().filter(r=>r.date.startsWith(mg.month)&&isExp(r)), tot={}; rs.forEach(r=>tot[r.category]=(tot[r.category]||0)+r.amount);
     const list=Object.entries(tot).sort((a,b)=>b[1]-a[1]), mx=list.length?list[0][1]:1, sum=list.reduce((a,x)=>a+x[1],0);
     body=`<div class="row" style="margin-bottom:8px">${msel}<span class="muted small">本月支出 ${money(sum)}（點分類看明細）</span></div>
       ${list.length?list.map(([c,a])=>`<div class="bar" onclick="mg.cat=mg.cat==='${c}'?'':'${c}';renderManage()"><div>${iconOf(c)} ${esc(c)}</div><div class="b"><i style="width:${Math.round(a/mx*100)}%"></i></div><div class="v">${money(a)}</div></div>`).join(''):'<div class="empty">這個月沒有支出</div>'}
@@ -404,6 +463,15 @@ function renderEdit(){
   const foot=`<div class="savebar"><div class="in"><button class="primary" onclick="saveEdit()">儲存</button><button onclick="leaveEdit()">返回</button><span id="dm"></span></div></div>`;
   const dateF=`<div><label class="f">日期</label><input type="date" value="${esc(r.date)}" oninput="setEdit('date',this.value)"></div>`;
   const amtF=`<div><label class="f">金額</label><input type="number" inputmode="decimal" value="${esc(r.amount)}" oninput="setEdit('amount',this.value)"></div>`;
+  if(r.type==='debt'){
+    const d=debtById(r.debt), nm=d?d.name:(r.debtName||'');
+    const ops=r.debtKind==='loan'?[['pay',`還${nm}`]]:[['pay',`我還${nm}`],['borrow',`我跟${nm}借錢`],['lend',`我借給${nm}`],['collect',`${nm}還我錢`]];
+    const body=`<div><label class="f">類型</label><div style="padding:9px 0;font-weight:700">${r.debtKind==='loan'?'🏦 還貸款（算支出）':'🤝 跟朋友借還（不算收支）'}</div></div>
+      <div><label class="f">內容</label><select onchange="setEdit('op',this.value)">${ops.map(([k,n])=>`<option value="${k}" ${r.op===k?'selected':''}>${esc(n)}</option>`).join('')}</select></div>
+      ${dateF}${amtF}<div><label class="f">帳戶</label><select onchange="setEdit('acct',this.value)">${acctOpts(okAcct(r.acct))}</select></div>`;
+    $('#app').innerHTML=`${head}<div class="card"><div class="grid">${body}</div></div>${foot}`;
+    const dm=$('#dm'); if(dm) dm.innerHTML=dirty?'<span class="dirty">● 有尚未儲存的修改</span>':''; return;
+  }
   if(r.type==='transfer'||r.type==='adjust'){
     const body=r.type==='transfer'
       ? `<div><label class="f">類型</label><div style="padding:9px 0;font-weight:700">🔁 帳戶轉移（不算收入或支出）</div></div>${dateF}${amtF}
@@ -437,9 +505,15 @@ function setEdit(f,v){
   const dm=$('#dm'); if(dm) dm.innerHTML='<span class="dirty">● 有尚未儲存的修改</span>';
 }
 function leaveEdit(){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; go2(back); }
-function go2(k){ page=k; ({home:renderHome,accounts:renderAccounts,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function go2(k){ page=k; ({home:renderHome,accounts:renderAccounts,debts:renderDebts,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function saveEdit(){
   const r=cur, amt=Number(r.amount);
+  if(r.type==='debt'){
+    if(!(amt>0)){alert('金額要是大於 0 的數字');return;} if(!r.date){alert('請先填寫：日期');return;}
+    const j=R.findIndex(x=>x.id===r.id), o=R[j], d=debtById(r.debt), nm=d?d.name:(r.debtName||'');
+    R[j]=Object.assign({},o,{op:r.op,amount:amt,date:r.date,acct:okAcct(r.acct),item:debtLabel(r.op,nm),exp:r.debtKind==='loan'&&r.op==='pay'});
+    if(!persist()){R[j]=o;return;} dirty=false; cur=null; go2(back); flash('已儲存 ✦'); return;
+  }
   if(r.type==='transfer'||r.type==='adjust'){
     if(!(amt>0)){alert('金額要是大於 0 的數字');return;} if(!r.date){alert('請先填寫：日期');return;}
     if(r.type==='transfer'&&okAcct(r.from)===okAcct(r.to)){alert('轉出和轉入不能是同一個帳戶');return;}
@@ -479,7 +553,7 @@ function renderAccounts(){
   page='accounts'; nav(); const b=balances(), total=S.accounts.reduce((s,a)=>s+b[a.id],0);
   $('#app').innerHTML=`<div class="card total"><div class="muted small" style="font-weight:700">總資產（所有帳戶加總）</div><div class="n" style="color:${total<0?'var(--bad)':'var(--ink)'}">${bm(Math.round(total*100)/100)}</div></div>
    <div class="card"><h2>👛 我的帳戶</h2>
-    ${S.accounts.map(a=>`<div class="acc"><div class="ic">${a.icon||'💳'}</div><div class="mid"><div style="font-weight:700">${esc(a.name)}</div><div class="small muted">起始餘額 ${bm(Number(a.init)||0)}</div></div>
+    ${S.accounts.map(a=>`<div class="acc"><div class="ic">${a.icon||'💳'}</div><div class="mid"><div style="font-weight:700">${esc(a.name)}</div><div class="small muted">起始餘額 ${bm(Number(a.init)||0)}${a.dueDay?`・每月 ${a.dueDay} 號繳款`:''}</div></div>
       <div class="bal" style="color:${b[a.id]<0?'var(--bad)':'var(--ink)'}">${bm(b[a.id])}</div>
       <div class="ops"><button onclick="editAcct('${a.id}')">修改</button><button onclick="calibAcct('${a.id}')">校正餘額</button>${a.id==='cash'?'':`<button class="danger" onclick="delAcct('${a.id}')">刪除</button>`}</div></div>`).join('')}
     <div class="muted small" style="margin-top:8px">餘額 = 起始餘額 ＋ 收入 － 支出 ± 轉帳 ± 校正。「現金」是預設帳戶，不能刪除。</div></div>
@@ -510,16 +584,18 @@ function editAcct(id){
   m.innerHTML=`<div class="box"><h2 style="margin:0 0 10px;font-size:17px">修改帳戶</h2>
     <div class="grid"><div><label class="f">圖示</label><button id="eaIc" style="font-size:24px;padding:4px 14px">${icon}</button></div>
     <div><label class="f">名稱（只寫暱稱）</label><input type="text" id="eaName" maxlength="20" value="${esc(a.name)}"></div>
-    <div><label class="f">起始餘額</label><input type="number" id="eaInit" inputmode="decimal" value="${esc(Number(a.init)||0)}"></div></div>
-    <div class="muted small" style="margin:8px 0">改起始餘額會影響目前餘額。如果只是想讓餘額跟實際一樣，建議用「校正餘額」。</div>
+    <div><label class="f">起始餘額（信用卡欠款請填負數）</label><input type="number" id="eaInit" inputmode="decimal" value="${esc(Number(a.init)||0)}"></div>
+    <div><label class="f">信用卡繳款日（每月幾號，不是信用卡就空白）</label><input type="number" id="eaDue" inputmode="numeric" min="1" max="31" value="${a.dueDay||''}" placeholder="例如：3"></div></div>
+    <div class="muted small" style="margin:8px 0">改起始餘額會影響目前餘額。如果只是想讓餘額跟實際一樣，建議用「校正餘額」。有填繳款日的帳戶，快到期（前 5 天內）且還有欠款時，首頁會提醒你。</div>
     <div class="row"><button class="primary" id="eaOk">儲存</button><button id="eaNo">取消</button></div></div>`;
   document.body.appendChild(m);
   m.querySelector('#eaIc').onclick=()=>pickIcon(i=>{icon=i||'💳';m.querySelector('#eaIc').textContent=icon;},false);
   m.querySelector('#eaNo').onclick=()=>m.remove();
   m.querySelector('#eaOk').onclick=()=>{
-    const name=m.querySelector('#eaName').value.trim(), init=parseInit(m.querySelector('#eaInit').value);
+    const name=m.querySelector('#eaName').value.trim(), init=parseInit(m.querySelector('#eaInit').value), dv=m.querySelector('#eaDue').value.trim();
     if(!checkAcctName(name,id)) return; if(Number.isNaN(init)){alert('起始餘額要是數字');return;}
-    const o=JSON.stringify(S); a.name=name; a.init=init; a.icon=icon; S.acctInitDone=true;
+    if(dv&&!dayOk(dv)){alert('繳款日要是 1 到 31 的數字，或空白');return;}
+    const o=JSON.stringify(S); a.name=name; a.init=init; a.icon=icon; a.dueDay=dayOk(dv); S.acctInitDone=true;
     if(!persist()){S=JSON.parse(o);return;} m.remove(); renderAccounts(); flash('已儲存 ✦');
   };
 }
@@ -562,6 +638,92 @@ function delAcct(id){
       if(finish(()=>{ refs.forEach(r=>{ r.deleted=true; r.deletedAt=today(); }); },`已刪除帳戶，${refs.length} 筆紀錄移到「最近刪除」`)) m.remove();
     }
   };
+}
+
+/* ---------- 負債頁 ---------- */
+function dueReminders(){
+  const b=balances(), out=[];
+  S.accounts.forEach(a=>{ if(!a.dueDay||!(b[a.id]<0)) return; const n=nextDue(a.dueDay); if(n&&n.days<=5) out.push(`💳 <b>${esc(a.name)}</b> ${fmtMD(n.date)}${n.days===0?'（今天）':`（還有 ${n.days} 天）`}要繳 <b>${money(-b[a.id])}</b>`); });
+  return out.length?`<div class="card" style="border-color:#f3b94a;background:#fff8e6"><h2>⏰ 繳款提醒</h2>${out.map(x=>`<div style="margin:4px 0">${x}</div>`).join('')}</div>`:'';
+}
+function renderDebts(){
+  page='debts'; nav(); const db=debtBal(), b=balances();
+  const loans=S.debts.filter(d=>d.kind==='loan'), ppl=S.debts.filter(d=>d.kind==='person');
+  const owe=ppl.filter(d=>db[d.id]>0), lent=ppl.filter(d=>db[d.id]<0), done=ppl.filter(d=>db[d.id]===0);
+  const cards=S.accounts.filter(a=>a.dueDay);
+  const loanTotal=loans.reduce((s,d)=>s+Math.max(db[d.id],0),0), oweTotal=owe.reduce((s,d)=>s+db[d.id],0), lentTotal=lent.reduce((s,d)=>s-db[d.id],0);
+  const cardTotal=cards.reduce((s,a)=>s+(b[a.id]<0?-b[a.id]:0),0);
+  const pRow=(d,amt)=>`<div class="acc"><div class="ic">${amt>0?'📤':'📥'}</div><div class="mid"><div style="font-weight:700">${esc(d.name)}</div></div><div class="bal">${money(Math.abs(amt))}</div>
+    <div class="ops"><button onclick="debtDetail('${d.id}')">明細</button><button class="danger" onclick="delDebt('${d.id}')">刪除</button></div></div>`;
+  $('#app').innerHTML=`<div class="card"><div class="stats">
+      <div class="stat out"><div class="n">${money(loanTotal+oweTotal+cardTotal)}</div><div class="l">我總共欠</div></div>
+      <div class="stat in"><div class="n">${money(lentTotal)}</div><div class="l">別人欠我</div></div>
+      <div class="stat"><div class="n">${money(cardTotal)}</div><div class="l">信用卡欠款</div></div></div></div>
+   <div class="card"><h2>🏦 貸款／分期</h2>
+    ${loans.length?loans.map(d=>{ const rem=db[d.id], init=Number(d.init)||0, paid=Math.min(Math.max(init-rem,0),init), pct=init>0?Math.round(paid/init*100):0, n=nextDue(d.dueDay);
+      return `<div class="acc"><div class="ic">🏦</div><div class="mid"><div style="font-weight:700">${esc(d.name)}</div>
+        <div class="small muted">${rem<=0?'🎉 已還清':`${d.monthly?`每月 ${money(d.monthly)}・剩約 ${Math.ceil(rem/d.monthly)} 期`:'未設定每月金額'}${n?`・下次繳款 ${fmtMD(n.date)}`:''}`}${d.payAcct&&acctById(d.payAcct)?`・從${esc(acctName(d.payAcct))}繳`:''}</div></div>
+        <div class="bal" style="color:${rem>0?'var(--bad)':'var(--ok)'}">${rem>0?'還欠 '+money(rem):'$0'}</div>
+        <div style="width:100%"><div class="bar" style="grid-template-columns:1fr 52px;cursor:default;margin:2px 0"><div class="b"><i style="width:${pct}%;background:var(--ok)"></i></div><div class="v small">${pct}%</div></div></div>
+        <div class="ops"><button onclick="debtDetail('${d.id}')">明細</button><button onclick="editLoan('${d.id}')">修改</button><button class="danger" onclick="delDebt('${d.id}')">刪除</button></div></div>`; }).join('')
+      :'<div class="muted small">還沒有貸款或分期。在下面新增，之後打「車貸5000 台新」就會自動扣。</div>'}
+    <details style="margin-top:10px"><summary>➕ 新增貸款／分期</summary><div class="grid" style="margin-top:8px">
+      <div><label class="f">名稱</label><input type="text" id="nlName" maxlength="20" placeholder="例如：車貸、手機分期"></div>
+      <div><label class="f">目前還欠多少</label><input type="number" id="nlInit" inputmode="decimal" placeholder="例如：320000"></div>
+      <div><label class="f">每月還多少（選填）</label><input type="number" id="nlMon" inputmode="decimal" placeholder="例如：5000"></div>
+      <div><label class="f">每月幾號繳（選填）</label><input type="number" id="nlDue" inputmode="numeric" placeholder="例如：15"></div>
+      <div><label class="f">從哪個帳戶繳（選填）</label><select id="nlAcct"><option value="">（沒有固定）</option>${acctOpts('')}</select></div></div>
+      <button class="primary" style="margin-top:10px" onclick="addLoan()">新增</button></details></div>
+   <div class="card"><h2>👥 跟朋友借還</h2>
+    <div class="dayh"><span>📤 我欠別人</span><span>${money(oweTotal)}</span></div>${owe.length?owe.map(d=>pRow(d,db[d.id])).join(''):'<div class="muted small">沒有</div>'}
+    <div class="dayh"><span>📥 別人欠我</span><span>${money(lentTotal)}</span></div>${lent.length?lent.map(d=>pRow(d,db[d.id])).join(''):'<div class="muted small">沒有</div>'}
+    ${done.length?`<details style="margin-top:8px"><summary class="small">已還清（${done.length}）</summary>${done.map(d=>pRow(d,0)).join('')}</details>`:''}
+    <div class="muted small" style="margin-top:8px">不用先建立。直接在首頁打：「跟小明借錢1500」「小明借錢2000」「還小明1000」「小明還800」。跟朋友借還<b>不算收入或支出</b>，只會改帳戶餘額和這裡的金額。</div></div>
+   <div class="card"><h2>💳 信用卡</h2>
+    ${cards.length?cards.map(a=>{const n=nextDue(a.dueDay);return `<div class="acc"><div class="ic">${a.icon||'💳'}</div><div class="mid"><div style="font-weight:700">${esc(a.name)}</div><div class="small muted">每月 ${a.dueDay} 號繳款・下次 ${fmtMD(n.date)}</div></div><div class="bal" style="color:${b[a.id]<0?'var(--bad)':'var(--ink)'}">${b[a.id]<0?'欠 '+money(-b[a.id]):'$0'}</div></div>`;}).join('')
+      :'<div class="muted small">信用卡請到「帳戶」新增（起始餘額填負數，例如欠 8000 就填 -8000），再按「修改」填上繳款日。繳卡費打「台新轉中信信用卡8300」，算轉帳、不算支出。</div>'}</div>`;
+}
+function readLoanForm(pre){
+  const g=s=>$(pre+s), name=g('Name').value.trim(), init=parseInit(g('Init').value), mon=parseInit(g('Mon').value), dv=g('Due').value.trim(), acct=g('Acct').value;
+  if(!name){alert('請填寫名稱');return null;} if(/\d/.test(name)){alert('名稱裡不要有數字（會跟金額搞混），例如「車貸」「手機分期」');return null;}
+  if(/領|轉|加值|\+值|借|還/.test(name)){alert('名稱裡不能有「領、轉、加值、借、還」這些字，小帳會判斷錯');return null;}
+  if(Number.isNaN(init)||!(init>0)){alert('「目前還欠多少」要是大於 0 的數字');return null;}
+  if(Number.isNaN(mon)||mon<0){alert('「每月還多少」要是數字或空白');return null;}
+  if(dv&&!dayOk(dv)){alert('繳款日要是 1 到 31 的數字，或空白');return null;}
+  return {name,init,monthly:mon,dueDay:dayOk(dv),payAcct:acct};
+}
+function loanNameTaken(name,selfId){ return S.debts.some(d=>d.id!==selfId&&d.name.toLowerCase()===name.toLowerCase()); }
+function addLoan(){
+  const f=readLoanForm('#nl'); if(!f) return; if(loanNameTaken(f.name,null)){alert('已經有同名的負債了');return;}
+  const o=JSON.stringify(S); S.debts.push(Object.assign({id:newId(),kind:'loan'},f)); if(!persist()){S=JSON.parse(o);return;} renderDebts(); flash(`已新增「${f.name}」✦`);
+}
+function editLoan(id){
+  const d=debtById(id); if(!d) return; const m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="box"><h2 style="margin:0 0 10px;font-size:17px">修改「${esc(d.name)}」</h2><div class="grid">
+    <div><label class="f">名稱</label><input type="text" id="elName" maxlength="20" value="${esc(d.name)}"></div>
+    <div><label class="f">建立時還欠多少</label><input type="number" id="elInit" inputmode="decimal" value="${esc(d.init)}"></div>
+    <div><label class="f">每月還多少（選填）</label><input type="number" id="elMon" inputmode="decimal" value="${d.monthly||''}"></div>
+    <div><label class="f">每月幾號繳（選填）</label><input type="number" id="elDue" inputmode="numeric" value="${d.dueDay||''}"></div>
+    <div><label class="f">從哪個帳戶繳（選填）</label><select id="elAcct"><option value="">（沒有固定）</option>${acctOpts(d.payAcct)}</select></div></div>
+    <div class="muted small" style="margin:8px 0">「還欠多少」會用「建立時還欠多少」減掉之後每一筆還款自動算出來。</div>
+    <div class="row"><button class="primary" id="elOk">儲存</button><button id="elNo">取消</button></div></div>`;
+  document.body.appendChild(m); m.querySelector('#elNo').onclick=()=>m.remove();
+  m.querySelector('#elOk').onclick=()=>{ const f=readLoanForm('#el'); if(!f) return; if(loanNameTaken(f.name,id)){alert('已經有同名的負債了');return;}
+    const o=JSON.stringify(S); Object.assign(d,f); if(!persist()){S=JSON.parse(o);return;} m.remove(); renderDebts(); flash('已儲存 ✦'); };
+}
+function debtDetail(id){
+  const d=debtById(id); if(!d) return; const rs=sortRecs(live().filter(r=>r.type==='debt'&&r.debt===id));
+  const m=document.createElement('div'); m.className='modal'; m.onclick=e=>{if(e.target===m)m.remove();};
+  m.innerHTML=`<div class="box" style="max-height:80vh;overflow:auto"><div class="row" style="margin-bottom:8px"><b>${esc(d.name)} 的紀錄</b><span class="spacer"></span><button id="ddX">關閉</button></div>
+    ${rs.length?rs.map(recRow).join(''):'<div class="empty">還沒有紀錄</div>'}</div>`;
+  document.body.appendChild(m); m.querySelector('#ddX').onclick=()=>m.remove();
+  m.querySelectorAll('.rec').forEach(el=>el.addEventListener('click',()=>m.remove()));
+}
+function delDebt(id){
+  const d=debtById(id); if(!d) return; const refs=live().filter(r=>r.type==='debt'&&r.debt===id);
+  if(!confirm(refs.length?`確定刪除「${d.name}」嗎？\n它的 ${refs.length} 筆紀錄會一起放進「最近刪除」，30 天內可以救回。`:`確定刪除「${d.name}」嗎？`)) return;
+  const oR=JSON.stringify(R), oS=JSON.stringify(S); refs.forEach(r=>{r.deleted=true;r.deletedAt=today();}); S.debts=S.debts.filter(x=>x.id!==id);
+  if(!persist()){R=JSON.parse(oR);S=JSON.parse(oS);return;} renderDebts(); flash(refs.length?`已刪除，${refs.length} 筆紀錄移到「最近刪除」`:'已刪除');
 }
 
 /* ---------- 設定 ---------- */
@@ -620,7 +782,8 @@ function renderTrash(){
 }
 function trashRestore(){ const ids=[...selT]; if(!ids.length) return; const oR=JSON.stringify(R); let fixed=0;
   R.forEach(r=>{ if(ids.includes(r.id)&&r.deleted){ r.deleted=false; delete r.deletedAt;
-    let f=false; ['acct','from','to'].forEach(k=>{ if(r[k]&&!acctById(r[k])){ r[k]='cash'; f=true; } }); if(f) fixed++; } });
+    let f=false; ['acct','from','to'].forEach(k=>{ if(r[k]&&!acctById(r[k])){ r[k]='cash'; f=true; } }); if(f) fixed++;
+    if(r.type==='debt'&&!debtById(r.debt)) S.debts.push({id:r.debt,name:r.debtName||'未命名',kind:r.debtKind==='loan'?'loan':'person',init:0,monthly:0,dueDay:0,payAcct:''}); } });
   if(!persist()){R=JSON.parse(oR);return;} selT=new Set(); renderTrash();
   if(fixed) alert(`已還原。其中 ${fixed} 筆原本的帳戶已經刪除，已自動改成「現金」。`); else flash('已還原 ✦'); }
 function trashPerm(){ const n=selT.size; if(!n) return; if(!confirm(`確定要永久刪除選取的 ${n} 筆嗎？永久刪除後無法復原。`)) return;
@@ -631,8 +794,8 @@ function purgeExpired(){ const old=R, n=R.length; R=R.filter(r=>!(r.deleted&&r.d
 function exportCSV(){
   const rs=sortRecs(live()).reverse(); if(!rs.length){alert('目前沒有紀錄可匯出。');return;}
   const head=['日期','類型','分類','項目','對象','帳戶','轉出帳戶','轉入帳戶','金額'];
-  const TL={income:'收入',expense:'支出',transfer:'轉帳',adjust:'校正'};
-  const rows=rs.map(r=>[r.date,TL[r.type]||'',r.category,r.item,r.who||'',(r.type==='income'||r.type==='expense'||r.type==='adjust')?acctName(r.acct):'',r.type==='transfer'?acctName(r.from):'',r.type==='transfer'?acctName(r.to):'',r.type==='adjust'&&r.sign<0?-r.amount:r.amount]);
+  const TL={income:'收入',expense:'支出',transfer:'轉帳',adjust:'校正',debt:'負債'};
+  const rows=rs.map(r=>[r.date,r.type==='debt'?(r.exp?'負債（還款・算支出）':'負債（借還）'):(TL[r.type]||''),r.category,r.type==='debt'?recMeta(r).name:r.item,r.who||'',r.type!=='transfer'?acctName(r.acct):'',r.type==='transfer'?acctName(r.from):'',r.type==='transfer'?acctName(r.to):'',r.type==='adjust'&&r.sign<0?-r.amount:r.amount]);
   const csv=[head,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
   download('﻿'+csv,`xiaozhang_${today()}.csv`,'text/csv;charset=utf-8');
 }
@@ -640,11 +803,13 @@ function backup(){ download(JSON.stringify({app:'casevoraXiaozhang',version:1,ex
 function restore(inp){
   const f=inp.files[0]; inp.value=''; if(!f) return; const fr=new FileReader();
   fr.onload=()=>{ let d; try{ d=JSON.parse(fr.result); if(!d||d.app!=='casevoraXiaozhang'||!Array.isArray(d.records)) throw 0; }catch(e){ alert('無法讀取：這不是本工具的備份檔。'); return; }
-    const bad=d.records.some(r=>!r||!/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')||!(Number(r.amount)>0)||!['income','expense','transfer','adjust'].includes(r.type)); if(bad){ alert('無法還原：備份檔內有格式不正確的紀錄。'); return; }
+    const bad=d.records.some(r=>!r||!/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')||!(Number(r.amount)>0)||!['income','expense','transfer','adjust','debt'].includes(r.type)||(r.type==='debt'&&(!DEBT_OP[r.op]||!/^[\w-]{1,40}$/.test(String(r.debt))))); if(bad){ alert('無法還原：備份檔內有格式不正確的紀錄。'); return; }
     if(!confirm(`備份檔內有 ${d.records.length} 筆紀錄。\n還原會「取代」目前瀏覽器中的 ${live().length} 筆紀錄和設定，目前「最近刪除」裡的 ${trashList().length} 筆也會一併被取代，確定嗎？`)) return;
-    const oR=R,oS=S; R=d.records.map(r=>({id:r.id||newId(),type:r.type,amount:Number(r.amount),item:String(r.item||''),category:r.category||(r.type==='income'?'其他收入':r.type==='transfer'?'轉帳':r.type==='adjust'?'校正':'其他'),date:r.date,who:r.who||'',icon:r.icon||'',createdAt:r.createdAt||'',
-      ...(r.type==='transfer'?{from:String(r.from||'cash'),to:String(r.to||'cash')}:{acct:String(r.acct||'cash')}),...(r.type==='adjust'?{sign:Number(r.sign)<0?-1:1}:{})}));
-    S=fixS(Object.assign(defaultS(),d.settings||{})); if(!persist()){R=oR;S=oS;return;} applyBg(); flash('還原完成 ✦'); go2('home'); };
+    const oR=R,oS=S; R=d.records.map(r=>({id:/^[\w-]{1,40}$/.test(String(r.id))?String(r.id):newId(),type:r.type,amount:Number(r.amount),item:String(r.item||''),category:r.category||(r.type==='income'?'其他收入':r.type==='transfer'?'轉帳':r.type==='adjust'?'校正':'其他'),date:r.date,who:r.who||'',icon:r.icon||'',createdAt:r.createdAt||'',
+      ...(r.type==='transfer'?{from:String(r.from||'cash'),to:String(r.to||'cash')}:{acct:String(r.acct||'cash')}),...(r.type==='adjust'?{sign:Number(r.sign)<0?-1:1}:{}),
+      ...(r.type==='debt'?{op:r.op,debt:String(r.debt),debtName:String(r.debtName||'').slice(0,20),debtKind:r.debtKind==='loan'?'loan':'person',exp:r.debtKind==='loan'&&r.op==='pay'}:{})}));
+    S=fixS(Object.assign(defaultS(),d.settings||{}));
+    R.forEach(r=>{ if(r.type==='debt'&&!S.debts.some(x=>x.id===r.debt)) S.debts.push({id:r.debt,name:r.debtName||'未命名',kind:r.debtKind,init:0,monthly:0,dueDay:0,payAcct:''}); }); if(!persist()){R=oR;S=oS;return;} applyBg(); flash('還原完成 ✦'); go2('home'); };
   fr.readAsText(f);
 }
 window.addEventListener('beforeunload',e=>{ if(dirty){e.preventDefault();e.returnValue='';} });
