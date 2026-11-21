@@ -269,6 +269,34 @@ body.bgpage #app>.muted,body.bgboth #app>.muted,body.bgpage .dash>.col>.muted,bo
 @media (max-width:899px){body.bgpage nav button,body.bgboth nav button{background:rgba(var(--card-rgb),.92)}body.bgpage nav button.on,body.bgboth nav button.on{background:var(--brand)}}
 @media (min-width:900px){body.bgpage #side,body.bgboth #side{background:rgba(var(--card-rgb),.93);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}}
 body.glass .card .muted,body.glass .kpi .s,body.glass .kpi .t{color:#2a4552}
+
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:7px 16px;font-weight:700;background:rgba(var(--card-rgb),.9)}
+.seg button+button{border-left:2px solid var(--line)}
+.seg button.on{background:var(--ink);color:#fff}
+.calg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cw{text-align:center;font-weight:800;color:var(--muted);font-size:14px;padding:2px 0}
+.cd{min-height:92px;border:2px solid var(--line);border-radius:12px;padding:6px;background:rgba(var(--card-rgb),.95);display:flex;flex-direction:column;gap:3px;min-width:0;cursor:pointer}
+.cd.we{background:rgba(240,247,250,.95)}.cd.out{opacity:.45}
+.cd.now{border-color:var(--brand-d);box-shadow:0 0 0 2px var(--brand-d) inset}
+.cd .dn{font-weight:800;font-size:14px}
+.cd .more{font-size:12px;color:var(--brand-d);font-weight:700}
+.ev{display:block;width:100%;text-align:left;border:0;border-radius:6px;padding:2px 6px;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.5}
+.ev-wait{background:#eef0f6;color:#46506a}.ev-today,.ev-moved{background:#fff1d6;color:#8a5a00}.ev-done,.ev-got{background:#e3f4ea;color:#1f6b45}.ev-late{background:#fde5e3;color:#a1302a}
+.ev-income{background:#dcecff;color:#1d5fa8}.ev-goal{background:#efe7fb;color:#5b3fa8}.ev-skip{background:#f1f1f1;color:#888}
+.legend{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-left:4px}
+.calw{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.calw .wd{border:2px solid var(--line);border-radius:12px;padding:8px;min-height:140px;display:flex;flex-direction:column;gap:4px;min-width:0;background:rgba(var(--card-rgb),.95)}
+.calw .wd.now{border-color:var(--brand-d)}
+.calw .dn{font-weight:800;font-size:14px;margin-bottom:2px}
+.calw .ev{white-space:normal}
+.lrow{display:grid;grid-template-columns:92px minmax(0,1fr) auto 110px auto;gap:6px 12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line)}
+.lrow.now{background:var(--brand-soft);border-radius:8px}
+.lrow .ld{font-weight:800}.lrow .la{text-align:right;white-space:nowrap}.lrow .lx{display:flex;gap:6px}.lrow .lx button{padding:4px 12px;font-size:13px}
+@media (max-width:760px){.calw{grid-template-columns:1fr}.calw .wd{min-height:0}
+  .lrow{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"d n a" "s s x"}.lrow .ld{grid-area:d}.lrow .ln{grid-area:n}.lrow .la{grid-area:a}.lrow .pill{grid-area:s;justify-self:start}.lrow .lx{grid-area:x;justify-self:end}}
+@media (max-width:600px){.calg{gap:3px}.cd{min-height:64px;padding:3px;border-width:1px;border-radius:8px}.cd .dn{font-size:12px}.ev{font-size:10px;padding:1px 3px}.cw{font-size:12px}}
 </style>
 </head>
 <body>
@@ -357,14 +385,14 @@ function download(content,name,type){const a=document.createElement('a');a.href=
 
 /* ---------- 資料 ---------- */
 let R=loadR(), S=loadS();
-function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{},ot:{bases:[],days:[],paid:{},allow:[],bonusFrom:''},phrases:['吃飯','平日加班','休息加班'],lastBackup:''};}
+function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{},ot:{bases:[],days:[],paid:{},allow:[],bonusFrom:''},phrases:['吃飯','平日加班','休息加班'],lastBackup:'',budget:{living:0}};}
 function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stringify(DEF_ACCTS));
   s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0,dueDay:dayOk(a.dueDay),atype:ACCT_TYPES[a.atype]?a.atype:defType(a.id)})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0,dueDay:0});
   if(!Array.isArray(s.debts)) s.debts=[];
   s.debts=s.debts.filter(d=>d&&/^[\w-]{1,40}$/.test(String(d.id))&&String(d.name||'').trim()&&['loan','person'].includes(d.kind)).map(d=>({id:String(d.id),name:String(d.name).trim().slice(0,20),kind:d.kind,
     init:Number.isFinite(Number(d.init))?Number(d.init):0,monthly:Number(d.monthly)>0?Number(d.monthly):0,dueDay:dayOk(d.dueDay),payAcct:/^[\w-]{1,40}$/.test(String(d.payAcct||''))?String(d.payAcct):'',created:/^\d{4}-\d{2}-\d{2}$/.test(String(d.created||''))?d.created:'',sub:['loan','inst','other'].includes(d.sub)?d.sub:'loan',orig:Number(d.orig)>0?Number(d.orig):0,end:/^\d{4}-\d{2}-\d{2}$/.test(String(d.end||''))?d.end:''}));
   if(!Array.isArray(s.recurring)) s.recurring=[];
-  s.recurring=s.recurring.filter(x=>x&&/^[\w-]{1,40}$/.test(String(x.id))&&String(x.name||'').trim()&&Number(x.amount)>0&&/^\d{4}-\d{2}$/.test(String(x.start||''))).map(x=>({id:String(x.id),name:String(x.name).trim().slice(0,20),kind:['income','expense','debt'].includes(x.kind)?x.kind:'expense',amount:Math.round(Number(x.amount)*100)/100,day:dayOk(x.day)||1,start:x.start,end:/^\d{4}-\d{2}$/.test(String(x.end||''))?x.end:'',acct:/^[\w-]{1,40}$/.test(String(x.acct||''))?String(x.acct):'',debt:/^[\w-]{1,40}$/.test(String(x.debt||''))?String(x.debt):''}));
+  s.recurring=s.recurring.filter(x=>x&&/^[\w-]{1,40}$/.test(String(x.id))&&String(x.name||'').trim()&&Number(x.amount)>0&&/^\d{4}-\d{2}$/.test(String(x.start||''))).map(x=>({id:String(x.id),name:String(x.name).trim().slice(0,20),kind:['income','expense','debt'].includes(x.kind)?x.kind:'expense',amount:Math.round(Number(x.amount)*100)/100,day:dayOk(x.day)||1,start:x.start,end:/^\d{4}-\d{2}$/.test(String(x.end||''))?x.end:'',acct:/^[\w-]{1,40}$/.test(String(x.acct||''))?String(x.acct):'',debt:/^[\w-]{1,40}$/.test(String(x.debt||''))?String(x.debt):'',every:[1,2,3,4,6,12].includes(Number(x.every))?Number(x.every):1}));
   if(!s.recurDone||typeof s.recurDone!=='object'||Array.isArray(s.recurDone)) s.recurDone={};
   const isObj=o=>o&&typeof o==='object'&&!Array.isArray(o), KEYRE=/^[\w-]{1,40}\|\d{4}-\d{2}$/, YMRE=/^\d{4}-\d{2}$/, phList=a=>Array.isArray(a)?a.filter(i=>/^[\w-]{1,60}$/.test(String(i))).map(String).slice(0,20):[];
   const mv={}; if(isObj(s.recurMove)) Object.entries(s.recurMove).forEach(([k,v])=>{ if(KEYRE.test(k)&&YMRE.test(String(v))) mv[k]=String(v); }); s.recurMove=mv;
@@ -378,6 +406,7 @@ function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stri
   if(isObj(ot.paid)) Object.entries(ot.paid).forEach(([k,v])=>{ if(/^\d{4}-\d{2}$/.test(k)&&Number(v)>=0&&String(v)!=='') s.ot.paid[k]=Math.round(Number(v)); });
   if(!Array.isArray(s.phrases)||(s.phrases.length===1&&s.phrases[0]==='平日加班2H')) s.phrases=['吃飯','平日加班','休息加班']; s.phrases=[...new Set(s.phrases.map(x=>String(x??'').trim().slice(0,30)).filter(Boolean))].slice(0,40);
   s.lastBackup=/^\d{4}-\d{2}-\d{2}$/.test(String(s.lastBackup||''))?s.lastBackup:'';
+  s.budget={living:isObj(s.budget)&&Number(s.budget.living)>0?Math.round(Number(s.budget.living)):0};
   const ps={}; if(isObj(s.payslips)) Object.entries(s.payslips).forEach(([k,v])=>{ if(!YMRE.test(k)||!isObj(v)) return; const l=phList(v.ph), note=String(v.note||'').slice(0,80); if(l.length||note) ps[k]={ph:l,note}; }); s.payslips=ps;
   if(!Array.isArray(s.goals)) s.goals=[];
   s.goals=s.goals.filter(g=>g&&/^[\w-]{1,40}$/.test(String(g.id))&&String(g.name||'').trim()).map(g=>({id:String(g.id),name:String(g.name).trim().slice(0,20),target:Number(g.target)>0?Number(g.target):0,
@@ -654,17 +683,17 @@ function answerAsk(kind){
 let page='home', back='home', mg={view:'mrep',day:today(),month:today().slice(0,7),year:today().slice(0,4),cat:''};
 let cur=null, dirty=false;
 const PHEAD={home:['記帳總覽','LEDGER DASHBOARD','今天花了多少、這個月還要繳什麼，一眼看清楚。'],bills:['繳費狀態','BILLS & PAYMENTS','每一筆該繳的錢：繳了沒、哪天到期、有沒有逾期。'],
-  ot:['加班與請假','OVERTIME & LEAVE','每天記實際時數，程式依勞基法自動分段算加班費，月底跟薪資條對一對。'],payslip:['薪資條','MONTHLY PAYSLIPS','每個月的薪資條截圖放在這裡：點一下月份，再按 Ctrl+V 就能貼上。'],accounts:['帳戶','ACCOUNTS','每個帳戶現在有多少錢。'],debts:['負債','DEBTS & LOANS','貸款、分期和借貸：還剩多少、每月要繳多少。'],
+  ot:['加班與請假','OVERTIME & LEAVE','每天記實際時數，程式依勞基法自動分段算加班費，月底跟薪資條對一對。'],cal:['行事曆','CALENDAR','這個月哪天要繳什麼、哪天有收入，一眼看清楚；也算好這個月能存多少。'],payslip:['薪資條','MONTHLY PAYSLIPS','每個月的薪資條截圖放在這裡：點一下月份，再按 Ctrl+V 就能貼上。'],accounts:['帳戶','ACCOUNTS','每個帳戶現在有多少錢。'],debts:['負債','DEBTS & LOANS','貸款、分期和借貸：還剩多少、每月要繳多少。'],
   savings:['儲蓄','SAVING GOALS','存錢目標和進度。'],manage:['帳務管理','REPORTS','月報表、年報表和搜尋。'],opts:['常用選項','FAVORITES','快速記帳的常用語、對象清單、小帳記住的詞，都在這裡改。'],settings:['設定','SETTINGS','固定收支、匯入、備份和資料保存方式。'],trash:['最近刪除','RECENTLY DELETED','刪除的紀錄保留 30 天。'],edit:['修改紀錄','EDIT RECORD','改完記得按「儲存」。']};
 function nav(hk){
   const late=billOpen().filter(b=>b.st==='late').length;
-  $('#nav').innerHTML=[['home','🏠 首頁'],['bills','🧾 繳費狀態'],['payslip','📄 薪資條'],['ot','⏱️ 加班'],['accounts','👛 帳戶'],['debts','💳 負債'],['savings','🎯 儲蓄'],['manage','📊 帳務管理'],['opts','⭐ 常用選項'],['settings','⚙️ 設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}${k==='bills'&&late?`<span class="cnt" title="逾期 ${late} 筆">${late}</span>`:''}</button>`).join('');
+  $('#nav').innerHTML=[['home','🏠 首頁'],['bills','🧾 繳費狀態'],['cal','📅 行事曆'],['payslip','📄 薪資條'],['ot','⏱️ 加班'],['accounts','👛 帳戶'],['debts','💳 負債'],['savings','🎯 儲蓄'],['manage','📊 帳務管理'],['opts','⭐ 常用選項'],['settings','⚙️ 設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}${k==='bills'&&late?`<span class="cnt" title="逾期 ${late} 筆">${late}</span>`:''}</button>`).join('');
   const h=PHEAD[hk||page]||PHEAD.home;
   $('#phead').innerHTML=`<div class="phead"><div style="min-width:0"><h1>${h[0]}</h1><div class="en">${h[1]}</div><div class="desc">${h[2]}</div></div><span class="badge">● 本機資料模式</span></div>
     <div class="nbar"><span class="lab">重要</span><span>本機儲存 · 僅在此裝置此瀏覽器有效 · 請勿用無痕視窗 · 定期下載備份</span><button onclick="openGuide()">查看使用說明</button></div>`;
 }
 function showHelp(){ go('settings'); const d=$('#dataHelp'); if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); } }
-function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,bills:renderBills,payslip:renderPayslip,ot:renderOT,opts:renderOpts,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,bills:renderBills,cal:renderCal,payslip:renderPayslip,ot:renderOT,opts:renderOpts,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function applyBg(){
   const b=S.bg||{}, st=document.documentElement.style, ca=Number.isFinite(+b.cardA)?Math.min(1,Math.max(.5,+b.cardA)):1, ve=Number.isFinite(+b.veil)?Math.min(.9,Math.max(0,+b.veil)):.5;
   st.setProperty('--cardA',b.url?ca:1); st.setProperty('--veil',ve); document.body.classList.toggle('glass',!!b.url&&ca<1);
@@ -714,7 +743,7 @@ function renderHome(){
       <div class="muted small" style="margin-top:6px">試試看：早餐65、午餐120 LINE Pay、薪水50000 台新、悠遊卡加值500、<b>平日加班2H</b>、<b>事假4H</b>　（沒說日期就記今天；沒說付款方式就算現金）</div></div>
     <div class="o2">${dueReminders()}${recurCard()}</div>
     <div class="o3">${S.acctInitDone?'':`<div class="card ask"><div style="font-weight:700">💡 先告訴小帳：每個帳戶現在有多少錢？</div><div class="small muted" style="margin:4px 0 10px">輸入起始餘額後，小帳才能幫你算出每個帳戶還剩多少。</div>
-      <div class="row"><button class="primary" onclick="go('accounts')">去輸入</button><button onclick="S.acctInitDone=true;persist();renderHome()">先不用</button></div></div>`}</div>
+      <div class="row"><button class="primary" onclick="balModal()">去輸入</button><button onclick="S.acctInitDone=true;persist();renderHome()">先不用</button></div></div>`}</div>
     <div id="askBox" class="o4"></div>
     <div class="card o6"><div class="row" style="margin-bottom:4px"><h2 style="margin:0">🧾 待處理繳費（${open.length}）</h2><span class="spacer"></span><a href="#" onclick="go('bills');return false" style="color:var(--brand-d);font-weight:700">看全部 →</a></div>
       ${open.length?billHead()+open.slice(0,8).map(b=>billRowHTML(b,true)).join('')+(open.length>8?`<div class="muted small" style="margin-top:6px">還有 ${open.length-8} 筆，請到「繳費狀態」查看。</div>`:''):'<div class="empty">目前沒有要繳的 ✦</div>'}</div>
@@ -723,6 +752,7 @@ function renderHome(){
       ${recent.length?recent.map(recRow).join(''):'<div class="empty">還沒有紀錄喔，在上面打一筆試試看 ✦</div>'}
       ${live().length>n?'<div class="muted small" style="margin-top:6px">更早的紀錄請到「帳務管理」選日期或月份查看。</div>':''}</div>
    </div><div class="col">
+    ${budgetCard()}
     <div class="card o8"><div class="row"><h2 style="margin:0">處理狀態</h2><span class="spacer"></span><span class="small muted">${ymLabel(ym)}</span></div>
       <div class="prog"><i style="width:${pct}%"></i></div><div class="small muted">本月繳費進度 ${doneM} / ${needM}（${pct}%）</div>
       <div style="margin-top:8px">${[['done','已繳','done'],['wait','待繳','open'],['today','今天到期','open'],['late','逾期','late'],['moved','已延後','moved']].map(([k,nm,f])=>`<div class="bs clickrow" role="button" tabindex="0" onclick="BM=today().slice(0,7);BF='${f}';go('bills')" onkeydown="if(event.key==='Enter')this.click()" title="點一下看是哪幾筆"><span><span class="pill ${k}">${nm}</span></span><b>${cntM(k)} 筆 ›</b></div>`).join('')}</div>
@@ -937,7 +967,7 @@ function setEdit(f,v){
   const dm=$('#dm'); if(dm) dm.innerHTML='<span class="dirty">● 有尚未儲存的修改</span>';
 }
 function leaveEdit(){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; go2(back); }
-function go2(k){ page=k; ({home:renderHome,bills:renderBills,payslip:renderPayslip,ot:renderOT,opts:renderOpts,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function go2(k){ page=k; ({home:renderHome,bills:renderBills,cal:renderCal,payslip:renderPayslip,ot:renderOT,opts:renderOpts,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function saveEdit(){
   const r=cur, amt=Number(r.amount);
   if(r.type==='save'){
@@ -996,7 +1026,7 @@ function renderAccounts(){
      <div class="bs sum" style="font-size:17px"><span>淨資產</span><span style="color:${nw.net<0?'var(--bad)':'var(--ok)'}">${bm(nw.net)}</span></div>
      <div class="dayh" style="margin-top:14px"><span>每月淨資產變化（月底）</span></div>${nwChart(12)}
      <div class="muted small">「帳戶所有紀錄加總」的帳戶總額是 ${bm(Math.round(total*100)/100)}。信用卡等負數帳戶算在負債。在加入「建立日期」之前建立的貸款，過去月份會一律算進去，所以早期月份可能不準。</div></div>
-   <div class="card"><h2>👛 我的帳戶</h2>
+   <div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">👛 我的帳戶</h2><span class="spacer"></span><button class="primary" onclick="balModal()">💰 一次填好全部餘額</button></div>
     ${S.accounts.map(a=>`<div class="acc"><div class="ic">${a.icon||'💳'}</div><div class="mid"><div style="font-weight:700">${esc(a.name)}</div><div class="small muted">${ACCT_TYPES[a.atype]||''}・起始 ${bm(Number(a.init)||0)}${a.dueDay?`・每月 ${a.dueDay} 號繳款`:''}</div></div>
       <div class="bal" style="color:${b[a.id]<0?'var(--bad)':'var(--ink)'}">${bm(b[a.id])}</div>
       <div class="ops"><button onclick="acctHistory('${a.id}')">異動紀錄</button><button onclick="editAcct('${a.id}')">修改</button><button onclick="calibAcct('${a.id}')">校正餘額</button>${a.id==='cash'?'':`<button class="danger" onclick="delAcct('${a.id}')">刪除</button>`}</div></div>`).join('')}
@@ -1266,12 +1296,15 @@ function delGoal(id){
 /* ---------- 每月固定收支 ---------- */
 const RC_KIND={income:'💰 收入',expense:'💸 支出',debt:'🏦 還負債'};
 function recById(id){return S.recurring.find(x=>x.id===id);}
+function ymDiff(a,b){ const [y1,m1]=a.split('-').map(Number),[y2,m2]=b.split('-').map(Number); return (y2-y1)*12+(m2-m1); }
+function recurOn(x,M){ return x.start<=M&&(!x.end||M<=x.end)&&ymDiff(x.start,M)%(x.every||1)===0; }
+function freqTxt(x){ return x.end&&x.end===x.start?'單次':x.every>1?`每 ${x.every} 個月`:'每月'; }
 function ymAdd(ym,n){let [y,m]=ym.split('-').map(Number);m+=n;while(m>12){m-=12;y++;}while(m<1){m+=12;y--;}return `${y}-${p2(m)}`;}
 function dueDate(ym,day){const [y,m]=ym.split('-').map(Number);return `${ym}-${p2(Math.min(day,new Date(y,m,0).getDate()))}`;}
 /* 到期（日期 ≤ 今天）但還沒按「記好」或「略過」的項目，含之前沒處理的月份 */
 function recurDue(){
   const out=[], t=today(), cur=t.slice(0,7);
-  S.recurring.forEach(x=>{ if(x.kind!=='income') return; let ym=x.start, guard=0; while(ym<=cur&&guard++<240){ if(x.end&&ym>x.end) break; const d=dueDate(ym,x.day);
+  S.recurring.forEach(x=>{ if(x.kind!=='income') return; let ym=x.start, guard=0; while(ym<=cur&&guard++<240){ if(x.end&&ym>x.end) break; if(!recurOn(x,ym)){ ym=ymAdd(ym,1); continue; } const d=dueDate(ym,x.day);
     if(d<=t&&!S.recurDone[x.id+'|'+ym]) out.push({x,ym,date:d}); ym=ymAdd(ym,1); } });
   return out.sort((a,b)=>a.date.localeCompare(b.date));
 }
@@ -1309,7 +1342,7 @@ function foldBox(k,label,inner){ let open=false; try{ open=localStorage.getItem(
 function recurListHTML(){
   if(!S.recurring.length) return '<div class="muted small">還沒有固定收支。可以在下面新增，或用「匯入 Excel」一次匯入。</div>';
   return S.recurring.slice().sort((a,b)=>({income:0,expense:1,debt:2}[a.kind]-{income:0,expense:1,debt:2}[b.kind])||a.start.localeCompare(b.start)).map(x=>`<div class="acc compact"><div class="mid"><div style="font-weight:700">${esc(x.name)} <span class="tag">${RC_KIND[x.kind].slice(2).trim()}</span></div>
-    <div class="small muted">每月 ${x.day} 號・${esc(acctName(x.acct))}${x.kind==='debt'&&debtById(x.debt)?'・'+esc(debtById(x.debt).name):''}・${x.start.replace('-','/')} 起${x.end?'～'+x.end.replace('-','/'):''}</div></div>
+    <div class="small muted">${freqTxt(x)} ${x.day} 號・${esc(acctName(x.acct))}${x.kind==='debt'&&debtById(x.debt)?'・'+esc(debtById(x.debt).name):''}・${x.start.replace('-','/')} 起${x.end?'～'+x.end.replace('-','/'):''}</div></div>
     <div class="bal" style="color:${x.kind==='income'?'var(--ok)':'var(--bad)'}">${x.kind==='income'?'+':'-'}${money(x.amount)}</div>
     <div class="ops"><button onclick="editRecur('${x.id}')">修改</button><button class="danger" onclick="delRecur('${x.id}')">刪除</button></div></div>`).join('');
 }
@@ -1319,7 +1352,8 @@ function recurFormHTML(pre,x){ x=x||{kind:'expense',day:10,start:today().slice(0
     <div><label class="f">類型</label><select id="${pre}Kind" onchange="$('#${pre}DebtW').style.display=this.value==='debt'?'':'none'">${Object.entries(RC_KIND).map(([k,n])=>`<option value="${k}" ${k===x.kind?'selected':''}>${n}</option>`).join('')}</select></div>
     <div id="${pre}DebtW" style="${x.kind==='debt'?'':'display:none'}"><label class="f">連到哪筆負債</label><select id="${pre}Debt">${debtOpts||'<option value="">（請先到「負債」新增）</option>'}</select></div>
     <div><label class="f">金額</label><input type="number" id="${pre}Amt" inputmode="decimal" value="${x.amount||''}"></div>
-    <div><label class="f">每月幾號</label><input type="number" id="${pre}Day" inputmode="numeric" value="${x.day||''}"></div>
+    <div><label class="f">幾號</label><input type="number" id="${pre}Day" inputmode="numeric" value="${x.day||''}"></div>
+    <div><label class="f">多久一次</label><select id="${pre}Every">${[[1,'每月'],[2,'每 2 個月'],[3,'每 3 個月'],[4,'每 4 個月'],[6,'每半年'],[12,'每年']].map(([v,n])=>`<option value="${v}" ${(x.every||1)===v?'selected':''}>${n}</option>`).join('')}</select></div>
     <div><label class="f">帳戶</label><select id="${pre}Acct">${acctOpts(x.acct&&acctById(x.acct)?x.acct:'cash')}</select></div>
     <div><label class="f">從哪個月開始</label><input type="month" id="${pre}Start" value="${x.start||''}"></div>
     <div><label class="f">到哪個月結束（選填）</label><input type="month" id="${pre}End" value="${x.end||''}"></div></div>`;
@@ -1329,7 +1363,7 @@ function readRecurForm(pre){
   if(!name){alert('請填寫項目');return null;} if(Number.isNaN(amt)||!(amt>0)){alert('金額要是大於 0 的數字');return null;}
   if(!day){alert('「每月幾號」要是 1 到 31');return null;} if(!/^\d{4}-\d{2}$/.test(start)){alert('請選擇從哪個月開始');return null;}
   if(end&&end<start){alert('結束月份不能早於開始月份');return null;} if(kind==='debt'&&!debtById(debt)){alert('請選擇要連到哪一筆負債');return null;}
-  return {name,kind,amount:amt,day,start,end:end||'',acct:g('Acct'),debt};
+  return {name,kind,amount:amt,day,start,end:end||'',acct:g('Acct'),debt,every:[1,2,3,4,6,12].includes(Number(g('Every')))?Number(g('Every')):1};
 }
 function addRecur(){ const f=readRecurForm('nr'); if(!f) return; const o=JSON.stringify(S); S.recurring.push(Object.assign({id:newId()},f));
   if(!persist()){S=JSON.parse(o);return;} renderSettings(); flash(`已新增「${f.name}」✦`); }
@@ -1372,7 +1406,7 @@ async function delPhoto(ctx,key,id){ const o=JSON.stringify(S);
   if(ctx==='att'){ S.att[key]=(S.att[key]||[]).filter(x=>x!==id); if(!S.att[key].length) delete S.att[key]; }
   else { const p=S.payslips[key]; if(p){ p.ph=p.ph.filter(x=>x!==id); if(!p.ph.length&&!p.note) delete S.payslips[key]; } }
   if(!persist()){ S=JSON.parse(o); return; } await phDel([id]); rerender(); flash('已刪除圖片'); }
-function rerender(){ attRender(); if(page==='opts') renderOpts(); else if(page==='bills') renderBills(); else if(page==='payslip') renderPayslip(); else if(page==='home') renderHome(); }
+function rerender(){ attRender(); if(page==='cal') renderCal(); else if(page==='opts') renderOpts(); else if(page==='bills') renderBills(); else if(page==='payslip') renderPayslip(); else if(page==='home') renderHome(); }
 
 /* ---------- 繳費狀態 ---------- */
 const ST_TXT={done:'已繳',skip:'略過',late:'逾期',today:'今天到期',wait:'待繳',moved:'已延後'}, OPEN_ST=['late','today','wait'];
@@ -1380,7 +1414,8 @@ function ymLabel(ym){ return `${ym.slice(0,4)}年${+ym.slice(5)}月`; }
 function ymShort(ym){ return `${+ym.slice(5)}月`; }
 function billStatus(k,due){ const d=S.recurDone[k]; if(d==='done') return 'done'; if(d==='skip') return 'skip'; const t=today(); return due<t?'late':due===t?'today':'wait'; }
 function billRows(M){ const out=[];
-  S.recurring.forEach(x=>{ if(x.kind==='income'||!(x.start<=M&&(!x.end||M<=x.end))) return; const k=x.id+'|'+M, mv=S.recurMove[k], due=dueDate(M,x.day);
+  const db=debtBal(), paidOff=x=>x.kind==='debt'&&debtById(x.debt)&&!(db[x.debt]>0);
+  S.recurring.forEach(x=>{ if(x.kind==='income'||!recurOn(x,M)) return; const k=x.id+'|'+M, mv=S.recurMove[k], due=dueDate(M,x.day); if(paidOff(x)&&!S.recurDone[k]) return;
     out.push(mv&&mv!==M?{x,k,orig:M,show:M,due,st:'moved',to:mv}:{x,k,orig:M,show:M,due,st:billStatus(k,due)}); });
   Object.entries(S.recurMove).forEach(([k,to])=>{ if(to!==M) return; const [id,orig]=k.split('|'); if(orig===M) return; const x=recById(id); if(!x||x.kind==='income') return;
     const due=dueDate(M,x.day); out.push({x,k,orig,show:M,due,st:billStatus(k,due),from:orig}); });
@@ -1390,7 +1425,7 @@ function billOpen(){ const cur=today().slice(0,7); let first=cur; S.recurring.fo
   return out.sort((a,b)=>a.due.localeCompare(b.due)); }
 function billByKey(k){ const [id,orig]=String(k).split('|'), x=recById(id); if(!x||!orig) return null; const show=S.recurMove[k]||orig; return {x,k,orig,show,due:dueDate(show,x.day)}; }
 function billRec(b){ return R.find(r=>!r.deleted&&r.recur===b.x.id&&r.recurMonth===b.orig); }
-function billRowHTML(b,compact){ const x=b.x, kq=esc(b.k), freq=x.end&&x.end===x.start?'單次':'每月', dn=x.kind==='debt'&&debtById(x.debt)?debtById(x.debt).name:'';
+function billRowHTML(b,compact){ const x=b.x, kq=esc(b.k), freq=freqTxt(x), dn=x.kind==='debt'&&debtById(x.debt)?debtById(x.debt).name:'';
   const sub=[x.kind==='debt'?'還款':'支出',freq,b.from?`${ymShort(b.from)}延後過來`:'',compact&&b.show!==today().slice(0,7)?ymLabel(b.show):'',dn&&dn!==x.name?dn:''].filter(Boolean).join('・');
   const rec=b.st==='done'?billRec(b):null, amt=rec?rec.amount:x.amount;
   const pill=b.st==='moved'?`<span class="pill moved">已延後 → ${ymShort(b.to)}${S.recurDone[b.k]==='done'?'（已繳）':''}</span>`:`<span class="pill ${b.st}">${ST_TXT[b.st]}</span>`;
@@ -1418,9 +1453,9 @@ function renderBills(){ page='bills'; nav(); const rows=billRows(BM), cur=today(
    <div class="muted small" style="margin:0 4px 14px">按「完成」會記一筆帳（還款會自動減少負債餘額）；按「延後」會把這筆挪到下個月，下個月的清單會多出這一筆。按錯了可以「改回未繳」或「取消延後」。要新增或修改項目，請到「設定 → 每月固定收支」。</div>`; }
 function billDone(k){ const b=billByKey(k); if(!b) return; const x=b.x, d=x.kind==='debt'?debtById(x.debt):null, m=document.createElement('div'); m.className='modal';
   m.innerHTML=`<div class="box"><h2 style="margin:0 0 4px;font-size:17px">✅ ${esc(x.name)} 繳好了</h2><div class="small muted" style="margin-bottom:10px">${ymLabel(b.orig)}${b.show!==b.orig?`（延後到 ${ymShort(b.show)}）`:''}・期限 ${fmtFull(b.due)}</div>
-    <div class="grid" style="grid-template-columns:1fr 1fr"><div><label class="f">實際繳了多少</label><input type="number" id="bdAmt" inputmode="decimal" value="${x.amount}"></div><div><label class="f">哪一天繳的</label><input type="date" id="bdDate" value="${today()}"></div></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr"><div><label class="f">實際繳了多少</label><input type="number" id="bdAmt" inputmode="decimal" value="${d&&debtBal()[d.id]>0?Math.min(x.amount,debtBal()[d.id]):x.amount}"></div><div><label class="f">哪一天繳的</label><input type="date" id="bdDate" value="${today()}"></div></div>
     <div style="margin-top:8px"><label class="f">從哪個帳戶</label><select id="bdAcct">${acctOpts(okAcct(x.acct))}</select></div>
-    ${d?`<div class="small muted" style="margin-top:6px">會記成「還${esc(d.name)}」，負債餘額會自動減少。</div>`:''}
+    ${d?`<div class="small muted" style="margin-top:6px">會記成「還${esc(d.name)}」，負債餘額會自動減少（目前還欠 ${money(Math.max(0,debtBal()[d.id]||0))}，還清後就不再提醒）。</div>`:''}
     <div class="row" style="margin-top:12px"><button class="primary" id="bdOk">確定，記好這筆</button><button id="bdNo">取消</button></div></div>`;
   document.body.appendChild(m); m.querySelector('#bdNo').onclick=()=>m.remove();
   m.querySelector('#bdOk').onclick=()=>{ const amt=Math.round(Number($('#bdAmt').value)*100)/100, date=$('#bdDate').value;
@@ -1520,7 +1555,7 @@ function renderOT(){ page='ot'; nav(); const M=OTM, cur=today().slice(0,7), days
      ${ps.map(x=>`<div style="margin-top:6px"><b class="small">${ymShort(x.ym)}薪資條</b> ${x.l.length?x.l.map(id=>phImg(id,'thumb',`viewImg('${esc(id)}','ps','${x.ym}')`,'width:56px;height:56px')).join(''):`<span class="small muted">還沒放（<a href="#" onclick="PS_SEL='${x.ym}';PS_Y='${x.ym.slice(0,4)}';go('payslip');return false">去放</a>）</span>`}</div>`).join('')}</div>
     ${bonusCard(M)}
     <div class="card"><h2>💼 月薪紀錄</h2><div class="small muted" style="margin-bottom:6px">時薪＝月薪 ÷ 30 ÷ 8。調薪時新增一筆，那天之後的加班會用新的月薪算。</div>
-     ${S.ot.bases.length?S.ot.bases.map((b,i)=>`<div class="bs"><span>${fmtFull(b.from)} 起</span><span>${money(b.amt)}（時薪 ${money(Math.round(b.amt/240*100)/100)}）<a href="#" onclick="otDelBase(${i});return false" style="color:var(--bad);margin-left:6px">✕</a></span></div>`).join(''):'<div class="small muted">還沒有月薪紀錄</div>'}
+     ${S.ot.bases.length?S.ot.bases.map((b,i)=>`<div class="acc compact"><div class="mid"><b>${fmtFull(b.from)} 起</b><div class="small muted">時薪 ${money(Math.round(b.amt/240*100)/100)}</div></div><div class="bal">${money(b.amt)}</div><div class="ops"><button onclick="otEditBase(${i})">修改</button><button class="danger" onclick="otDelBase(${i})">刪除</button></div></div>`).join(''):'<div class="small muted">還沒有月薪紀錄</div>'}
      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:8px"><div><label class="f">從哪天開始</label><input type="date" id="obFrom"></div><div><label class="f">月薪</label><input type="number" id="obAmt" inputmode="numeric" placeholder="例：32000"></div></div>
      <button style="margin-top:8px" onclick="otAddBase()">新增月薪</button></div>
     <div class="card"><details><summary>怎麼算的？（勞基法一般算法）</summary><ul class="small" style="padding-left:18px">
@@ -1548,7 +1583,15 @@ function otEdit(id){ const d=S.ot.days.find(x=>x.id===id); if(!d) return; const 
   m.querySelector('#oeOk').onclick=()=>{ const f=otRead('oe'); if(!f) return; const o=JSON.stringify(S.ot); Object.assign(d,f); if(!persist()){ S.ot=JSON.parse(o); return; } m.remove(); renderOT(); flash('已儲存 ✦'); }; }
 function otSavePaid(){ const v=$('#otPaid').value.trim(), o=JSON.stringify(S.ot); if(v===''){ delete S.ot.paid[OTM]; } else { const n=Number(v); if(!(n>=0)){ alert('金額要是數字'); return; } S.ot.paid[OTM]=Math.round(n); } if(!persist()){ S.ot=JSON.parse(o); return; } renderOT(); flash('已儲存'); }
 function otAddBase(){ const from=$('#obFrom').value, amt=Number($('#obAmt').value); if(!/^\d{4}-\d{2}-\d{2}$/.test(from)){ alert('請選從哪天開始'); return; } if(!(amt>0)){ alert('月薪要大於 0'); return; }
-  const o=JSON.stringify(S.ot); S.ot.bases=S.ot.bases.filter(b=>b.from!==from); S.ot.bases.push({from,amt:Math.round(amt)}); S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(!persist()){ S.ot=JSON.parse(o); return; } renderOT(); flash('已新增月薪 ✦'); }
+  const o=JSON.stringify(S.ot); S.ot.bases=S.ot.bases.filter(b=>b.from!==from); S.ot.bases.push({from,amt:Math.round(amt)}); S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(!persist()){ S.ot=JSON.parse(o); return; } syncSalary(Math.round(amt)); renderOT(); flash('已新增月薪 ✦'); }
+function syncSalary(amt){ const last=S.ot.bases[S.ot.bases.length-1]; if(!last||last.amt!==amt) return; const x=S.recurring.find(y=>y.kind==='income'&&/薪水|薪資|月薪/.test(y.name)); if(!x||x.amount===amt) return;
+  if(confirm(`要把每月「${x.name}」提醒的金額也從 ${money(x.amount)} 改成 ${money(amt)} 嗎？\n（已經記好的不會變）`)){ x.amount=amt; persist(); flash(`「${x.name}」也改成 ${money(amt)} ✦`); } }
+function otEditBase(i){ const b=S.ot.bases[i]; if(!b) return; const m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="box"><h2 style="margin:0 0 10px;font-size:17px">修改月薪</h2><div class="grid" style="grid-template-columns:1fr 1fr"><div><label class="f">從哪天開始</label><input type="date" id="ebFrom" value="${b.from}"></div><div><label class="f">月薪</label><input type="number" id="ebAmt" inputmode="numeric" value="${b.amt}"></div></div>
+    <div class="row" style="margin-top:12px"><button class="primary" id="ebOk">儲存</button><button id="ebNo">取消</button></div></div>`;
+  document.body.appendChild(m); m.querySelector('#ebNo').onclick=()=>m.remove();
+  m.querySelector('#ebOk').onclick=()=>{ const from=$('#ebFrom').value, amt=Number($('#ebAmt').value); if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!(amt>0)){ alert('日期和月薪都要填'); return; }
+    const o=JSON.stringify(S.ot); S.ot.bases.splice(i,1); S.ot.bases=S.ot.bases.filter(x=>x.from!==from); S.ot.bases.push({from,amt:Math.round(amt)}); S.ot.bases.sort((a,c)=>a.from.localeCompare(c.from)); if(!persist()){ S.ot=JSON.parse(o); return; } m.remove(); syncSalary(Math.round(amt)); renderOT(); flash('已儲存 ✦'); }; }
 function otDelBase(i){ const b=S.ot.bases[i]; if(!b||!confirm(`確定刪除「${fmtFull(b.from)} 起 ${money(b.amt)}」這筆月薪紀錄嗎？`)) return; const o=JSON.stringify(S.ot); S.ot.bases.splice(i,1); if(!persist()){ S.ot=JSON.parse(o); return; } renderOT(); }
 
 /* ---------- 節金＋加給預估、請假扣薪 ---------- */
@@ -1609,7 +1652,7 @@ const gStep=(n,t,mock,body)=>`<div class="mg-step"><div class="gx">${mock}</div>
 const GUIDES={
  home:{t:'記帳總覽使用說明',steps:()=>[
   gStep(1,'第一次使用（只要做一次）',gR(`${gB('⬇️ 下載備份',{n:1})}`)+gR(`${gB('⚙️ 設定')}<span>→</span>${gB('選擇 Excel 檔匯入',{pr:1,hl:1,n:2})}`)+gR(`${gB('👛 帳戶')}<span>→</span>${gIn('薪轉帳戶 目前餘額',1)}${gN(3)}`),
-   `<ol style="margin:0 0 6px;padding-left:20px;font-size:14px"><li>先按「💾 備份與匯入」卡的「⬇️ 下載備份」${gN(1)}，萬一弄錯可以回來。</li><li>按同一張卡的「📥 匯入 Excel」，或到「設定」匯入${gN(2)}（要用範本格式）。</li><li>到「帳戶」把每個帳戶<b>現在有多少錢</b>填上${gN(3)}。</li></ol><p>做完這三步，以後每天只要記帳就好。</p>`),
+   `<ol style="margin:0 0 6px;padding-left:20px;font-size:14px"><li>先按「💾 備份與匯入」卡的「⬇️ 下載備份」${gN(1)}，萬一弄錯可以回來。</li><li>按同一張卡的「📥 匯入 Excel」，或到「設定」匯入${gN(2)}（要用範本格式）。</li><li>按「💰 一次填好全部餘額」，把每個帳戶<b>現在有多少錢</b>填上${gN(3)}。</li></ol><p>做完這三步，以後每天只要記帳就好。</p>`),
   gStep(2,'像聊天一樣記帳',gC(gR(`${gIn('午餐120 LINE Pay',1)}${gB('記',{pr:1,n:1})}`)+gR(`<span class="gx-s">付款方式</span>${gIn('💵 現金 ▾')}`)),
    `<p>打一句話，按「記」${gN(1)}或 Enter 就好。</p><ul><li><b>花錢</b>：早餐65、午餐120 LINE Pay</li><li><b>收錢</b>：薪水50000 台新、加班費5111</li><li><b>加班／請假</b>：平日加班2H、休息加班8H（週六）、事假4H、病假1天 → 記到「⏱️ 加班」，不算花錢</li></ul><p class="small muted">沒說日期就記今天；沒說付款方式就算現金。</p>`),
   gStep(3,'常用語一鍵記',gC(gR(`${gIn('平日加班2H')}${gB('⭐ 加入常用',{hl:1,n:1})}`)+gR(`<span class="gx-chip">吃飯 ×</span><span class="gx-chip">平日加班 ×</span><span class="gx-chip">休息加班 ×</span>${gN(2)}`)),
@@ -1622,6 +1665,15 @@ const GUIDES={
    `<p>發薪日會出現提醒。<b>金額已經幫你扣好上個月請假</b>（節金也會照加班頁的預估）。跟薪資條一樣就按「記好」${gN(1)}，不一樣先改數字。</p>`),
   gStep(7,'備份與匯入',gC(gR(`<b style="flex:1">💾 備份</b><span class="gx-s" style="color:var(--bad)">還沒備份過</span>`)+gR(gB('⬇️ 下載備份',{pr:1,hl:1,n:1}))),
    `<p>資料只在這台電腦。在「💾 備份與匯入」卡按「下載備份」${gN(1)}，檔案放雲端硬碟或寄給自己。<b>超過 14 天沒備份會變紅字提醒。</b></p><p>同一張卡也有「📥 匯入 Excel」，跟設定頁的一樣。</p>`)]},
+ cal:{t:'行事曆使用說明',steps:()=>[
+  gStep(1,'三種看法',gR(`<span class="seg" style="display:inline-flex"><button class="on" style="padding:3px 10px;font-size:11px">月檢視</button><button style="padding:3px 10px;font-size:11px">週檢視</button><button style="padding:3px 10px;font-size:11px">清單檢視</button></span>${gN(1)}`),
+   `<p>上面切換${gN(1)}：<b>月檢視</b>像月曆、<b>週檢視</b>看一週每天的事、<b>清單檢視</b>照日期一條一條列出來，可以直接按「完成」「延後」。</p>`),
+  gStep(2,'顏色代表什麼',gR(`<span class="pill ev-wait">待繳</span><span class="pill ev-today">今天／延後</span><span class="pill ev-done">已繳</span>`)+gR(`<span class="pill ev-late">逾期</span><span class="pill ev-income">收入</span><span class="pill ev-goal">目標</span>`),
+   `<ul><li><b>灰</b>：還沒到期　<b>黃</b>：今天到期或延後</li><li><b>綠</b>：已繳／已入帳　<b>紅</b>：逾期</li><li><b>藍</b>：薪水、節金等收入　<b>紫</b>：存錢目標的截止日</li></ul>`),
+  gStep(3,'點一下就能處理',gC(gR(`<b style="flex:1">零卡</b><span class="pill ev-late">逾期</span>`)+gR(`${gB('完成',{dk:1,hl:1,n:1})}${gB('延後到下個月',{rd:1,n:2})}`)),
+   `<p>點月曆上的任何一筆，會跳出詳細資料。要繳的可以直接按「完成」${gN(1)}或「延後」${gN(2)}；點日期數字會切到那一週。</p>`),
+  gStep(4,'這個月能存多少',gR(`${gK('預計收入','$49,900','var(--ok)')}${gK('要繳的錢','$45,000','var(--bad)')}`)+gR(`${gK('生活費','$5,000','#e0a100')}${gK('可以存','-$100','var(--bad)')}`),
+   `<p>最上面四張卡會算：<b>預計收入 − 要繳的錢 − 生活費預算 = 這個月預計可以存</b>。</p><p>變成<b>紅色負數</b>代表這個月會不夠用，可以早點想辦法（延後、少花一點）。換月份就能看之後每個月。</p>`)]},
  bills:{t:'繳費狀態使用說明',steps:()=>[
   gStep(1,'選月份、選分頁',gR(`${gB('◀')}<b>2026年11月</b>${gB('▶')}`)+gR(`${gN(1)}${gB('未繳（2）',{dk:1})}${gB('逾期（1）')}${gB('已繳（8）')}${gB('已延後')}${gB('全部')}`),
    `<p>用 ◀ ▶ 換月份。分頁${gN(1)}可以只看未繳、逾期、已繳、已延後。</p><p>狀態：${gTag('待繳')} 還沒到期、${gTag('今天到期','today')}、${gTag('逾期','late')} 過了期限還沒按完成、${gTag('已繳','done')}、${gTag('已延後 → 12月','moved')}。</p>`),
@@ -1634,7 +1686,7 @@ const GUIDES={
   gStep(5,'按錯了怎麼辦',gC(gR(`<b style="flex:1">房租</b>${gTag('已繳','done')}${gB('改回未繳',{hl:1,n:1})}`)+gR(`<b style="flex:1">電腦</b>${gTag('已延後 → 12月','moved')}${gB('取消延後',{n:2})}`)),
    `<p>「改回未繳」${gN(1)}：當時記的那筆帳移到「最近刪除」，30 天內可以救回來。</p><p>「取消延後」${gN(2)}：改回原本的月份繳。</p>`),
   gStep(6,'新增或修改項目',gR(`${gB('⚙️ 設定')}<span>→</span>${gB('📅 每月固定收支',{hl:1,n:1})}`),
-   `<p>每月要繳的項目在「設定 → 每月固定收支」${gN(1)}新增、修改；也可以用「匯入 Excel」一次匯入。</p>`)]},
+   `<p>每月要繳的項目在「設定 → 每月固定收支」${gN(1)}新增、修改；「多久一次」可以選每月、每 2 個月、每 4 個月…。還負債的會<b>還清就自動停止</b>。</p>`)]},
  payslip:{t:'薪資條使用說明',steps:()=>[
   gStep(1,'點要放的月份',`<div class="gx-c" style="box-shadow:0 0 0 3px var(--brand-soft);border-color:var(--brand)">${gR(`<b>11 月</b>${gN(1)}<span class="gx-s" style="color:var(--brand-d)">Ctrl+V 會貼到這裡</span>`)}<div class="gx-dash">點這格，再按 Ctrl+V 貼上</div></div>`,
    `<p>先點一下要放的月份${gN(1)}，那一格會被框起來。</p>`),
@@ -1659,7 +1711,7 @@ const GUIDES={
    `<p>每 4 個月一期（5/20、9/20、1/20 發）。在「設定加給」填每一項的金額和從哪個月起；<b>金額中途改了就再新增一筆</b>，會按月份比例算。</p><p>設定好「從哪次發放開始依請假扣」，那期起會照請假時數扣（生理假算一半）。</p>`)]},
  accounts:{t:'帳戶使用說明',steps:()=>[
   gStep(1,'先填每個帳戶現在有多少錢',gC(gR(`<span>🏦</span><b style="flex:1">薪轉帳戶</b><b>$12,000</b>`)+gR(`${gB('修改',{hl:1,n:1})}${gB('校正餘額')}${gB('異動紀錄')}`),'👛 我的帳戶'),
-   `<p>按「修改」${gN(1)}填<b>起始餘額</b>（今天帳戶裡實際的錢）。之後記帳就會自動加減。</p><p class="small muted">名稱只寫暱稱（例：台新），不要寫帳號、卡號。</p>`),
+   `<p>最快：按「💰 一次填好全部餘額」，每個帳戶填<b>現在實際有多少錢</b>就好。也可以按個別帳戶的「修改」${gN(1)}。之後記帳就會自動加減。</p><p class="small muted">名稱只寫暱稱（例：台新），不要寫帳號、卡號。</p>`),
   gStep(2,'新增帳戶',gC(gR(`${gIn('名稱：台新')}${gIn('類型：銀行 ▾')}`)+gR(`${gIn('起始餘額 5000')}${gB('新增',{pr:1,hl:1,n:1})}`)),
    `<p>在「新增帳戶」填名稱、類型、起始餘額，按「新增」${gN(1)}。</p><p><b>信用卡</b>：起始餘額填負數（欠 8000 就填 -8000），再按「修改」填每月繳款日。</p>`),
   gStep(3,'跟銀行對不上：校正餘額',gC(gR(`<b style="flex:1">薪轉帳戶</b><span class="gx-s">算出來 $12,000</span>`)+gR(`${gIn('銀行實際 11,800',1)}${gB('校正餘額',{pr:1,n:1})}`)),
@@ -1702,7 +1754,7 @@ const GUIDES={
   gStep(1,'匯入 Excel',gR(`${gB('下載範本',{n:1})}${gB('選擇 Excel 檔匯入',{pr:1,hl:1,n:2})}`)+gC(gR(`<b>📥 匯入預覽</b>`)+gR(`<span class="gx-s">將新增 74 項</span>${gB('確定匯入',{pr:1})}`)),
    `<p>先「下載範本」${gN(1)}，照欄位把資料貼進去；<b>自己做的表直接匯入讀不懂</b>。</p><p>選檔案${gN(2)}後會先預覽，再選：</p><ul><li><b>加進去（不覆蓋）</b>：只加新的，重複的跳過。</li><li><b>清空後匯入（覆蓋）</b>：先自動下載備份，再把帳、帳戶、負債、加班等換成檔案內容；薪資條、常用語會保留。</li></ul>`),
   gStep(2,'每月固定收支',gC(gR(`<b style="flex:1">房租</b><span class="gx-s">每月 10 號</span><b>-$8,000</b>`)+gR(`${gB('修改')}${gB('刪除',{rd:1})}`),'📅 每月固定收支'),
-   `<p>支出和還款會出現在「繳費狀態」；收入到了日期會在首頁提醒。只發一次的（例：節金）把開始和結束設成同一個月。</p>`),
+   `<p>支出和還款會出現在「繳費狀態」；收入到了日期會在首頁提醒。「多久一次」可選每月、每 2 個月（例：水電）、每 4 個月（例：節金）；只有一次的，開始和結束設同一個月。</p>`),
   gStep(3,'下載備份、從備份還原',gR(`${gB('下載備份',{pr:1,hl:1,n:1})}${gB('從備份還原',{n:2})}`),
    `<p>「下載備份」${gN(1)}會把帳、設定、圖片存成一個檔，請放到<b>這台電腦以外</b>的地方（雲端硬碟或寄給自己）。</p><p>換電腦或資料不見時，用「從備份還原」${gN(2)}，會<b>取代</b>目前的資料。</p>`),
   gStep(4,'資料存在哪裡',gC(gR(`<span>🔒</span><b>本機儲存 · 僅在此裝置此瀏覽器有效</b>`)),
@@ -1715,7 +1767,7 @@ function flowHTML(){ const F=[['隨手記帳','花錢、收錢打一句話就記
   return `<div class="card"><div class="row" style="margin-bottom:10px"><div><b>每月流程</b><div class="small muted">照這五步，帳就不會亂</div></div><span class="spacer"></span><button onclick="openGuide('home')">查看使用說明 →</button></div>
     <div class="fsteps">${F.map(([t,d],i)=>`<div class="fstep"><div class="fno">STEP ${p2(i+1)}</div><b>${t}</b><p>${d}</p></div>`).join('')}</div></div>`; }
 function openGuide(k){ k=GUIDES[k]?k:(GUIDES[page]?page:'home'); if(page!==k||!$('#guide_'+k)) go(k); const g=$('#guide_'+k); if(!g) return; g.open=true; g.scrollIntoView({behavior:'smooth',block:'start'}); }
-['renderHome','renderBills','renderPayslip','renderOT','renderAccounts','renderDebts','renderSavings','renderManage','renderOpts','renderSettings'].forEach(fn=>{ const f=window[fn], k={renderHome:'home',renderBills:'bills',renderPayslip:'payslip',renderOT:'ot',renderAccounts:'accounts',renderDebts:'debts',renderSavings:'savings',renderManage:'manage',renderOpts:'opts',renderSettings:'settings'}[fn];
+['renderHome','renderBills','renderCal','renderPayslip','renderOT','renderAccounts','renderDebts','renderSavings','renderManage','renderOpts','renderSettings'].forEach(fn=>{ const f=window[fn], k={renderHome:'home',renderBills:'bills',renderCal:'cal',renderPayslip:'payslip',renderOT:'ot',renderAccounts:'accounts',renderDebts:'debts',renderSavings:'savings',renderManage:'manage',renderOpts:'opts',renderSettings:'settings'}[fn];
   window[fn]=function(){ const r=f.apply(this,arguments); try{ const a=$('#app'); if(a&&!a.querySelector('.gcard')) a.insertAdjacentHTML('beforeend',(k==='home'?flowHTML():'')+guideBox(k)); }catch(e){} return r; }; });
 
 /* ---------- 快速記帳：加班／請假、常用語 ---------- */
@@ -1779,6 +1831,74 @@ function kpiShow(k){ const ym=today().slice(0,7), m=document.createElement('div'
   m.innerHTML=`<div class="box" style="max-width:560px;max-height:85vh;overflow:auto"><div class="row" style="margin-bottom:8px"><h2 style="margin:0;font-size:18px">${title}</h2><span class="spacer"></span><button onclick="this.closest('.modal').remove()" aria-label="關閉">✕</button></div>${body}<div class="row" style="margin-top:12px">${foot}<span class="spacer"></span><button class="primary" onclick="this.closest('.modal').remove()">關閉</button></div></div>`;
   document.body.appendChild(m); m.addEventListener('click',e=>{ if(e.target===m||e.target.closest('.rec')) m.remove(); }); }
 
+/* ---------- 一次填好全部帳戶餘額 ---------- */
+function balModal(){ const b=balances(), m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="box" style="max-width:480px;max-height:88vh;overflow:auto"><h2 style="margin:0 0 4px;font-size:18px">💰 現在每個帳戶有多少錢？</h2>
+    <div class="small muted" style="margin-bottom:10px">打開銀行 App、看看錢包，把<b>現在實際的金額</b>填進去。沒有的帳戶留 0 就好；信用卡欠款填負數（欠 8000 填 -8000）。</div>
+    ${S.accounts.map(a=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:8px"><label style="flex:1;min-width:0;font-weight:700" for="bal_${a.id}">${a.icon||'💳'} ${esc(a.name)}</label><input type="number" inputmode="decimal" id="bal_${a.id}" value="${Math.round((b[a.id]||0)*100)/100}" style="width:140px"></div>`).join('')}
+    <div class="small muted">不會記成收入或支出，只是把「現在有多少錢」設定好。之後記帳會從這裡開始加減。</div>
+    <div class="row" style="margin-top:12px"><button class="primary" id="blOk">儲存</button><button id="blNo">取消</button><span class="spacer"></span><button onclick="this.closest('.modal').remove();go('accounts')">新增帳戶</button></div></div>`;
+  document.body.appendChild(m); m.querySelector('#blNo').onclick=()=>m.remove();
+  m.querySelector('#blOk').onclick=()=>{ const o=JSON.stringify(S); for(const a of S.accounts){ const v=Number($('#bal_'+a.id).value); if(!Number.isFinite(v)){ alert(`「${a.name}」要填數字`); S=JSON.parse(o); return; } a.init=Math.round(((Number(a.init)||0)+v-(b[a.id]||0))*100)/100; }
+    S.acctInitDone=true; if(!persist()){ S=JSON.parse(o); return; } m.remove(); rerender(); if(page==='accounts') renderAccounts(); flash('餘額設定好了 ✦'); }; }
+/* ---------- 生活費預算 ---------- */
+const LIVING=['餐飲','交通','生活用品','娛樂','醫療','其他'];
+function livingSpent(ym){ return live().filter(r=>r.date.startsWith(ym)&&r.type==='expense'&&LIVING.includes(r.category)).reduce((a,r)=>a+r.amount,0); }
+function budgetCard(){ const B=S.budget.living, ym=today().slice(0,7), sp=livingSpent(ym), left=B-sp, pct=B?Math.min(100,Math.round(sp/B*100)):0;
+  const [y,m]=ym.split('-').map(Number), daysLeft=new Date(y,m,0).getDate()-(+today().slice(8))+1;
+  return `<div class="card o8"><div class="row"><h2 style="margin:0">🍙 本月生活費</h2><span class="spacer"></span><a href="#" class="small" onclick="budgetEdit();return false">改預算</a></div>
+    ${B?`<div class="prog"><i style="width:${pct}%;background:${left<0?'var(--bad)':pct>80?'#e0a100':'var(--ok)'}"></i></div>
+      <div class="bs"><span>已花</span><b>${money(sp)} / ${money(B)}</b></div>
+      <div class="bs"><span>${left<0?'超出':'還能花'}</span><b style="color:${left<0?'var(--bad)':'var(--ok)'}">${money(Math.abs(left))}</b></div>
+      ${left>0?`<div class="small muted">剩 ${daysLeft} 天，平均每天可以花 ${money(Math.floor(left/daysLeft))}</div>`:''}
+      <div class="small muted" style="margin-top:4px">算的是餐飲、交通、生活用品、娛樂、醫療、其他；房租、帳單、還款不算。</div>`
+     :'<div class="small muted" style="margin-top:6px">還沒設定。按「改預算」填每個月的生活費，就會幫你算還能花多少。</div>'}</div>`; }
+function budgetEdit(){ const v=prompt('每個月的生活費預算（例：5000；填 0 表示不用）',S.budget.living||''); if(v===null) return; const n=Number(v); if(!(n>=0)){ alert('要填數字'); return; } S.budget.living=Math.round(n); persist(); rerender(); flash('預算已儲存 ✦'); }
+/* ---------- 行事曆 ---------- */
+let CALM=today().slice(0,7), CALV='month', CALD=today();
+const EV_TXT={done:'已繳',wait:'待繳',today:'今天到期',late:'逾期',moved:'已延後',skip:'略過',income:'收入',got:'已入帳',goal:'存錢目標'};
+function monthEvents(M){ const ev=[];
+  billRows(M).forEach(b=>{ const r=b.st==='done'?billRec(b):null; ev.push({date:b.due,name:b.x.name,amt:r?r.amount:b.x.amount,st:b.st,k:b.k,type:'bill',to:b.to,from:b.from}); });
+  S.recurring.forEach(x=>{ if(x.kind!=='income'||!recurOn(x,M)) return; const k=x.id+'|'+M, d=S.recurDone[k], h=recurHint(x,M); ev.push({date:dueDate(M,x.day),name:x.name,amt:h?h.amt:x.amount,st:d==='done'?'got':d==='skip'?'skip':'income',type:'income',note:h?h.note:''}); });
+  const prev=ymAdd(M,-1), otp=otPayMonth(prev); if(otp>0){ const sx=S.recurring.find(y=>y.kind==='income'&&/薪水|薪資|月薪/.test(y.name)&&recurOn(y,M)); ev.push({date:dueDate(M,sx?sx.day:10),name:`加班費（${ymShort(prev)}）`,amt:otp,st:'income',type:'income',ot:1,note:`照加班頁 ${ymShort(prev)}的紀錄估算，實際以薪資條為準`}); }
+  S.goals.forEach(g=>{ if(!g.done&&g.deadline&&g.deadline.startsWith(M)) ev.push({date:g.deadline,name:`${g.name} 截止`,amt:g.target,st:'goal',type:'goal'}); });
+  return ev.sort((a,b)=>a.date.localeCompare(b.date)||(a.type==='income'?-1:1)); }
+function otPayMonth(ym){ return Math.round(S.ot.days.filter(d=>d.date.startsWith(ym)&&!isLeave(d.kind)).reduce((a,d)=>a+otCalc(d).pay,0)); }
+function monthPlan(M){ const ev=monthEvents(M), inc=ev.filter(e=>e.type==='income'&&e.st!=='skip').reduce((a,e)=>a+e.amt,0), out=ev.filter(e=>e.type==='bill'&&e.st!=='moved'&&e.st!=='skip').reduce((a,e)=>a+e.amt,0), liv=S.budget.living;
+  return {inc,out,liv,save:inc-out-liv}; }
+function evChip(e,i,full){ return `<button class="ev ev-${e.st}" onclick="evOpen('${e.date.slice(0,7)}',${i})" title="${esc(e.name)} ${money(e.amt)}・${EV_TXT[e.st]}">${e.type==='income'?'＋':e.type==='goal'?'🎯':''}${esc(e.name)}${full?` <b>${money(e.amt)}</b>`:''}</button>`; }
+function renderCal(){ page='cal'; nav(); const M=CALM, ev=monthEvents(M), P=monthPlan(M), t=today();
+  const byDay={}; ev.forEach((e,i)=>{ (byDay[e.date]=byDay[e.date]||[]).push([e,i]); });
+  const [y,m]=M.split('-').map(Number), first=new Date(y,m-1,1), off=(first.getDay()+6)%7, dim=new Date(y,m,0).getDate();
+  const cell=(ds,inMonth)=>{ const list=byDay[ds]||[], w=new Date(ds+'T00:00').getDay();
+    return `<div class="cd ${inMonth?'':'out'} ${w===0||w===6?'we':''} ${ds===t?'now':''}" onclick="if(event.target===this||event.target.classList.contains('dn')){CALD='${ds}';CALV='week';renderCal()}"><div class="dn">${+ds.slice(8)}</div>${list.slice(0,3).map(([e,i])=>evChip(e,i)).join('')}${list.length>3?`<a href="#" class="more" onclick="CALD='${ds}';CALV='week';renderCal();return false">+${list.length-3}</a>`:''}</div>`; };
+  let grid=''; if(CALV==='month'){ const cells=[]; for(let i=0;i<42;i++){ const d=new Date(y,m-1,1-off+i), ds=`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; cells.push(cell(ds,d.getMonth()===m-1)); if(i>=27&&i%7===6&&new Date(y,m-1,1-off+i+1).getMonth()!==m-1) break; }
+    grid=`<div class="calg">${'一二三四五六日'.split('').map(w=>`<div class="cw">${w}</div>`).join('')}${cells.join('')}</div>`; }
+  else if(CALV==='week'){ const d0=new Date(CALD+'T00:00'), mon=new Date(d0); mon.setDate(d0.getDate()-((d0.getDay()+6)%7)); const days=[...Array(7)].map((_,k)=>{ const d=new Date(mon); d.setDate(mon.getDate()+k); return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; });
+    const evs={}; [...new Set(days.map(d=>d.slice(0,7)))].forEach(mm=>monthEvents(mm).forEach((e,i)=>{ (evs[e.date]=evs[e.date]||[]).push([e,i]); }));
+    grid=`<div class="row" style="margin-bottom:8px"><button onclick="CALD=addDays(CALD,-7);CALM=CALD.slice(0,7);renderCal()">← 上週</button><b>${fmtMD(days[0])}～${fmtMD(days[6])}</b><button onclick="CALD=addDays(CALD,7);CALM=CALD.slice(0,7);renderCal()">下週 →</button></div>
+      <div class="calw">${days.map(ds=>`<div class="wd ${ds===t?'now':''}"><div class="dn">${fmtMD(ds)}（${WK[new Date(ds+'T00:00').getDay()]}）</div>${(evs[ds]||[]).map(([e,i])=>evChip(e,i,true)).join('')||'<div class="small muted">—</div>'}</div>`).join('')}</div>`; }
+  else { grid=ev.length?ev.map((e,i)=>`<div class="lrow ${e.date===t?'now':''}"><div class="ld">${fmtMD(e.date)}<span class="small muted">（${WK[new Date(e.date+'T00:00').getDay()]}）</span></div><div class="ln"><b>${esc(e.name)}</b>${e.note?`<div class="small muted">${esc(e.note)}</div>`:''}${e.from?`<div class="small muted">${ymShort(e.from)}延後過來</div>`:''}</div>
+      <span class="pill ev-${e.st}">${EV_TXT[e.st]}${e.st==='moved'?` → ${ymShort(e.to)}`:''}</span><b class="la" style="color:${e.type==='income'?'var(--ok)':e.type==='goal'?'var(--info)':'var(--ink)'}">${e.type==='income'?'+':e.type==='goal'?'':'-'}${money(e.amt)}</b>
+      <div class="lx">${e.type==='bill'&&OPEN_ST.includes(e.st)?`<button class="dark" onclick="billDone('${esc(e.k)}')">完成</button><button class="danger" onclick="billMove('${esc(e.k)}')">延後</button>`:''}</div></div>`).join(''):'<div class="empty">這個月沒有排定的收支</div>'; }
+  $('#app').innerHTML=`<div class="kpis">
+     ${kpi('預計收入',bmS(P.inc),'薪水、節金、上個月加班費','💰','var(--ok)','var(--ok-soft)',money(P.inc))}
+     ${kpi('要繳的錢',bmS(P.out),`${ev.filter(e=>e.type==='bill'&&OPEN_ST.includes(e.st)).length} 筆還沒繳`,'🧾','var(--bad)','var(--bad-soft)',money(P.out),'',"BM=CALM;BF='open';go('bills')")}
+     ${kpi('生活費預算',bmS(P.liv),P.liv?'吃飯、交通等日常花費':'到首頁設定','🍙','#e0a100','#fff3d6',money(P.liv))}
+     ${kpi('預計可以存',bmS(P.save),P.save<0?'<b style="color:var(--bad)">這個月會不夠用</b>':'收入 − 要繳 − 生活費','🐷',P.save<0?'var(--bad)':'var(--brand)',P.save<0?'var(--bad-soft)':'var(--brand-soft)',bm(P.save))}</div>
+   <div class="card"><div class="row" style="margin-bottom:10px"><div class="seg">${[['month','月檢視'],['week','週檢視'],['list','清單檢視']].map(([k,n])=>`<button class="${CALV===k?'on':''}" onclick="CALV='${k}';renderCal()">${n}</button>`).join('')}</div></div>
+     <div class="row" style="margin-bottom:10px"><button onclick="CALM=ymAdd(CALM,-1);CALD=CALM+'-01';renderCal()">← 上個月</button><h2 style="margin:0 6px">${ymLabel(M)}</h2><button onclick="CALM=ymAdd(CALM,1);CALD=CALM+'-01';renderCal()">下個月 →</button><button onclick="CALM=today().slice(0,7);CALD=today();renderCal()">回到今天</button><span class="spacer"></span>
+       <span class="small legend"><i class="ev-wait"></i>待繳 <i class="ev-today"></i>今天／延後 <i class="ev-done"></i>已繳 <i class="ev-late"></i>逾期 <i class="ev-income"></i>收入 <i class="ev-goal"></i>目標</span></div>
+     ${grid}</div>`; }
+function evOpen(M,i){ const e=monthEvents(M)[i]; if(!e) return; const m=document.createElement('div'); m.className='modal';
+  const acts=e.type==='bill'&&OPEN_ST.includes(e.st)?`<button class="dark" onclick="this.closest('.modal').remove();billDone('${esc(e.k)}')">完成</button><button class="danger" onclick="this.closest('.modal').remove();billMove('${esc(e.k)}')">延後到下個月</button>`
+    :e.type==='bill'?`<button onclick="this.closest('.modal').remove();BM='${M}';BF='all';go('bills')">到繳費狀態看</button>`:e.type==='goal'?`<button onclick="this.closest('.modal').remove();go('savings')">到儲蓄看</button>`:e.ot?`<button onclick="this.closest('.modal').remove();OTM='${ymAdd(M,-1)}';go('ot')}">到加班頁看</button>`:e.st==='income'?`<button onclick="this.closest('.modal').remove();go('home')">到首頁「收入到期」記好</button>`:'';
+  m.innerHTML=`<div class="box"><div class="row"><h2 style="margin:0;font-size:18px">${esc(e.name)}</h2><span class="spacer"></span><span class="pill ev-${e.st}">${EV_TXT[e.st]}</span></div>
+    <div class="bs" style="margin-top:8px"><span>日期</span><b>${fmtFull(e.date)}（${WK[new Date(e.date+'T00:00').getDay()]}）</b></div><div class="bs"><span>金額</span><b>${money(e.amt)}</b></div>${e.note?`<div class="small muted">${esc(e.note)}</div>`:''}
+    ${e.st==='income'&&e.date>today()?'<div class="small muted" style="margin-top:6px">到了那天，首頁會出現提醒讓你按「記好」。</div>':''}
+    <div class="row" style="margin-top:12px">${acts}<span class="spacer"></span><button onclick="this.closest('.modal').remove()">關閉</button></div></div>`;
+  document.body.appendChild(m); m.onclick=ev=>{ if(ev.target===m) m.remove(); }; }
+
 /* ---------- 匯入 Excel ---------- */
 let XLSXP=null;
 function loadXLSX(){ if(window.XLSX) return Promise.resolve(window.XLSX); if(XLSXP) return XLSXP;
@@ -1787,17 +1907,19 @@ function loadXLSX(){ if(window.XLSX) return Promise.resolve(window.XLSX); if(XLS
 const TPL={
   帳戶:[['名稱','類型','目前餘額'],['測試銀行','銀行','52000'],['現金','現金','3000']],
   負債:[['名稱','種類','總額','已還','每月','到期日','從哪個帳戶繳'],['測試貸款','貸款','600000','120000','12000','2030/5/27','測試銀行'],['王小明','借人','50000','10000','','',''],['李小華','借出','3000','0','','','']],
-  固定收支:[['項目','類型','金額','每月幾號','開始','結束','帳戶','連到哪筆負債'],['薪水','收入','45000','10','115.11','','測試銀行',''],['房租','支出','8000','5','115.11','','測試銀行',''],['測試貸款','還負債','12000','10','115.11','119.5','測試銀行','測試貸款']],
+  固定收支:[['項目','類型','金額','每月幾號','開始','結束','帳戶','連到哪筆負債','每幾個月'],['薪水','收入','45000','10','115.11','','測試銀行',''],['房租','支出','8000','5','115.11','','測試銀行',''],['測試貸款','還負債','12000','10','115.11','119.5','測試銀行','測試貸款']],
   加班:[['日期','類型','申報時數','核准時數','備註'],['115.11.2','平日','2','',''],['2026/11/4','平日','1','0.5','有問題 -0.5'],['115.11.21','休息日','8','',''],['115.11.12','事假','4','','']],
   月薪:[['從哪天開始','月薪'],['115.9.1','30000'],['115.11.1','32000']],
   加給:[['名稱','多久','金額','從哪個月起'],['證書加給','每月','3000','115.9'],['節金','每4個月','8000','115.9'],['節金','每4個月','9000','116.1']],
   節金:[['從哪次發放開始依請假扣'],['116.5']],
+  預算:[['項目','每月金額'],['生活費','5000']],
+  儲蓄目標:[['名稱','目標金額','期限'],['旅遊基金','30000','116.6.30']],
   記帳紀錄:[['日期','收入或支出','項目','金額','帳戶','分類（可不填）'],['115.11.1','支出','早餐','65','現金',''],['2026/11/2','收入','獎金','3000','測試銀行','']]
 };
 async function downloadTemplate(){
   let X; try{ X=await loadXLSX(); }catch(e){ alert('需要網路才能產生 Excel 範本，請連上網路再試一次。'); return; }
   const wb=X.utils.book_new();
-  X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet([['小帳匯入範本：照各工作表的欄位填，第一列（標題）不要改。範例都是假資料，請換成你的資料或刪掉。'],['日期可寫 115.11.10 或 2026/11/10；月份可寫 115.11 或 2026/11。'],['負債的「種類」：貸款、分期、其他債務、借人（我欠別人）、借出（別人欠我）。'],['固定收支的「類型」：收入、支出、還負債（要填「連到哪筆負債」）。'],['帳戶的「類型」：現金、銀行、電子支付、信用卡、其他；信用卡欠款請填負數。'],['加班的「類型」：平日、休息日、國定假日（例假也填這個）、事假、病假、生理假、颱風假、公傷假；時數以 0.5 小時為單位，核准時數被扣才填。']]),'說明');
+  X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet([['小帳匯入範本：照各工作表的欄位填，第一列（標題）不要改。範例都是假資料，請換成你的資料或刪掉。'],['日期可寫 115.11.10 或 2026/11/10；月份可寫 115.11 或 2026/11。'],['負債的「種類」：貸款、分期、其他債務、借人（我欠別人）、借出（別人欠我）。'],['固定收支的「類型」：收入、支出、還負債（要填「連到哪筆負債」）。「每幾個月」可填 1、2、3、4、6、12（空白＝每月）；只發一次的，開始和結束填同一個月。'],['帳戶的「類型」：現金、銀行、電子支付、信用卡、其他；信用卡欠款請填負數。'],['加班的「類型」：平日、休息日、國定假日（例假也填這個）、事假、病假、生理假、颱風假、公傷假；時數以 0.5 小時為單位，核准時數被扣才填。']]),'說明');
   Object.entries(TPL).forEach(([n,a])=>X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(a),n));
   X.writeFile(wb,'xiaozhang_import_template.xlsx');
 }
@@ -1819,7 +1941,7 @@ function rowsOf(X,wb,name){ const ws=wb.Sheets[name]; if(!ws) return [];
   const head=a[0].map(h=>String(h).trim()); return a.slice(1).map((r,i)=>({n:i+2,get:k=>{const j=head.findIndex(h=>h.startsWith(k));return j<0?'':r[j];},empty:r.every(c=>String(c).trim()==='')})).filter(r=>!r.empty); }
 let PENDING_IMPORT=null, IMPORT_SRC=null;
 function buildPlan(X,wb){
-  const plan={accts:[],debts:[],recs:[],recur:[],ot:[],bases:[],allow:[],bonusFrom:null,skip:[]}, skip=(sh,n,why)=>plan.skip.push(`${sh} 第 ${n} 列：${why}`);
+  const plan={accts:[],debts:[],recs:[],recur:[],ot:[],bases:[],allow:[],bonusFrom:null,budget:null,goals:[],skip:[]}, skip=(sh,n,why)=>plan.skip.push(`${sh} 第 ${n} 列：${why}`);
   const newAcctNames=new Set(), newDebtNames=new Set();
   const TYPEMAP={現金:'cash',銀行:'bank',銀行帳戶:'bank',電子支付:'epay',信用卡:'card',其他:'other',其他帳戶:'other'};
   rowsOf(X,wb,'帳戶').forEach(r=>{ const name=String(r.get('名稱')).trim(), bal=numOf(r.get('目前餘額'));
@@ -1841,16 +1963,20 @@ function buildPlan(X,wb){
     else plan.debts.push({id:newId(),name:name.slice(0,20),kind:'person',init:k[1]*rem,orig:Math.round(tot),monthly:0,dueDay:0,payAcct:'',created:today(),end:''}); });
   const debtId=n=>{ const s=String(n??'').trim().toLowerCase(); if(!s) return ''; const d=S.debts.find(x=>x.name.toLowerCase()===s)||plan.debts.find(x=>x.name.toLowerCase()===s); return d?d.id:null; };
   const RK={收入:'income',支出:'expense',還負債:'debt',還款:'debt'};
-  rowsOf(X,wb,'固定收支').forEach(r=>{ const name=String(r.get('項目')).trim(), kind=RK[String(r.get('類型')).trim()], amt=numOf(r.get('金額')), day=dayOk(numOf(r.get('每月幾號'))), start=parseYM(r.get('開始')), endS=String(r.get('結束')).trim(), end=endS?parseYM(r.get('結束')):'';
+  rowsOf(X,wb,'固定收支').forEach(r=>{ const name=String(r.get('項目')).trim(), kind=RK[String(r.get('類型')).trim()], amt=numOf(r.get('金額')), day=dayOk(numOf(r.get('每月幾號'))), evN=numOf(r.get('每幾個月')), every=[1,2,3,4,6,12].includes(evN)?evN:1, start=parseYM(r.get('開始')), endS=String(r.get('結束')).trim(), end=endS?parseYM(r.get('結束')):'';
     if(!name) return skip('固定收支',r.n,'沒有項目名稱'); if(!kind) return skip('固定收支',r.n,'「類型」要寫：收入、支出、還負債');
     if(Number.isNaN(amt)||Math.abs(amt)<=0) return skip('固定收支',r.n,'金額要是數字'); if(!day) return skip('固定收支',r.n,'「每月幾號」要是 1～31');
     if(start==='AMBIG'||end==='AMBIG') return skip('固定收支',r.n,'月份寫成數字 115.1，Excel 會把 115.10 變成 115.1，分不出是 1 月還是 10 月。請在格子前面加一個單引號，寫成 \'115.10，或寫 2026/10');
     if(!start) return skip('固定收支',r.n,'「開始」看不懂，請寫 115.11 或 2026/11'); if(endS&&!end) return skip('固定收支',r.n,'「結束」看不懂');
     const a=acctId(r.get('帳戶')); if(a===null) return skip('固定收支',r.n,`找不到帳戶「${r.get('帳戶')}」`);
     let d=''; if(kind==='debt'){ d=debtId(r.get('連到哪筆負債')); if(!d) return skip('固定收支',r.n,`找不到負債「${r.get('連到哪筆負債')}」`); }
-    const same=S.recurring.some(y=>y.name===name.slice(0,20)&&y.kind===kind&&y.amount===Math.round(Math.abs(amt))&&y.day===day&&y.start===start&&y.end===end);
+    const same=S.recurring.some(y=>y.name===name.slice(0,20)&&y.kind===kind&&y.amount===Math.round(Math.abs(amt))&&y.day===day&&y.start===start&&y.end===end&&(y.every||1)===every);
     if(same) return skip('固定收支',r.n,`「${name}」${start.replace('-','/')} 起這筆已經有了（可能匯入過）`);
-    plan.recur.push({id:newId(),name:name.slice(0,20),kind,amount:Math.round(Math.abs(amt)),day,start,end,acct:a||'cash',debt:d}); });
+    plan.recur.push({id:newId(),name:name.slice(0,20),kind,amount:Math.round(Math.abs(amt)),day,start,end,acct:a||'cash',debt:d,every}); });
+  rowsOf(X,wb,'預算').forEach(r=>{ const n=String(r.get('項目')).trim(), v=numOf(r.get('每月金額')); if(/生活/.test(n)&&v>=0&&Math.round(v)!==S.budget.living) plan.budget=Math.round(v); });
+  rowsOf(X,wb,'儲蓄目標').forEach(r=>{ const name=String(r.get('名稱')).trim().slice(0,20), tg=numOf(r.get('目標金額')), dS=String(r.get('期限')).trim(), dl=dS?parseDateAny(r.get('期限')):'';
+    if(!name) return skip('儲蓄目標',r.n,'沒有名稱'); if(/\d/.test(name)) return skip('儲蓄目標',r.n,'名稱裡不要有數字'); if(!(tg>0)) return skip('儲蓄目標',r.n,'目標金額要大於 0'); if(dS&&!dl) return skip('儲蓄目標',r.n,'期限看不懂');
+    if(S.goals.some(g=>g.name===name)) return skip('儲蓄目標',r.n,`「${name}」已經有了`); plan.goals.push({id:newId(),name,target:Math.round(tg),mode:'manual',acct:'',deadline:dl,done:false,doneAt:''}); });
   const OTK={平日:'wd',平日加班:'wd',休息日:'rest',休息日加班:'rest',休息:'rest',休息加班:'rest',國定假日:'hol',例假:'hol',國定假日加班:'hol',事假:'lv_personal',病假:'lv_sick',生理假:'lv_men',颱風假:'lv_typhoon',公傷假:'lv_injury',公傷病假:'lv_injury'};
   rowsOf(X,wb,'加班').forEach(r=>{ const date=parseDateAny(r.get('日期')), k=OTK[String(r.get('類型')).trim()], h=numOf(r.get('申報時數')), aS=String(r.get('核准時數')).trim(), a=aS===''?null:numOf(r.get('核准時數'));
     if(!date) return skip('加班',r.n,'日期看不懂'); if(!k) return skip('加班',r.n,'「類型」要寫：平日、休息日、國定假日、事假、病假、生理假、颱風假、公傷假');
@@ -1876,8 +2002,8 @@ function buildPlan(X,wb){
     plan.recs.push({id:newId(),type,amount:Math.round(Math.abs(amt)),item:item.slice(0,40),category:cat,date,who:'',icon:'',acct:a||'cash',createdAt:new Date().toISOString(),imported:true}); });
   return plan;
 }
-function planCount(p){ return p.accts.length+p.debts.length+p.recur.length+p.recs.length+p.ot.length+p.bases.length+p.allow.length+(p.bonusFrom?1:0); }
-function applyPlan(p){ S.accounts.push(...p.accts); S.debts.push(...p.debts); S.recurring.push(...p.recur); R.push(...p.recs); S.ot.days.push(...p.ot); S.ot.bases.push(...p.bases); S.ot.allow.push(...p.allow); if(p.bonusFrom) S.ot.bonusFrom=p.bonusFrom; S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(p.accts.length) S.acctInitDone=true; }
+function planCount(p){ return p.accts.length+p.debts.length+p.recur.length+p.recs.length+p.ot.length+p.bases.length+p.allow.length+(p.bonusFrom?1:0)+(p.budget!==null?1:0)+p.goals.length; }
+function applyPlan(p){ S.accounts.push(...p.accts); S.debts.push(...p.debts); S.recurring.push(...p.recur); R.push(...p.recs); S.ot.days.push(...p.ot); S.ot.bases.push(...p.bases); S.ot.allow.push(...p.allow); if(p.bonusFrom) S.ot.bonusFrom=p.bonusFrom; if(p.budget!==null) S.budget.living=p.budget; S.goals.push(...p.goals); S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(p.accts.length) S.acctInitDone=true; }
 function cleanState(){ return fixS(Object.assign(defaultS(),{phrases:S.phrases,rules:S.rules,people:S.people,catIcons:S.catIcons,bg:S.bg,recentN:S.recentN,payslips:S.payslips,lastBackup:S.lastBackup})); }
 function fullPlan(){ if(!IMPORT_SRC) return null; const sv=[S,R]; try{ S=cleanState(); R=[]; return buildPlan(IMPORT_SRC.X,IMPORT_SRC.wb); }finally{ S=sv[0]; R=sv[1]; } }
 
@@ -1892,13 +2018,15 @@ function showImportPreview(p){
   const n=planCount(p), fp=fullPlan(), fn=fp?planCount(fp):0, m=document.createElement('div'); m.className='modal';
   const sec=(t,list,fmt)=>list.length?`<div class="dayh"><span>${t}（${list.length}）</span></div>${list.slice(0,30).map(x=>`<div class="bs" style="font-size:13px">${fmt(x)}</div>`).join('')}${list.length>30?`<div class="muted small">…還有 ${list.length-30} 筆</div>`:''}`:'';
   m.innerHTML=`<div class="box" style="max-height:85vh;overflow:auto"><h2 style="margin:0 0 6px;font-size:17px">📥 匯入預覽</h2>
-    <div class="small muted" style="margin-bottom:6px">${n?`這個檔案有 <b>${n}</b> 項是新的。`:p.skip.length&&fn?'這個檔案的內容<b>都已經有了</b>，加進去不會多任何東西。想用檔案內容重來，請選「清空後匯入」。':p.skip.length?'沒有可以匯入的資料。':'沒有可以匯入的資料。<br>記帳幫手只看得懂<b>範本格式</b>：工作表要叫「帳戶」「負債」「固定收支」「加班」「月薪」「加給」「節金」「記帳紀錄」，第一列是範本的標題。自己做的表請先按「下載範本」，把資料照欄位貼進去再匯入。'}</div>
+    <div class="small muted" style="margin-bottom:6px">${n?`這個檔案有 <b>${n}</b> 項是新的。`:p.skip.length&&fn?'這個檔案的內容<b>都已經有了</b>，加進去不會多任何東西。想用檔案內容重來，請選「清空後匯入」。':p.skip.length?'沒有可以匯入的資料。':'沒有可以匯入的資料。<br>記帳幫手只看得懂<b>範本格式</b>：工作表要叫「帳戶」「負債」「固定收支」「加班」「月薪」「加給」「節金」「預算」「儲蓄目標」「記帳紀錄」，第一列是範本的標題。自己做的表請先按「下載範本」，把資料照欄位貼進去再匯入。'}</div>
     ${fn?`<div class="impmode"><div class="f" style="margin:6px 0 6px">要怎麼匯入？</div>
       <label class="opt"><input type="radio" name="ipMode" value="add" ${n?'checked':'disabled'}><div><b>加進去（不覆蓋）</b><div class="small muted">${n?`新增上面這 ${n} 項，重複的會自動跳過；原本的資料都保留。`:'這個檔案的內容都已經有了，不用再加。'}</div></div></label>
       <label class="opt danger"><input type="radio" name="ipMode" value="replace" ${n?'':'checked'}><div><b>清空後匯入（覆蓋）</b><div class="small muted">會<b>先自動下載一份備份</b>，再清掉目前的記帳紀錄、帳戶、負債、固定收支、繳費狀態、加班請假、月薪、加給，換成這個檔案的 ${fn} 項。<br><b>薪資條、常用語、對象、分類圖示、背景圖會保留。</b></div></div></label></div>`:''}
     ${sec('👛 帳戶',p.accts,x=>`<span>${esc(x.name)}</span><span>${bm(x.init)}</span>`)}
     ${sec('💳 負債',p.debts,x=>`<span>${esc(x.name)}・${x.kind==='loan'?LOAN_SUB[x.sub].slice(2).trim():(x.init>=0?'我欠':'欠我')}</span><span>${x.init>=0?'還欠':'對方還欠'} ${money(Math.abs(x.init))} / 總額 ${money(x.orig)}</span>`)}
-    ${sec('📅 固定收支',p.recur,x=>`<span>${esc(x.name)}・每月 ${x.day} 號・${x.start.replace('-','/')} 起</span><span>${x.kind==='income'?'+':'-'}${money(x.amount)}</span>`)}
+    ${p.budget!==null?`<div class="bs" style="font-size:13px"><span>🍙 生活費預算</span><span>每月 ${money(p.budget)}</span></div>`:''}
+    ${sec('🎯 儲蓄目標',p.goals,x=>`<span>${esc(x.name)}${x.deadline?`・${fmtFull(x.deadline)} 前`:''}</span><span>${money(x.target)}</span>`)}
+    ${sec('📅 固定收支',p.recur,x=>`<span>${esc(x.name)}・${x.end&&x.end===x.start?`只有 ${x.start.replace('-','/')}`:`${freqTxt(x)} ${x.day} 號・${x.start.replace('-','/')} 起`}</span><span>${x.kind==='income'?'+':'-'}${money(x.amount)}</span>`)}
     ${sec('🎁 加給',p.allow,x=>`<span>${esc(x.name)}・${x.per==='p'?'每 4 個月':'每月'}</span><span>${money(x.amt)}（${ymLabel(x.from)}起）</span>`)}
     ${p.bonusFrom?`<div class="bs" style="font-size:13px"><span>節金依請假扣</span><span>${ymLabel(p.bonusFrom)}發的那期起</span></div>`:''}
     ${sec('💼 月薪',p.bases,x=>`<span>${fmtFull(x.from)} 起</span><span>${money(x.amt)}</span>`)}
