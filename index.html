@@ -1537,7 +1537,7 @@ const gStep=(n,t,mock,body)=>`<div class="mg-step"><div class="gx">${mock}</div>
 const GUIDES={
  home:{t:'記帳總覽使用說明',steps:()=>[
   gStep(1,'第一次使用（只要做一次）',gR(`${gB('⬇️ 下載備份',{n:1})}`)+gR(`${gB('⚙️ 設定')}<span>→</span>${gB('選擇 Excel 檔匯入',{pr:1,hl:1,n:2})}`)+gR(`${gB('👛 帳戶')}<span>→</span>${gIn('薪轉帳戶 目前餘額',1)}${gN(3)}`),
-   `<ol style="margin:0 0 6px;padding-left:20px;font-size:14px"><li>先按「💾 備份」卡的「⬇️ 下載備份」${gN(1)}，萬一弄錯可以回來。</li><li>到「設定」匯入整理好的 Excel${gN(2)}（要用範本格式）。</li><li>到「帳戶」把每個帳戶<b>現在有多少錢</b>填上${gN(3)}。</li></ol><p>做完這三步，以後每天只要記帳就好。</p>`),
+   `<ol style="margin:0 0 6px;padding-left:20px;font-size:14px"><li>先按「💾 備份與匯入」卡的「⬇️ 下載備份」${gN(1)}，萬一弄錯可以回來。</li><li>按同一張卡的「📥 匯入 Excel」，或到「設定」匯入${gN(2)}（要用範本格式）。</li><li>到「帳戶」把每個帳戶<b>現在有多少錢</b>填上${gN(3)}。</li></ol><p>做完這三步，以後每天只要記帳就好。</p>`),
   gStep(2,'像聊天一樣記帳',gC(gR(`${gIn('午餐120 LINE Pay',1)}${gB('記',{pr:1,n:1})}`)+gR(`<span class="gx-s">付款方式</span>${gIn('💵 現金 ▾')}`)),
    `<p>打一句話，按「記」${gN(1)}或 Enter 就好。</p><ul><li><b>花錢</b>：早餐65、午餐120 LINE Pay</li><li><b>收錢</b>：薪水50000 台新、加班費5111</li><li><b>加班／請假</b>：平日加班2H、事假4H、病假1天 → 記到「⏱️ 加班」，不算花錢</li></ul><p class="small muted">沒說日期就記今天；沒說付款方式就算現金。</p>`),
   gStep(3,'常用語一鍵記',gC(gR(`${gIn('平日加班2H')}${gB('⭐ 加入常用',{hl:1,n:1})}`)+gR(`<span class="gx-chip">平日加班2H ×</span><span class="gx-chip">早餐65 ×</span>${gN(2)}`)),
@@ -1548,8 +1548,8 @@ const GUIDES={
    `<p>繳好了按「完成」${gN(1)}；這個月繳不出來按「延後」${gN(2)}，會挪到下個月。</p>`),
   gStep(6,'薪水、節金到了按「記好」',gC(gR(`<b style="flex:1">薪水</b>${gIn('30,337')}${gB('記好',{pr:1,hl:1,n:1})}`)+`<div class="gx-s" style="color:var(--brand-d);font-weight:700">已預扣 11月請假 $1,663</div>`,'💰 收入到期'),
    `<p>發薪日會出現提醒。<b>金額已經幫你扣好上個月請假</b>（節金也會照加班頁的預估）。跟薪資條一樣就按「記好」${gN(1)}，不一樣先改數字。</p>`),
-  gStep(7,'記得備份',gC(gR(`<b style="flex:1">💾 備份</b><span class="gx-s" style="color:var(--bad)">還沒備份過</span>`)+gR(gB('⬇️ 下載備份',{pr:1,hl:1,n:1}))),
-   `<p>資料只在這台電腦。在「💾 備份」卡按「下載備份」${gN(1)}，檔案放雲端硬碟或寄給自己。<b>超過 14 天沒備份會變紅字提醒。</b></p>`)]},
+  gStep(7,'備份與匯入',gC(gR(`<b style="flex:1">💾 備份</b><span class="gx-s" style="color:var(--bad)">還沒備份過</span>`)+gR(gB('⬇️ 下載備份',{pr:1,hl:1,n:1}))),
+   `<p>資料只在這台電腦。在「💾 備份與匯入」卡按「下載備份」${gN(1)}，檔案放雲端硬碟或寄給自己。<b>超過 14 天沒備份會變紅字提醒。</b></p><p>同一張卡也有「📥 匯入 Excel」，跟設定頁的一樣。</p>`)]},
  bills:{t:'繳費狀態使用說明',steps:()=>[
   gStep(1,'選月份、選分頁',gR(`${gB('◀')}<b>2026年11月</b>${gB('▶')}`)+gR(`${gN(1)}${gB('未繳（2）',{dk:1})}${gB('逾期（1）')}${gB('已繳（8）')}${gB('已延後')}${gB('全部')}`),
    `<p>用 ◀ ▶ 換月份。分頁${gN(1)}可以只看未繳、逾期、已繳、已延後。</p><p>狀態：${gTag('待繳')} 還沒到期、${gTag('今天到期','today')}、${gTag('逾期','late')} 過了期限還沒按完成、${gTag('已繳','done')}、${gTag('已延後 → 12月','moved')}。</p>`),
@@ -1684,9 +1684,11 @@ function renderOpts(){ page='opts'; nav();
    <div class="card"><h2>👥 對象清單</h2><div class="quick" style="margin-bottom:8px"><input type="text" id="pIn" placeholder="例如：A同事" onkeydown="if(event.key==='Enter')addPerson()"><button class="primary" onclick="addPerson()" style="font-size:15px">新增</button></div>
      ${S.people.length?S.people.map((p,i)=>`<span class="tag" style="font-size:14px;margin:2px 4px 2px 0">${esc(p)} <a href="#" onclick="delPerson(${i});return false" style="color:var(--bad);text-decoration:none">✕</a></span>`).join(''):'<div class="muted small">還沒有對象。打字記帳時，在最後加上對象名字，例如「還錢2000 A同事」</div>'}</div>`; }
 function backupCard(){ const lb=S.lastBackup, d=lb?daysBetween(lb,today()):null;
-  return `<div class="card o8"><div class="row"><h2 style="margin:0">💾 備份</h2><span class="spacer"></span><span class="small ${d===null||d>14?'':'muted'}" style="${d===null||d>14?'color:var(--bad);font-weight:700':''}">${lb?`上次 ${fmtMD(lb)}（${d===0?'今天':d+' 天前'}）`:'還沒備份過'}</span></div>
+  return `<div class="card o8"><div class="row"><h2 style="margin:0">💾 備份與匯入</h2><span class="spacer"></span><span class="small ${d===null||d>14?'':'muted'}" style="${d===null||d>14?'color:var(--bad);font-weight:700':''}">${lb?`上次 ${fmtMD(lb)}（${d===0?'今天':d+' 天前'}）`:'還沒備份過'}</span></div>
     <div class="small muted" style="margin:6px 0 8px">資料只在這台電腦這個瀏覽器，請定期下載備份，放在這台電腦以外的地方。備份檔裡有薪資條，不要傳給別人。</div>
-    <button class="primary" onclick="backup()" style="width:100%">⬇️ 下載備份</button></div>`; }
+    <button class="primary" onclick="backup()" style="width:100%">⬇️ 下載備份</button>
+    <button onclick="$('#xlsFileHome').click()" style="width:100%;margin-top:8px">📥 匯入 Excel</button><input type="file" id="xlsFileHome" accept=".xlsx,.xls,.csv" hidden onchange="importExcel(this)">
+    <div class="small muted" style="margin-top:6px">要用範本格式（<a href="#" onclick="downloadTemplate();return false">下載範本</a>）。匯入前會先預覽，按「確定匯入」才會加進去。<b>請先下載備份再匯入。</b></div></div>`; }
 
 /* ---------- 匯入 Excel ---------- */
 let XLSXP=null;
@@ -1806,7 +1808,7 @@ function showImportPreview(p){
   document.body.appendChild(m); m.querySelector('#ipNo').onclick=()=>{PENDING_IMPORT=null;m.remove();};
   const ok=m.querySelector('#ipOk'); if(ok) ok.onclick=()=>{ const oR=JSON.stringify(R), oS=JSON.stringify(S);
     S.accounts.push(...p.accts); S.debts.push(...p.debts); S.recurring.push(...p.recur); R.push(...p.recs); S.ot.days.push(...p.ot); S.ot.bases.push(...p.bases); S.ot.allow.push(...p.allow); if(p.bonusFrom) S.ot.bonusFrom=p.bonusFrom; S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(p.accts.length) S.acctInitDone=true;
-    if(!persist()){R=JSON.parse(oR);S=JSON.parse(oS);return;} PENDING_IMPORT=null; m.remove(); renderSettings(); flash(`匯入完成 ✦ 新增 ${n} 項`); };
+    if(!persist()){R=JSON.parse(oR);S=JSON.parse(oS);return;} PENDING_IMPORT=null; m.remove(); if(page==='home') renderHome(); else renderSettings(); flash(`匯入完成 ✦ 新增 ${n} 項`); };
 }
 
 /* ---------- 設定 ---------- */
