@@ -264,7 +264,7 @@ button.dark:hover{background:#2f2424}
 <main><div id="phead"></div><div id="app"></div></main>
 <script>
 const KEY_R='casevoraXiaozhang_v1', KEY_S='casevoraXiaozhang_v1_settings';
-const OT_KIND={wd:'平日加班',rest:'休息日加班',hol:'國定假日／例假加班',lv_personal:'事假',lv_sick:'病假',lv_men:'生理假',lv_typhoon:'颱風假'};
+const OT_KIND={wd:'平日加班',rest:'休息日加班',hol:'國定假日／例假加班',lv_personal:'事假',lv_sick:'病假',lv_men:'生理假',lv_typhoon:'颱風假',lv_injury:'公傷假'};
 const EXP=['餐飲','交通','生活用品','房租','娛樂','醫療','帳單','其他'];
 const INC=['薪資','兼職','其他收入'];
 const DEF_ICON={餐飲:'🍙',交通:'🚌',生活用品:'🧻',房租:'🏠',娛樂:'🎮',醫療:'💊',帳單:'🧾',其他:'🧸',薪資:'💰',兼職:'🐥',其他收入:'🎁'};
@@ -1436,9 +1436,10 @@ function renderOT(){ page='ot'; nav(); const M=OTM, cur=today().slice(0,7), days
          <td style="text-align:right">${c.base?money(Math.round(c.pay)):'—'}</td><td style="white-space:nowrap"><button style="padding:2px 8px;font-size:12px" onclick="otEdit('${d.id}')">修改</button></td></tr>`; }).join('')}</tbody></table></div>`:'<div class="empty">這個月還沒有加班紀錄</div>'}
      ${cap>46?`<div class="notice small">⚠️ 這個月加班 ${hh(cap)}，超過勞基法一般上限 46 小時。</div>`:''}</div>
     <div class="card"><h2>🌂 請假（${ymLabel(M)}）</h2>
-     ${lvs.length?lvs.map(d=>`<div class="bs"><span>${fmtMD(d.date)} ${OT_KIND[d.kind]}${d.note?` <span class="small muted">${esc(d.note)}</span>`:''}</span><span>${d.hrs} 小時 <a href="#" onclick="otEdit('${d.id}');return false" class="small">修改</a></span></div>`).join(''):'<div class="small muted">這個月沒有請假紀錄。用上面「新增一天」，類型選事假／病假／生理假／颱風假。</div>'}
+     ${lvs.length?lvs.map(d=>`<div class="bs"><span>${fmtMD(d.date)} ${OT_KIND[d.kind]}${d.note?` <span class="small muted">${esc(d.note)}</span>`:''}</span><span>${d.hrs} 小時 <a href="#" onclick="otEdit('${d.id}');return false" class="small">修改</a></span></div>`).join(''):'<div class="small muted">這個月沒有請假紀錄。用上面「新增一天」，類型選事假／病假／生理假／颱風假／公傷假；以 0.5 小時為單位，請 2 小時就填 2。</div>'}
      ${lvs.length?`<div class="bs sum"><span>這個月請假扣薪預估<div class="small muted" style="font-weight:400">會從 ${ymShort(ymAdd(M,1))}10 號的薪水扣</div></span><b style="color:var(--bad)">-${money(lvPayCut(M))}</b></div>`:''}
-     <div class="small muted" style="margin-top:8px">扣薪水照政府規定：事假、颱風假全扣；病假（要附證明）、生理假扣一半。病假沒附證明時，請改記成事假。</div>
+     <div class="small muted" style="margin-top:8px">扣薪水照政府規定：事假、颱風假全扣；病假、生理假扣一半；公傷假不扣。</div>
+     ${lvs.some(d=>d.kind==='lv_sick'||d.kind==='lv_injury')?`<div class="notice small">📎 這個月有病假／公傷假：記得交<b>收據或醫生證明（宜休養）</b>，公傷假要附診斷證明。</div>`:''}
      <div class="small muted" style="margin-top:4px">${yr} 年累計：${Object.keys(lvYear).length?Object.entries(lvYear).map(([k,v])=>`${OT_KIND[k]} ${v} 小時`).join('、'):'沒有'}。之後節金／獎金按請假比例扣時，可以用這個數字對。</div></div>
    </div><div class="col">
     <div class="card"><h2>📄 對薪資條</h2><label class="f">薪資條上「${ymShort(M)}加班」的加班費</label>
@@ -1463,7 +1464,7 @@ function otRead(pre){ const date=$('#'+pre+'Date').value, kind=$('#'+pre+'Kind')
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ alert('請選日期'); return null; } if(!(hrs>0)||hrs*2!==Math.round(hrs*2)||hrs>24){ alert('申報時數要以 0.5 小時為單位，例如 1.5、2'); return null; }
   if(appr!==null&&(!(appr>=0)||appr*2!==Math.round(appr*2)||appr>hrs)){ alert('核准時數要以 0.5 為單位，而且不能比申報多'); return null; }
   return {date,kind,hrs,appr:appr===hrs?null:appr,note:$('#'+pre+'Note').value.trim().slice(0,40)}; }
-function otAdd(){ const f=otRead('ot'); if(!f) return; const o=JSON.stringify(S.ot); S.ot.days.push(Object.assign({id:newId()},f)); if(!persist()){ S.ot=JSON.parse(o); return; } OTM=f.date.slice(0,7); renderOT(); flash(`已記 ${fmtMD(f.date)} ${OT_KIND[f.kind]} ${f.appr??f.hrs} 小時 ✦`); }
+function otAdd(){ const f=otRead('ot'); if(!f) return; const o=JSON.stringify(S.ot); S.ot.days.push(Object.assign({id:newId()},f)); if(!persist()){ S.ot=JSON.parse(o); return; } OTM=f.date.slice(0,7); renderOT(); flash(`已記 ${fmtMD(f.date)} ${OT_KIND[f.kind]} ${f.appr??f.hrs} 小時 ✦${proofTip(f.kind)}`); }
 function otEdit(id){ const d=S.ot.days.find(x=>x.id===id); if(!d) return; const m=document.createElement('div'); m.className='modal';
   m.innerHTML=`<div class="box"><h2 style="margin:0 0 10px;font-size:17px">修改 ${fmtMD(d.date)}</h2><div class="grid" style="grid-template-columns:1fr 1fr">
     <div><label class="f">日期</label><input type="date" id="oeDate" value="${d.date}"></div><div><label class="f">類型</label><select id="oeKind">${Object.entries(OT_KIND).map(([k,n])=>`<option value="${k}" ${k===d.kind?'selected':''}>${n}</option>`).join('')}</select></div>
@@ -1480,7 +1481,7 @@ function otDelBase(i){ const b=S.ot.bases[i]; if(!b||!confirm(`確定刪除「${
 
 /* ---------- 節金＋加給預估、請假扣薪 ---------- */
 /* 節金／加給：依請假時數扣（事假、病假、颱風假全算，生理假算一半）；薪水：依政府規定（事假、颱風假全扣，病假、生理假扣一半） */
-const LV_W={lv_personal:1,lv_sick:1,lv_typhoon:1,lv_men:0.5}, LV_PAY={lv_personal:1,lv_sick:0.5,lv_men:0.5,lv_typhoon:1};
+const LV_W={lv_personal:1,lv_sick:1,lv_typhoon:1,lv_men:0.5,lv_injury:0}, LV_PAY={lv_personal:1,lv_sick:0.5,lv_men:0.5,lv_typhoon:1,lv_injury:0};
 function lvW(prefix){ return S.ot.days.filter(d=>isLeave(d.kind)&&d.date.startsWith(prefix)).reduce((a,d)=>a+d.hrs*(LV_W[d.kind]??1),0); }
 function lvPayCut(ym){ return Math.round(S.ot.days.filter(d=>isLeave(d.kind)&&d.date.startsWith(ym)).reduce((a,d)=>a+d.hrs*(LV_PAY[d.kind]??1)*otBase(d.date)/240,0)); }
 function lvHours(ym){ const o={}; S.ot.days.filter(d=>isLeave(d.kind)&&d.date.startsWith(ym)).forEach(d=>o[d.kind]=(o[d.kind]||0)+d.hrs); return o; }
@@ -1511,7 +1512,7 @@ function bonusCard(M){ const c=bonusCalc(M), set=S.ot.allow.length>0;
       <div style="margin-top:10px"><label class="f">從哪次發放開始依請假扣</label><div class="row" style="flex-wrap:nowrap"><input type="month" id="bnFrom" value="${S.ot.bonusFrom}"><button onclick="bonusFromSave()">儲存</button></div></div>
       <ul class="small muted" style="padding-left:18px;margin:8px 0 0"><li>每 4 個月一期：1～4 月在 5/20 發、5～8 月在 9/20、9～12 月在隔年 1/20。</li>
         <li>金額中途改了（例：節金從 11 月起變多）就再新增一筆「從 11 月起」，會按月份比例算。</li>
-        <li>扣法：每個月的份額 ÷ 30 ÷ 8 × 當月請假時數。事假、病假、颱風假全算，生理假算一半。</li>
+        <li>扣法：每個月的份額 ÷ 30 ÷ 8 × 當月請假時數。事假、病假、颱風假全算，生理假算一半，公傷假不算。</li>
         <li>這是照你說明的公司算法估算，實際以薪資條為準。</li></ul></details></div>`; }
 function allowAdd(){ const name=$('#alName').value.trim().slice(0,20), per=$('#alPer').value, amt=Number($('#alAmt').value), from=$('#alFrom').value;
   if(!name){ alert('請填名稱'); return; } if(!(amt>=0)||$('#alAmt').value.trim()===''){ alert('請填金額（停發就填 0）'); return; } if(!/^\d{4}-\d{2}$/.test(from)){ alert('請選從哪個月起'); return; }
@@ -1581,9 +1582,45 @@ const GUIDES={
   gStep(4,'月底對薪資條',gR(`${gK('我算的','$3,000','var(--info)')}${gK('薪資條上','$2,900','var(--ok)')}`)+gR(`${gK('差額','-$100','var(--bad)')}<span class="gx-s" style="color:var(--bad)">公司少給你 $100</span>`),
    `<p>把薪資條上的加班費填進這頁的「對薪資條」，就會算出<b>差額＝公司給的 − 我算的</b>。</p><ul><li><b>負的</b>：公司少給你，可以拿去問人資</li><li><b>0</b>：沒算錯</li><li><b>正的</b>：公司多給</li></ul>`),
   gStep(5,'請假會自動扣薪水',gC(gR(`<span>11/27 事假</span><b style="margin-left:auto">8 小時</b>`)+gR(`<span>這個月請假扣薪預估</span><b style="margin-left:auto;color:var(--bad)">-$1,663</b>`)),
-   `<p>照政府規定算：</p><ul><li><b>事假、颱風假</b>：全扣</li><li><b>病假</b>（要附證明）、<b>生理假</b>：扣一半</li></ul><p>這個月請的假，會從<b>下個月 10 號</b>的薪水扣；首頁薪水提醒的金額會自動扣好。</p>`),
+   `<p>照政府規定算（時薪 × 請假時數）：</p><ul><li><b>事假、颱風假</b>：全扣</li><li><b>病假、生理假</b>：扣一半</li><li><b>公傷假</b>：不扣</li></ul><p>可以只請幾小時，例如打「事假2H」。這個月請的假，會從<b>下個月 10 號</b>的薪水扣；首頁薪水提醒的金額會自動扣好。</p><p>📎 病假記得交收據或醫生證明（宜休養），公傷假要附診斷證明。</p>`),
   gStep(6,'節金＋加給預估',gC(gR(`<span>畢業證書</span><b style="margin-left:auto">$8,000</b>`)+gR(`<span>節金</span><b style="margin-left:auto">$9,000</b>`)+gR(`<span>預估實拿</span><b style="margin-left:auto">$25,000</b>`),'🎁 節金＋加給預估'),
    `<p>每 4 個月一期（5/20、9/20、1/20 發）。在「設定加給」填每一項的金額和從哪個月起；<b>金額中途改了就再新增一筆</b>，會按月份比例算。</p><p>設定好「從哪次發放開始依請假扣」，那期起會照請假時數扣（生理假算一半）。</p>`)]},
+ accounts:{t:'帳戶使用說明',steps:()=>[
+  gStep(1,'先填每個帳戶現在有多少錢',gC(gR(`<span>🏦</span><b style="flex:1">薪轉帳戶</b><b>$12,000</b>`)+gR(`${gB('修改',{hl:1,n:1})}${gB('校正餘額')}${gB('異動紀錄')}`),'👛 我的帳戶'),
+   `<p>按「修改」${gN(1)}填<b>起始餘額</b>（今天帳戶裡實際的錢）。之後記帳就會自動加減。</p><p class="small muted">名稱只寫暱稱（例：台新），不要寫帳號、卡號。</p>`),
+  gStep(2,'新增帳戶',gC(gR(`${gIn('名稱：台新')}${gIn('類型：銀行 ▾')}`)+gR(`${gIn('起始餘額 5000')}${gB('新增',{pr:1,hl:1,n:1})}`)),
+   `<p>在「新增帳戶」填名稱、類型、起始餘額，按「新增」${gN(1)}。</p><p><b>信用卡</b>：起始餘額填負數（欠 8000 就填 -8000），再按「修改」填每月繳款日。</p>`),
+  gStep(3,'跟銀行對不上：校正餘額',gC(gR(`<b style="flex:1">薪轉帳戶</b><span class="gx-s">算出來 $12,000</span>`)+gR(`${gIn('銀行實際 11,800',1)}${gB('校正餘額',{pr:1,n:1})}`)),
+   `<p>忘了記某幾筆、跟銀行 App 不一樣時，按「校正餘額」${gN(1)}，填實際金額。會記一筆「校正」，<b>不算收入或支出</b>。</p>`),
+  gStep(4,'資產負債表',gC(gR(`<span style="flex:1">總資產</span><b style="color:var(--ok)">$12,000</b>`)+gR(`<span style="flex:1">總負債</span><b style="color:var(--bad)">$158萬</b>`)+gR(`<b style="flex:1">淨資產</b><b>-$157萬</b>`),'📊 資產負債表'),
+   `<p><b>淨資產＝所有帳戶的錢 − 還欠的錢</b>。下面的長條圖是每個月底的淨資產，每還一期，紅色會慢慢變短。</p>`)]},
+ debts:{t:'負債使用說明',steps:()=>[
+  gStep(1,'看還剩多少',gC(gR(`<span>🏦</span><b style="flex:1">元大</b><b style="color:var(--bad)">還欠 $644,754</b>`)+gR(`<span class="gx-s" style="flex:1">每月 $9,769・剩約 66 期</span>`)+`<div class="prog" style="margin:0"><i style="width:21%"></i></div>`),
+   `<p>每筆貸款、分期會顯示：還欠多少、每月繳多少、還剩幾期、下次繳款日。綠色長條是已還的比例。</p>`),
+  gStep(2,'還款怎麼記',gR(`${gB('🧾 繳費狀態')}<span>→</span>${gB('完成',{dk:1,hl:1,n:1})}`)+gC(gR(`${gIn('還元大9769',1)}${gB('記',{pr:1,n:2})}`)),
+   `<p>設了每月固定還款的，到「繳費狀態」按「完成」${gN(1)}就好。</p><p>臨時多還，在首頁打「還元大9769」${gN(2)}。還款<b>算支出</b>，負債會自動減少。</p>`),
+  gStep(3,'新增、修改、看明細',gR(`${gB('明細',{n:1})}${gB('修改',{n:2})}${gB('刪除',{rd:1})}`)+gR(gB('➕ 新增貸款／分期',{hl:1,n:3})),
+   `<p>「明細」${gN(1)}看每一次還款；「修改」${gN(2)}改金額、繳款日、到期日；「➕ 新增」${gN(3)}加新的貸款或分期。</p>`),
+  gStep(4,'跟朋友借還',gC(gR(`<span>📤</span><span style="flex:1">欠俊佑</span><b>$400,000</b>`),'👥 跟朋友借還')+gC(gR(`${gIn('還俊佑5000',1)}${gB('記',{pr:1})}`)),
+   `<p>不用先建立，直接在首頁打：「跟小明借錢1500」「還小明1000」「小明還800」。</p><p>跟朋友借還<b>不算收入或支出</b>，只會改帳戶餘額和這裡的金額。</p>`)]},
+ savings:{t:'儲蓄使用說明',steps:()=>[
+  gStep(1,'新增目標',gC(gR(`${gIn('名稱：旅遊基金')}${gIn('目標 30000')}`)+gR(`${gIn('期限 2027/6/30')}${gB('新增',{pr:1,hl:1,n:1})}`),'➕ 新增目標'),
+   `<p>按「➕ 新增目標」填名稱、目標金額、期限（可不填），按「新增」${gN(1)}。</p>`),
+  gStep(2,'自己標記：存了就打一句',gC(gR(`${gIn('旅遊基金存5000',1)}${gB('記',{pr:1,n:1})}`)),
+   `<p>在首頁打「旅遊基金存5000」${gN(1)}，進度就會增加。</p><p>這種方式<b>帳戶餘額不變、不算支出</b>，只是幫你記「這些錢是要存的」。</p>`),
+  gStep(3,'綁定帳戶：有專門的存錢帳戶',gC(gR(`${gIn('台新轉儲蓄專戶5000',1)}${gB('記',{pr:1,n:1})}`)),
+   `<p>目標選「綁定帳戶」時，那個帳戶的餘額就是存了多少。用轉帳存錢${gN(1)}，例如「台新轉儲蓄專戶5000」。</p>`),
+  gStep(4,'看進度',gC(gR(`<b style="flex:1">旅遊基金</b><b>$12,000 / $30,000</b>`)+`<div class="prog" style="margin:0"><i style="width:40%"></i></div>`+gR(`<span class="gx-s">還要 $18,000・每月約 $2,571</span>`)),
+   `<p>會顯示存了多少、還差多少、照期限每個月要存多少。達成後可以按「完成」收起來。</p>`)]},
+ manage:{t:'帳務管理使用說明',steps:()=>[
+  gStep(1,'選要看什麼',gR(`${gB('📊 月報表',{pr:1,n:1})}${gB('📈 年報表')}${gB('每日')}${gB('每月')}`)+gR(`${gB('依分類看支出')}${gB('依帳戶看支出')}${gB('🔍 搜尋',{n:2})}`),
+   `<p>上面一排${gN(1)}切換：月報表、年報表、每日、每月、依分類、依帳戶。要找某一筆用「🔍 搜尋」${gN(2)}。</p>`),
+  gStep(2,'月報表',gR(`${gK('當月收入','$52,000','var(--ok)')}${gK('當月支出','$18,300','var(--bad)')}`)+gC(`<div class="gx-s">📉 每日支出趨勢</div><div class="prog" style="margin:0"><i style="width:60%;background:var(--accent)"></i></div>`),
+   `<p>選年、月，看這個月收入、支出、結餘，跟上個月比多少；下面有每天花多少、花在哪些分類。</p><p class="small muted">轉帳、存進儲蓄、跟朋友借還不算收支；還貸款算支出。</p>`),
+  gStep(3,'年報表',gC(gR(`<span style="flex:1">1月</span><span class="gx-s">收 $52,000・支 $40,100</span>`)+gR(`<span style="flex:1">2月</span><span class="gx-s">收 $52,000・支 $38,900</span>`)),
+   `<p>一年 12 個月並排，看每月結餘和儲蓄率，也能跟去年比。</p>`),
+  gStep(4,'搜尋與修改',gC(gR(`${gIn('🔍 午餐',1)}${gIn('全部類型 ▾')}`)+gR(`<span>🍙</span><b style="flex:1">午餐</b><b style="color:var(--bad)">-$120</b>`)),
+   `<p>打關鍵字（項目、分類、對象、帳戶都可以），也可以選類型和日期範圍。點結果就能修改或刪除。</p><p>要匯出給 Excel，到「設定 → 匯出 CSV」。</p>`)]},
  opts:{t:'常用選項使用說明',steps:()=>[
   gStep(1,'快速記帳常用語',gC(gR(`${gIn('平日加班2H')}${gB('↑')}${gB('↓')}${gB('儲存',{n:1})}${gB('刪除',{rd:1,n:2})}`)),
    `<p>直接改字按「儲存」${gN(1)}；↑↓ 調整在首頁出現的順序；不要的按「刪除」${gN(2)}。</p>`),
@@ -1606,22 +1643,23 @@ function flowHTML(){ const F=[['隨手記帳','花錢、收錢打一句話就記
   return `<div class="card"><div class="row" style="margin-bottom:10px"><div><b>每月流程</b><div class="small muted">照這五步，帳就不會亂</div></div><span class="spacer"></span><button onclick="openGuide('home')">查看使用說明 →</button></div>
     <div class="fsteps">${F.map(([t,d],i)=>`<div class="fstep"><div class="fno">STEP ${p2(i+1)}</div><b>${t}</b><p>${d}</p></div>`).join('')}</div></div>`; }
 function openGuide(k){ k=GUIDES[k]?k:(GUIDES[page]?page:'home'); if(page!==k||!$('#guide_'+k)) go(k); const g=$('#guide_'+k); if(!g) return; g.open=true; g.scrollIntoView({behavior:'smooth',block:'start'}); }
-['renderHome','renderBills','renderPayslip','renderOT','renderOpts','renderSettings'].forEach(fn=>{ const f=window[fn], k={renderHome:'home',renderBills:'bills',renderPayslip:'payslip',renderOT:'ot',renderOpts:'opts',renderSettings:'settings'}[fn];
+['renderHome','renderBills','renderPayslip','renderOT','renderAccounts','renderDebts','renderSavings','renderManage','renderOpts','renderSettings'].forEach(fn=>{ const f=window[fn], k={renderHome:'home',renderBills:'bills',renderPayslip:'payslip',renderOT:'ot',renderAccounts:'accounts',renderDebts:'debts',renderSavings:'savings',renderManage:'manage',renderOpts:'opts',renderSettings:'settings'}[fn];
   window[fn]=function(){ const r=f.apply(this,arguments); try{ const a=$('#app'); if(a&&!a.querySelector('.gcard')) a.insertAdjacentHTML('beforeend',(k==='home'?flowHTML():'')+guideBox(k)); }catch(e){} return r; }; });
 
 /* ---------- 快速記帳：加班／請假、常用語 ---------- */
 function otQuick(raw){ const t=String(raw||'').trim().replace(/\s+/g,'');
   const m=t.match(/^(?:(\d{1,2})[\/.月](\d{1,2})日?)?(?:(平日|休息日|假日|國定假日|例假)(?:加班)?|加班)(\d+(?:\.\d+)?)(h|hr|小時)?$/i)||t.match(/^(?:(\d{1,2})[\/.月](\d{1,2})日?)?加班(平日|休息日|假日|國定假日|例假)(\d+(?:\.\d+)?)(h|hr|小時)?$/i);
-  const l=t.match(/^(?:(\d{1,2})[\/.月](\d{1,2})日?)?(事假|病假|生理假|颱風假)(\d+(?:\.\d+)?)(h|hr|小時|天)?$/i);
+  const l=t.match(/^(?:(\d{1,2})[\/.月](\d{1,2})日?)?(事假|病假|生理假|颱風假|公傷假|公傷病假)(\d+(?:\.\d+)?)(h|hr|小時|天)?$/i);
   if(!m&&!l) return false; const g=m||l, y=+today().slice(0,4), date=g[1]?ymd(y,+g[1],+g[2]):today();
   if(!date){ alert('日期看起來不對，請再確認一下。'); return true; }
   let hrs=Number(g[4]); if(l&&/天/.test(g[5]||'')) hrs*=8;
   if(!(hrs>0)||hrs*2!==Math.round(hrs*2)||hrs>24){ alert('時數要以 0.5 小時為單位，例如：平日加班2H、事假4H'); return true; }
-  let kind; if(l) kind={事假:'lv_personal',病假:'lv_sick',生理假:'lv_men',颱風假:'lv_typhoon'}[g[3]];
+  let kind; if(l) kind={事假:'lv_personal',病假:'lv_sick',生理假:'lv_men',颱風假:'lv_typhoon',公傷假:'lv_injury',公傷病假:'lv_injury'}[g[3]];
   else if(g[3]) kind={平日:'wd',休息日:'rest',假日:'hol',國定假日:'hol',例假:'hol'}[g[3]];
   else { const w=new Date(date+'T00:00').getDay(); kind=w===6?'rest':w===0?'hol':'wd'; }
   const o=JSON.stringify(S.ot); S.ot.days.push({id:newId(),date,kind,hrs,appr:null,note:''}); if(!persist()){ S.ot=JSON.parse(o); return true; }
-  if(page==='home') renderHome(); flash(`已記到加班頁 ✦ ${fmtMD(date)} ${OT_KIND[kind]} ${hrs} 小時`); return true; }
+  if(page==='home') renderHome(); flash(`已記到加班頁 ✦ ${fmtMD(date)} ${OT_KIND[kind]} ${hrs} 小時${proofTip(kind)}`); return true; }
+function proofTip(k){ return k==='lv_sick'?'・📎 記得附收據或醫生證明':k==='lv_injury'?'・📎 記得附診斷證明':''; }
 function usePhrase(i){ const t=S.phrases[i]; if(!t) return; const inp=$('#qin'); if(!inp) return; inp.value=t;
   if(/\d/.test(t)){ quickAdd(); } else { inp.focus(); inp.setSelectionRange(t.length,t.length); flash('接著打金額，再按「記」'); } }
 function addPhrase(){ const inp=$('#qin'), v=(inp?inp.value:'').trim().slice(0,30); if(!v){ flash('先在輸入框打字，再按「加入常用」'); if(inp) inp.focus(); return; }
@@ -1668,7 +1706,7 @@ const TPL={
 async function downloadTemplate(){
   let X; try{ X=await loadXLSX(); }catch(e){ alert('需要網路才能產生 Excel 範本，請連上網路再試一次。'); return; }
   const wb=X.utils.book_new();
-  X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet([['小帳匯入範本：照各工作表的欄位填，第一列（標題）不要改。範例都是假資料，請換成你的資料或刪掉。'],['日期可寫 115.11.10 或 2026/11/10；月份可寫 115.11 或 2026/11。'],['負債的「種類」：貸款、分期、其他債務、借人（我欠別人）、借出（別人欠我）。'],['固定收支的「類型」：收入、支出、還負債（要填「連到哪筆負債」）。'],['帳戶的「類型」：現金、銀行、電子支付、信用卡、其他；信用卡欠款請填負數。'],['加班的「類型」：平日、休息日、國定假日（例假也填這個）、事假、病假、生理假、颱風假；時數以 0.5 小時為單位，核准時數被扣才填。']]),'說明');
+  X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet([['小帳匯入範本：照各工作表的欄位填，第一列（標題）不要改。範例都是假資料，請換成你的資料或刪掉。'],['日期可寫 115.11.10 或 2026/11/10；月份可寫 115.11 或 2026/11。'],['負債的「種類」：貸款、分期、其他債務、借人（我欠別人）、借出（別人欠我）。'],['固定收支的「類型」：收入、支出、還負債（要填「連到哪筆負債」）。'],['帳戶的「類型」：現金、銀行、電子支付、信用卡、其他；信用卡欠款請填負數。'],['加班的「類型」：平日、休息日、國定假日（例假也填這個）、事假、病假、生理假、颱風假、公傷假；時數以 0.5 小時為單位，核准時數被扣才填。']]),'說明');
   Object.entries(TPL).forEach(([n,a])=>X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(a),n));
   X.writeFile(wb,'xiaozhang_import_template.xlsx');
 }
@@ -1725,9 +1763,9 @@ async function importExcel(inp){
     const same=S.recurring.some(y=>y.name===name.slice(0,20)&&y.kind===kind&&y.amount===Math.round(Math.abs(amt))&&y.day===day&&y.start===start&&y.end===end);
     if(same) return skip('固定收支',r.n,`「${name}」${start.replace('-','/')} 起這筆已經有了（可能匯入過）`);
     plan.recur.push({id:newId(),name:name.slice(0,20),kind,amount:Math.round(Math.abs(amt)),day,start,end,acct:a||'cash',debt:d}); });
-  const OTK={平日:'wd',平日加班:'wd',休息日:'rest',休息日加班:'rest',國定假日:'hol',例假:'hol',國定假日加班:'hol',事假:'lv_personal',病假:'lv_sick',生理假:'lv_men',颱風假:'lv_typhoon'};
+  const OTK={平日:'wd',平日加班:'wd',休息日:'rest',休息日加班:'rest',國定假日:'hol',例假:'hol',國定假日加班:'hol',事假:'lv_personal',病假:'lv_sick',生理假:'lv_men',颱風假:'lv_typhoon',公傷假:'lv_injury',公傷病假:'lv_injury'};
   rowsOf(X,wb,'加班').forEach(r=>{ const date=parseDateAny(r.get('日期')), k=OTK[String(r.get('類型')).trim()], h=numOf(r.get('申報時數')), aS=String(r.get('核准時數')).trim(), a=aS===''?null:numOf(r.get('核准時數'));
-    if(!date) return skip('加班',r.n,'日期看不懂'); if(!k) return skip('加班',r.n,'「類型」要寫：平日、休息日、國定假日、事假、病假、生理假、颱風假');
+    if(!date) return skip('加班',r.n,'日期看不懂'); if(!k) return skip('加班',r.n,'「類型」要寫：平日、休息日、國定假日、事假、病假、生理假、颱風假、公傷假');
     if(!(h>0)||h*2!==Math.round(h*2)) return skip('加班',r.n,'申報時數要以 0.5 小時為單位'); if(a!==null&&(!(a>=0)||a>h||a*2!==Math.round(a*2))) return skip('加班',r.n,'核准時數要以 0.5 為單位，而且不能比申報多');
     if(S.ot.days.some(d=>d.date===date&&d.kind===k&&d.hrs===h)) return skip('加班',r.n,`${fmtFull(date)} 這筆已經有了（可能匯入過）`);
     plan.ot.push({id:newId(),date,kind:k,hrs:h,appr:a===h?null:a,note:String(r.get('備註')||'').trim().slice(0,40)}); });
