@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Casevora 小帳</title>
+<title>記帳幫手</title>
 <style>
 :root{
   --bg:#fff8f0; --card:#ffffff; --ink:#4a3b3b; --muted:#8b7878; --line:#f2ddd2;
@@ -27,9 +27,10 @@ header .sub{font-size:13px;color:#fff;opacity:.95;text-shadow:0 1px 0 rgba(233,1
 header .sub .lead{font-size:16px;font-weight:800;letter-spacing:1px;text-shadow:0 1px 0 rgba(200,80,65,.75),0 0 6px rgba(200,80,65,.45)}
 header .sub .note{display:inline-block;margin-top:6px;background:rgba(255,255,255,.92);color:var(--ink);text-shadow:none;font-weight:700;border-radius:999px;padding:2px 12px;box-shadow:0 1px 4px rgba(233,105,90,.2)}
 header.custom .sub{color:var(--ink);text-shadow:none}
-main{max-width:760px;margin:0 auto;padding:14px 16px 90px}
-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
-nav button{flex:1;border-radius:999px;padding:9px 6px;font-weight:700}
+main{max-width:760px;margin:0 auto;padding:6px 16px 90px}
+nav{display:flex;gap:8px;overflow-x:auto;margin:0;padding:4px 0 6px;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:none;border-radius:999px;padding:8px 14px;font-weight:700;white-space:nowrap}
 nav button.on{background:var(--brand);border-color:var(--brand);color:#fff}
 .card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:16px 18px;margin-bottom:14px;box-shadow:0 3px 10px rgba(233,105,90,.07)}
 .card h2{margin:0 0 10px;font-size:17px}
@@ -90,18 +91,14 @@ label.f{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;font-w
 /* 首頁儀表板：手機照原本順序一欄；電腦兩欄 */
 .dash{display:flex;flex-direction:column}
 .dash .col{display:contents}
+.dash>.kpis{margin-bottom:14px}
 .o1{order:1}.o2{order:2}.o3{order:3}.o4{order:4}.o5{order:5}.o6{order:6}.o7{order:7}.o8{order:8}
 .desk{display:none}
 .card h2 .sub{font-size:12px;font-weight:700;color:var(--muted);margin-left:6px}
 @media (min-width:900px){
-  header .t{max-width:1180px}
-  main{max-width:1180px;display:grid;grid-template-columns:200px minmax(0,1fr);gap:22px;align-items:start}
-  nav{grid-template-columns:1fr;position:sticky;top:14px;gap:6px;background:var(--card);border:2px solid var(--line);border-radius:20px;padding:10px;box-shadow:0 3px 10px rgba(233,105,90,.07)}
-  nav button{text-align:left;padding:11px 16px;border-radius:14px;border-color:transparent;font-size:15px}
-  nav button:not(.on):hover{background:var(--brand-soft)}
-  #app{margin-top:14px}
-  .dash{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:0 16px;align-items:start}
+  .dash{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:0 18px;align-items:start}
   .dash .col{display:block}
+  .dash>.kpis{grid-column:1/-1;order:0}
   .desk{display:block}
   .stat{padding:16px 8px}
   .stat .n{font-size:clamp(16px,1.6vw,22px)}
@@ -119,6 +116,74 @@ th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left}
 th{color:var(--muted)}
 .notice{border-radius:14px;padding:10px 14px;font-size:14px;margin:8px 0;background:#fff3e0;color:#7a3d06}
 details summary{cursor:pointer;font-weight:700}
+
+/* ===== 版面：左側滿版工具列（參考衛生追蹤），配色維持原本 ===== */
+#side{max-width:760px;margin:0 auto;padding:12px 16px 0}
+#side .brand,#side .ws,#side .foot{display:none}
+nav .cnt{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;line-height:18px;text-align:center}
+.phead{display:flex;align-items:flex-start;gap:12px;margin:8px 0 12px}
+.phead h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.5px}
+.phead .en{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:2.5px;color:var(--brand-d)}
+.phead .en:before{content:"";width:22px;height:2px;background:var(--brand)}
+.phead .desc{font-size:13px;color:var(--muted);margin-top:2px}
+.phead .badge{margin-left:auto;flex:none;background:var(--ok-soft);color:var(--ok);font-size:12px;font-weight:800;border-radius:999px;padding:3px 12px;white-space:nowrap}
+.nbar{display:none}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.kpi{position:relative;background:var(--card);border:2px solid var(--line);border-left:5px solid var(--c);border-radius:16px;padding:12px 14px;box-shadow:0 3px 10px rgba(233,105,90,.06);min-width:0}
+.kpi .t{font-size:13px;font-weight:700;color:var(--muted)}
+.kpi .v{font-size:clamp(18px,5vw,26px);font-weight:800;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:30px}
+.kpi .s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .i{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--cs)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.chips button{border-radius:999px;padding:4px 14px;font-weight:700}
+.chips button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.brow{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-areas:"n n n a" "s d f f" "x x x x";gap:6px 10px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--line)}
+.brow:last-child{border-bottom:0}
+.brow.bhead{display:none}
+.brow .cn{grid-area:n;min-width:0}.brow .ca{grid-area:a;font-weight:800;text-align:right;white-space:nowrap}.brow .cs{grid-area:s}.brow .cd{grid-area:d;white-space:nowrap}.brow .cf{grid-area:f;min-width:0}.brow .cx{grid-area:x;display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.brow .cn b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brow .cn .sb{font-size:12px;color:var(--muted)}
+.brow .cx button{padding:4px 12px;font-size:13px}
+button.dark{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
+button.dark:hover{background:#2f2424}
+.pill{display:inline-block;border-radius:999px;padding:1px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+.pill.done{background:var(--ok-soft);color:var(--ok)}.pill.late{background:var(--bad-soft);color:var(--bad)}.pill.wait{background:#eef0f6;color:#5b6478}.pill.today,.pill.moved{background:#fff3e0;color:#b45309}.pill.skip{background:#f1eeee;color:var(--muted)}
+.thumb{width:34px;height:34px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;vertical-align:middle;margin:0 4px 0 0;background:#fffaf6}
+.attbtn{padding:2px 10px!important;font-size:12px!important;border-style:dashed!important}
+.psgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.ps{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px;cursor:pointer;min-width:0}
+.ps.sel{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.ps .ims{display:flex;gap:6px;flex-wrap:wrap;min-height:96px;align-items:center;justify-content:center;background:#fffaf6;border:2px dashed var(--line);border-radius:12px;margin:8px 0;padding:6px;text-align:center}
+.ps .ims img{height:86px;max-width:100%;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
+.pastebox{border:2px dashed var(--brand);background:#fff7f4;border-radius:14px;padding:16px;text-align:center;margin:8px 0}
+.viewer img{max-width:100%;max-height:70vh;display:block;margin:0 auto;border-radius:10px}
+.prog{height:10px;border-radius:999px;background:var(--brand-soft);overflow:hidden;margin:8px 0 4px}
+.prog i{display:block;height:100%;background:var(--ok)}
+@media (min-width:900px){
+  header#hd{display:none}
+  #side{position:fixed;top:0;left:0;bottom:0;width:240px;max-width:none;margin:0;padding:0;background:var(--card);border-right:2px solid var(--line);display:flex;flex-direction:column;z-index:20;overflow-y:auto;box-shadow:4px 0 14px rgba(233,105,90,.06)}
+  #side .brand{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#ffb4a2,#ffd6a5);padding:22px 16px}
+  #side .brand svg{width:46px;height:58px;flex:none}
+  #side .bn{font-size:21px;font-weight:800;color:#fff;text-shadow:0 2px 0 rgba(233,105,90,.5);letter-spacing:1px}
+  #side .bs2{font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 0 rgba(200,80,65,.7)}
+  #side .ws{display:block;font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;padding:18px 20px 6px}
+  nav{flex-direction:column;overflow:visible;padding:0 12px;gap:4px;flex:1}
+  nav button{text-align:left;padding:11px 14px;border-radius:14px;border-color:transparent;font-size:15px;background:transparent}
+  nav button:not(.on):hover{background:var(--brand-soft)}
+  #side .foot{display:block;margin:12px;padding:12px 8px 4px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.7}
+  main{margin-left:240px;max-width:none;padding:26px 32px 60px}
+  .phead{margin:0 0 14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .phead h1{font-size:28px}
+  .nbar{display:flex;align-items:center;gap:12px;background:var(--bad-soft);border:2px solid #f3c2bd;border-left:5px solid var(--bad);border-radius:14px;padding:10px 14px;margin-bottom:16px;font-weight:700;color:#9b2c25;font-size:14px}
+  .nbar .lab{background:#a1302a;color:#fff;border-radius:6px;padding:1px 10px;font-size:13px;flex:none}
+  .nbar button{margin-left:auto;flex:none;font-size:13px;padding:4px 12px;color:#9b2c25;border-color:#efb9b5}
+  .kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .kpi{padding:14px 16px}
+  .brow{grid-template-columns:minmax(0,2fr) 100px 140px 64px minmax(0,1fr) auto;grid-template-areas:"n a s d f x";gap:6px 14px;padding:12px 6px}
+  .brow .ca{text-align:left}
+  .brow.bhead{display:grid;font-size:13px;font-weight:700;color:var(--muted);padding:6px}
+  .savebar{left:240px}
+}
 </style>
 </head>
 <body>
@@ -139,9 +204,16 @@ details summary{cursor:pointer;font-weight:700}
       <path d="M-6 -52 Q-4 -66 6 -64" fill="none" stroke="#6bbf8a" stroke-width="4" stroke-linecap="round"/><ellipse cx="12" cy="-66" rx="10" ry="6" fill="#8fd6a8"/>
     </g>
   </svg>
-  <div class="t"><div class="tt"><h1>Casevora 小帳</h1><div class="sub"><span class="lead">像聊天一樣記帳</span><br><span class="note">🔒 本機儲存 · 僅在此裝置此瀏覽器有效 · 可匯出備份</span></div></div></div>
+  <div class="t"><div class="tt"><h1>記帳幫手</h1><div class="sub"><span class="lead">像聊天一樣記帳</span><br><span class="note">🔒 本機儲存 · 僅在此裝置此瀏覽器有效 · 可匯出備份</span></div></div></div>
 </header>
-<main><nav id="nav"></nav><div id="app"></div></main>
+<aside id="side">
+  <div class="brand"><svg viewBox="-50 -70 100 135" aria-hidden="true"><path d="M-46 8 Q-46 -52 0 -52 Q46 -52 46 8 Q46 58 0 58 Q-46 58 -46 8Z" fill="#fff6dc" stroke="#f3b94a" stroke-width="4"/><circle cx="-16" cy="2" r="6" fill="#4a3b3b"/><circle cx="16" cy="2" r="6" fill="#4a3b3b"/><ellipse cx="-28" cy="18" rx="8" ry="5" fill="#ff9d94" opacity=".7"/><ellipse cx="28" cy="18" rx="8" ry="5" fill="#ff9d94" opacity=".7"/><path d="M-8 14 Q0 24 8 14" fill="none" stroke="#4a3b3b" stroke-width="3.5" stroke-linecap="round"/><path d="M-6 -52 Q-4 -66 6 -64" fill="none" stroke="#6bbf8a" stroke-width="5" stroke-linecap="round"/><ellipse cx="12" cy="-66" rx="10" ry="6" fill="#8fd6a8"/></svg>
+    <div><div class="bn">記帳幫手</div><div class="bs2">像聊天一樣記帳</div></div></div>
+  <div class="ws">工作台 WORKSPACE</div>
+  <nav id="nav"></nav>
+  <div class="foot"><b>記帳幫手</b><br>個人帳本・本機資料模式<br>🔒 僅在此裝置此瀏覽器有效</div>
+</aside>
+<main><div id="phead"></div><div id="app"></div></main>
 <script>
 const KEY_R='casevoraXiaozhang_v1', KEY_S='casevoraXiaozhang_v1_settings';
 const EXP=['餐飲','交通','生活用品','房租','娛樂','醫療','帳單','其他'];
@@ -170,7 +242,7 @@ function download(content,name,type){const a=document.createElement('a');a.href=
 
 /* ---------- 資料 ---------- */
 let R=loadR(), S=loadS();
-function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{}};}
+function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{}};}
 function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stringify(DEF_ACCTS));
   s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0,dueDay:dayOk(a.dueDay),atype:ACCT_TYPES[a.atype]?a.atype:defType(a.id)})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0,dueDay:0});
   if(!Array.isArray(s.debts)) s.debts=[];
@@ -179,6 +251,10 @@ function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stri
   if(!Array.isArray(s.recurring)) s.recurring=[];
   s.recurring=s.recurring.filter(x=>x&&/^[\w-]{1,40}$/.test(String(x.id))&&String(x.name||'').trim()&&Number(x.amount)>0&&/^\d{4}-\d{2}$/.test(String(x.start||''))).map(x=>({id:String(x.id),name:String(x.name).trim().slice(0,20),kind:['income','expense','debt'].includes(x.kind)?x.kind:'expense',amount:Math.round(Number(x.amount)*100)/100,day:dayOk(x.day)||1,start:x.start,end:/^\d{4}-\d{2}$/.test(String(x.end||''))?x.end:'',acct:/^[\w-]{1,40}$/.test(String(x.acct||''))?String(x.acct):'',debt:/^[\w-]{1,40}$/.test(String(x.debt||''))?String(x.debt):''}));
   if(!s.recurDone||typeof s.recurDone!=='object'||Array.isArray(s.recurDone)) s.recurDone={};
+  const isObj=o=>o&&typeof o==='object'&&!Array.isArray(o), KEYRE=/^[\w-]{1,40}\|\d{4}-\d{2}$/, YMRE=/^\d{4}-\d{2}$/, phList=a=>Array.isArray(a)?a.filter(i=>/^[\w-]{1,60}$/.test(String(i))).map(String).slice(0,20):[];
+  const mv={}; if(isObj(s.recurMove)) Object.entries(s.recurMove).forEach(([k,v])=>{ if(KEYRE.test(k)&&YMRE.test(String(v))) mv[k]=String(v); }); s.recurMove=mv;
+  const at={}; if(isObj(s.att)) Object.entries(s.att).forEach(([k,v])=>{ const l=phList(v); if(KEYRE.test(k)&&l.length) at[k]=l; }); s.att=at;
+  const ps={}; if(isObj(s.payslips)) Object.entries(s.payslips).forEach(([k,v])=>{ if(!YMRE.test(k)||!isObj(v)) return; const l=phList(v.ph), note=String(v.note||'').slice(0,80); if(l.length||note) ps[k]={ph:l,note}; }); s.payslips=ps;
   if(!Array.isArray(s.goals)) s.goals=[];
   s.goals=s.goals.filter(g=>g&&/^[\w-]{1,40}$/.test(String(g.id))&&String(g.name||'').trim()).map(g=>({id:String(g.id),name:String(g.name).trim().slice(0,20),target:Number(g.target)>0?Number(g.target):0,
     mode:g.mode==='acct'?'acct':'manual',acct:/^[\w-]{1,40}$/.test(String(g.acct||''))?String(g.acct):'',deadline:/^\d{4}-\d{2}-\d{2}$/.test(String(g.deadline||''))?g.deadline:'',done:g.done===true,doneAt:/^\d{4}-\d{2}-\d{2}$/.test(String(g.doneAt||''))?g.doneAt:''}));
@@ -453,10 +529,18 @@ function answerAsk(kind){
 /* ---------- 版面 ---------- */
 let page='home', back='home', mg={view:'mrep',day:today(),month:today().slice(0,7),year:today().slice(0,4),cat:''};
 let cur=null, dirty=false;
-function nav(){
-  $('#nav').innerHTML=[['home','🏠 首頁'],['accounts','👛 帳戶'],['debts','💳 負債'],['savings','🎯 儲蓄'],['manage','📊 帳務管理'],['settings','⚙️ 設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}</button>`).join('');
+const PHEAD={home:['記帳總覽','LEDGER DASHBOARD','今天花了多少、這個月還要繳什麼，一眼看清楚。'],bills:['繳費狀態','BILLS & PAYMENTS','每一筆該繳的錢：繳了沒、哪天到期、有沒有逾期。'],
+  payslip:['薪資條','MONTHLY PAYSLIPS','每個月的薪資條截圖放在這裡：點一下月份，再按 Ctrl+V 就能貼上。'],accounts:['帳戶','ACCOUNTS','每個帳戶現在有多少錢。'],debts:['負債','DEBTS & LOANS','貸款、分期和借貸：還剩多少、每月要繳多少。'],
+  savings:['儲蓄','SAVING GOALS','存錢目標和進度。'],manage:['帳務管理','REPORTS','月報表、年報表和搜尋。'],settings:['設定','SETTINGS','固定收支、匯入、備份和資料保存方式。'],trash:['最近刪除','RECENTLY DELETED','刪除的紀錄保留 30 天。'],edit:['修改紀錄','EDIT RECORD','改完記得按「儲存」。']};
+function nav(hk){
+  const late=billOpen().filter(b=>b.st==='late').length;
+  $('#nav').innerHTML=[['home','🏠 首頁'],['bills','🧾 繳費狀態'],['payslip','📄 薪資條'],['accounts','👛 帳戶'],['debts','💳 負債'],['savings','🎯 儲蓄'],['manage','📊 帳務管理'],['settings','⚙️ 設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}${k==='bills'&&late?`<span class="cnt" title="逾期 ${late} 筆">${late}</span>`:''}</button>`).join('');
+  const h=PHEAD[hk||page]||PHEAD.home;
+  $('#phead').innerHTML=`<div class="phead"><div style="min-width:0"><h1>${h[0]}</h1><div class="en">${h[1]}</div><div class="desc">${h[2]}</div></div><span class="badge">● 本機資料模式</span></div>
+    <div class="nbar"><span class="lab">重要</span><span>本機儲存 · 僅在此裝置此瀏覽器有效 · 請勿用無痕視窗 · 定期下載備份</span><button onclick="showHelp()">查看使用說明</button></div>`;
 }
-function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function showHelp(){ go('settings'); const d=$('#dataHelp'); if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); } }
+function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,bills:renderBills,payslip:renderPayslip,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function applyBg(){
   const b=S.bg||{}; document.body.classList.remove('bgpage','bgboth'); const h=$('#hd'); h.classList.remove('custom'); h.style.backgroundImage='';
   if(!b.url) return;
@@ -480,11 +564,23 @@ function recRow(r){
 function monthTotals(ym){
   let i=0,o=0; live().filter(r=>r.date.startsWith(ym)).forEach(r=>{ if(r.type==='income') i+=r.amount; else if(isExp(r)) o+=r.amount; }); return {i,o,b:i-o};
 }
+function kpi(t,v,sub,ic,c,cs,full,cls){ return `<div class="kpi ${cls||''}" style="--c:${c};--cs:${cs}"><div class="t">${t}</div><div class="v" title="${esc(full||'')}">${v}</div><div class="s">${sub}</div><div class="i">${ic}</div></div>`; }
+function billHead(){ return `<div class="brow bhead"><div class="cn">項目名稱</div><div class="ca">金額</div><div class="cs">狀態</div><div class="cd">期限</div><div class="cf">附件</div><div class="cx"></div></div>`; }
 function renderHome(){
   page='home'; nav();
   const ym=today().slice(0,7), t=monthTotals(ym), pt=monthTotals(prevYM(ym)), nw=netWorth(), n=S.recentN||10, recent=sortRecs(live()).slice(0,n);
   const mc=catTotals(live().filter(r=>r.date.startsWith(ym)));
-  $('#app').innerHTML=`<div class="dash"><div class="col">
+  const open=billOpen(), late=open.filter(b=>b.st==='late'), openSum=open.reduce((a,b)=>a+b.x.amount,0), rowsM=billRows(ym);
+  const cntM=k=>rowsM.filter(b=>b.st===k).length, needM=rowsM.filter(b=>b.st!=='moved'&&b.st!=='skip').length, doneM=cntM('done'), pct=needM?Math.round(doneM/needM*100):0;
+  const lateOld=late.slice().sort((a,b)=>a.due.localeCompare(b.due)).slice(0,4);
+  $('#app').innerHTML=`<div class="dash">
+   <div class="kpis o5">
+    ${kpi('本月收入',bmS(t.i),`上月 ${bmS(pt.i)}`,'💰','var(--ok)','var(--ok-soft)',money(t.i))}
+    ${kpi('本月支出',bmS(t.o),`上月 ${bmS(pt.o)}`,'💸','var(--bad)','var(--bad-soft)',money(t.o))}
+    ${kpi('還沒繳',bmS(openSum),`${open.length} 筆・逾期 ${late.length} 筆`,'🧾','#e0a100','#fff3d6',money(openSum))}
+    ${kpi('淨資產',bmS(nw.net),`總資產 ${bmS(nw.assets)}・總負債 ${bmS(nw.liab)}`,'📈','var(--info)','#efe9fb',bm(nw.net))}
+   </div>
+   <div class="col">
     <div class="card o1"><h2>✏️ 快速記帳</h2>
       <div class="quick"><input type="text" id="qin" placeholder="例如：吃飯100" onkeydown="if(event.key==='Enter')quickAdd()"><button class="primary" onclick="quickAdd()">記</button></div>
       <div class="paysel"><label class="f" for="paySel" style="margin:0">付款方式</label><select id="paySel" onchange="this.dataset.t='1'">${acctOpts('cash')}</select></div>
@@ -493,26 +589,22 @@ function renderHome(){
     <div class="o3">${S.acctInitDone?'':`<div class="card ask"><div style="font-weight:700">💡 先告訴小帳：每個帳戶現在有多少錢？</div><div class="small muted" style="margin:4px 0 10px">輸入起始餘額後，小帳才能幫你算出每個帳戶還剩多少。</div>
       <div class="row"><button class="primary" onclick="go('accounts')">去輸入</button><button onclick="S.acctInitDone=true;persist();renderHome()">先不用</button></div></div>`}</div>
     <div id="askBox" class="o4"></div>
+    <div class="card o6"><div class="row" style="margin-bottom:4px"><h2 style="margin:0">🧾 待處理繳費（${open.length}）</h2><span class="spacer"></span><a href="#" onclick="go('bills');return false" style="color:var(--brand-d);font-weight:700">看全部 →</a></div>
+      ${open.length?billHead()+open.slice(0,8).map(b=>billRowHTML(b,true)).join('')+(open.length>8?`<div class="muted small" style="margin-top:6px">還有 ${open.length-8} 筆，請到「繳費狀態」查看。</div>`:''):'<div class="empty">目前沒有要繳的 ✦</div>'}</div>
     <div class="card o7"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">🧾 最近記帳紀錄</h2><span class="spacer"></span><button onclick="mg.view='find';go('manage')" style="padding:6px 12px">🔍 搜尋</button>
       <select style="width:auto" onchange="S.recentN=+this.value;persist();renderHome()">${[10,20,30].map(x=>`<option value="${x}" ${n===x?'selected':''}>${x} 筆</option>`).join('')}</select></div>
       ${recent.length?recent.map(recRow).join(''):'<div class="empty">還沒有紀錄喔，在上面打一筆試試看 ✦</div>'}
       ${live().length>n?'<div class="muted small" style="margin-top:6px">更早的紀錄請到「帳務管理」選日期或月份查看。</div>':''}</div>
    </div><div class="col">
-    <div class="card o5"><h2>💰 資金總覽</h2><div class="stats">
-      <div class="stat in"><div class="n" title="${bm(nw.assets)}">${bmS(nw.assets)}</div><div class="l">總資產</div></div>
-      <div class="stat out"><div class="n" title="${money(nw.liab)}">${bmS(nw.liab)}</div><div class="l">總負債</div></div>
-      <div class="stat"><div class="n" title="${bm(nw.net)}" style="color:${nw.net<0?'var(--bad)':'var(--ink)'}">${bmS(nw.net)}</div><div class="l">淨資產</div></div></div>
-      <div class="muted small" style="margin-top:6px">淨資產 = 總資產 － 總負債。明細請看「帳戶」頁的資產負債表。</div></div>
-    <div class="card o6"><h2>🌸 ${+ym.slice(5)} 月總覽</h2><div class="stats">
-      <div class="stat in"><div class="n" title="${money(t.i)}">${bmS(t.i)}</div><div class="l">本月收入</div>${cmpLine(t.i,pt.i,true)}</div>
-      <div class="stat out"><div class="n" title="${money(t.o)}">${bmS(t.o)}</div><div class="l">本月支出</div>${cmpLine(t.o,pt.o,false)}</div>
-      <div class="stat"><div class="n" title="${bm(t.b)}" style="color:${t.b<0?'var(--bad)':'var(--ink)'}">${bmS(t.b)}</div><div class="l">本月結餘</div>${cmpLine(t.b,pt.b,true)}</div></div></div>
+    <div class="card o8"><div class="row"><h2 style="margin:0">處理狀態</h2><span class="spacer"></span><span class="small muted">${ymLabel(ym)}</span></div>
+      <div class="prog"><i style="width:${pct}%"></i></div><div class="small muted">本月繳費進度 ${doneM} / ${needM}（${pct}%）</div>
+      <div style="margin-top:8px">${[['done','已繳'],['wait','待繳'],['today','今天到期'],['late','逾期'],['moved','已延後']].map(([k,nm])=>`<div class="bs"><span><span class="pill ${k}">${nm}</span></span><b>${cntM(k)} 筆</b></div>`).join('')}</div></div>
+    <div class="card o8"><div class="row"><h2 style="margin:0">需要注意</h2><span class="spacer"></span><span class="small muted">逾期最久</span></div>
+      ${lateOld.length?lateOld.map(b=>`<div class="bs"><span>${esc(b.x.name)} <span class="small muted">${fmtMD(b.due)}</span></span><b style="color:var(--bad)">${money(b.x.amount)}</b></div>`).join(''):'<div class="small muted" style="margin-top:6px">目前沒有逾期的繳費 ✦</div>'}</div>
     <div class="card o8 desk"><h2>🍩 本月支出分類<span class="sub">點這裡看完整月報表 →</span></h2><div onclick="mg.view='mrep';mg.month=today().slice(0,7);go('manage')" style="cursor:pointer">${donut(mc)}</div></div>
     <div class="card o8 desk"><h2>📈 淨資產變化</h2>${nwChart(6)}</div>
    </div></div>`;
 }
-
-/* ---------- 帳務管理 ---------- */
 function monthsWithData(){return [...new Set([today().slice(0,7),...live().map(r=>r.date.slice(0,7))])].sort().reverse();}
 /* ---------- 統計報表（全部依實際紀錄即時計算） ---------- */
 const CAT_COLOR={餐飲:'#2a78d6',交通:'#eb6834',生活用品:'#1baf7a',房租:'#eda100',娛樂:'#e87ba4',醫療:'#008300',帳單:'#6250d6',還款:'#e34948'};
@@ -661,7 +753,7 @@ function renderManage(){
 function openEdit(id){const r=R.find(x=>x.id===id); if(!r||r.deleted) return; back=page; cur=JSON.parse(JSON.stringify(r)); cur._orig={category:r.category,who:r.who||''}; cur._remember=true; dirty=false; renderEdit(); window.scrollTo(0,0);}
 function renderEdit(){
   const r=cur, cats=r.type==='income'?INC:EXP;
-  $('#nav').innerHTML='';
+  nav('edit');
   const head=`<div class="row" style="margin-bottom:12px"><button onclick="leaveEdit()">← 返回</button><h2 style="margin:0 8px;font-size:18px">修改紀錄</h2><span class="spacer"></span><button class="danger" onclick="delRecord()">刪除</button></div>`;
   const foot=`<div class="savebar"><div class="in"><button class="primary" onclick="saveEdit()">儲存</button><button onclick="leaveEdit()">返回</button><span id="dm"></span></div></div>`;
   const dateF=`<div><label class="f">日期</label><input type="date" value="${esc(r.date)}" oninput="setEdit('date',this.value)"></div>`;
@@ -715,7 +807,7 @@ function setEdit(f,v){
   const dm=$('#dm'); if(dm) dm.innerHTML='<span class="dirty">● 有尚未儲存的修改</span>';
 }
 function leaveEdit(){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; go2(back); }
-function go2(k){ page=k; ({home:renderHome,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function go2(k){ page=k; ({home:renderHome,bills:renderBills,payslip:renderPayslip,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function saveEdit(){
   const r=cur, amt=Number(r.amount);
   if(r.type==='save'){
@@ -1049,13 +1141,13 @@ function dueDate(ym,day){const [y,m]=ym.split('-').map(Number);return `${ym}-${p
 /* 到期（日期 ≤ 今天）但還沒按「記好」或「略過」的項目，含之前沒處理的月份 */
 function recurDue(){
   const out=[], t=today(), cur=t.slice(0,7);
-  S.recurring.forEach(x=>{ let ym=x.start, guard=0; while(ym<=cur&&guard++<240){ if(x.end&&ym>x.end) break; const d=dueDate(ym,x.day);
+  S.recurring.forEach(x=>{ if(x.kind!=='income') return; let ym=x.start, guard=0; while(ym<=cur&&guard++<240){ if(x.end&&ym>x.end) break; const d=dueDate(ym,x.day);
     if(d<=t&&!S.recurDone[x.id+'|'+ym]) out.push({x,ym,date:d}); ym=ymAdd(ym,1); } });
   return out.sort((a,b)=>a.date.localeCompare(b.date));
 }
 function recurCard(){
   const due=recurDue(); if(!due.length) return '';
-  return `<div class="card" style="border-color:#8a6bd1;background:#f6f2ff"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">📅 固定收支到期（${due.length} 筆）</h2><span class="spacer"></span><button class="primary" onclick="recurDoAll()">全部記好</button></div>
+  return `<div class="card" style="border-color:#8a6bd1;background:#f6f2ff"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">💰 收入到期（${due.length} 筆）</h2><span class="spacer"></span><button class="primary" onclick="recurDoAll()">全部記好</button></div>
     ${due.map((d,i)=>{const x=d.x;return `<div class="acc" style="flex-wrap:nowrap"><div class="mid"><div style="font-weight:700">${esc(x.name)} <span class="tag">${RC_KIND[x.kind].slice(2).trim()}</span></div>
       <div class="small muted">${fmtFull(d.date)}・${esc(acctName(x.acct))}${x.kind==='debt'&&debtById(x.debt)?'・'+esc(debtById(x.debt).name):''}</div></div>
       <input type="number" inputmode="decimal" id="rc${i}" value="${x.amount}" style="width:96px;padding:6px 8px" aria-label="金額">
@@ -1116,8 +1208,134 @@ function editRecur(id){ const x=recById(id); if(!x) return; const m=document.cre
   document.body.appendChild(m); m.querySelector('#erNo').onclick=()=>m.remove();
   m.querySelector('#erOk').onclick=()=>{ const f=readRecurForm('er'); if(!f) return; const o=JSON.stringify(S); Object.assign(x,f); if(!persist()){S=JSON.parse(o);return;} m.remove(); renderSettings(); flash('已儲存 ✦'); }; }
 function delRecur(id){ const x=recById(id); if(!x) return; if(!confirm(`確定刪除固定收支「${x.name}」嗎？\n已經記好的紀錄會保留，只是之後不再提醒。`)) return;
-  const o=JSON.stringify(S); S.recurring=S.recurring.filter(y=>y.id!==id); Object.keys(S.recurDone).forEach(k=>{ if(k.startsWith(id+'|')) delete S.recurDone[k]; });
-  if(!persist()){S=JSON.parse(o);return;} renderSettings(); flash('已刪除'); }
+  const o=JSON.stringify(S), gone=[]; S.recurring=S.recurring.filter(y=>y.id!==id); ['recurDone','recurMove','att'].forEach(f=>Object.keys(S[f]).forEach(k=>{ if(k.startsWith(id+'|')){ if(f==='att') gone.push(...S.att[k]); delete S[f][k]; } }));
+  if(!persist()){S=JSON.parse(o);return;} phDel(gone); renderSettings(); flash('已刪除'); }
+
+/* ---------- 圖片：存在 IndexedDB（瀏覽器的大容量空間，一樣只在這台電腦、這個瀏覽器） ---------- */
+const PH_DB='casevoraLedgerPhotos', BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; let phDBP=null; const PH_CACHE={};
+const PH_FAIL='圖片存不進去。可能是無痕視窗、瀏覽器封鎖了網站資料，或電腦空間不足。';
+function phDB(){ if(phDBP) return phDBP; phDBP=new Promise((ok,no)=>{ try{ const rq=indexedDB.open(PH_DB,1); rq.onupgradeneeded=()=>rq.result.createObjectStore('p'); rq.onsuccess=()=>ok(rq.result); rq.onerror=()=>no(rq.error); }catch(e){ no(e); } }); phDBP.catch(()=>{ phDBP=null; }); return phDBP; }
+function phTx(mode,fn){ return phDB().then(db=>new Promise((ok,no)=>{ const tx=db.transaction('p',mode), rq=fn(tx.objectStore('p')); tx.oncomplete=()=>ok(rq?rq.result:undefined); tx.onerror=tx.onabort=()=>no(tx.error||new Error('tx')); })); }
+async function phPut(url,id){ id=id||('ph'+newId()); await phTx('readwrite',st=>st.put(url,id)); PH_CACHE[id]=url; return id; }
+async function phGet(id){ if(PH_CACHE[id]) return PH_CACHE[id]; const v=await phTx('readonly',st=>st.get(id)); if(v) PH_CACHE[id]=v; return v; }
+async function phDel(ids){ for(const id of ids){ delete PH_CACHE[id]; try{ await phTx('readwrite',st=>st.delete(id)); }catch(e){} } }
+function allPhIds(){ const ids=new Set(); Object.values(S.att).forEach(l=>l.forEach(i=>ids.add(i))); Object.values(S.payslips).forEach(p=>p.ph.forEach(i=>ids.add(i))); return [...ids]; }
+function fillPhotos(){ document.querySelectorAll('img[data-ph]:not([data-ok])').forEach(im=>{ im.dataset.ok='1'; const id=im.dataset.ph; phGet(id).then(u=>{ if(u) im.src=u; else im.alt='圖片不見了'; }).catch(()=>{ im.alt='讀不到圖片'; }); }); }
+new MutationObserver(()=>fillPhotos()).observe(document.body,{childList:true,subtree:true});
+function phImg(id,cls,click,style){ return `<img class="${cls||''}" src="${BLANK}" data-ph="${esc(id)}" alt="圖片" ${style?`style="${style}"`:''} onclick="event.stopPropagation();${click}">`; }
+function imgToData(file){ return new Promise((ok,no)=>{ const fr=new FileReader(); fr.onerror=()=>no(fr.error); fr.onload=()=>{ const im=new Image(); im.onerror=()=>no(new Error('img'));
+  im.onload=()=>{ const M=2000, k=Math.min(1,M/Math.max(im.width,im.height)), c=document.createElement('canvas'); c.width=Math.max(1,Math.round(im.width*k)); c.height=Math.max(1,Math.round(im.height*k));
+    const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(im,0,0,c.width,c.height); ok(c.toDataURL('image/jpeg',.85)); }; im.src=fr.result; }; fr.readAsDataURL(file); }); }
+async function saveImages(files){ const ids=[]; for(const f of files){ ids.push(await phPut(await imgToData(f))); } try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){} return ids; }
+let PASTE=null;
+function clipImages(e){ const out=[], it=e.clipboardData&&e.clipboardData.items; if(it) for(const x of it){ if(x.kind==='file'&&/^image\//.test(x.type)){ const f=x.getAsFile(); if(f) out.push(f); } } return out; }
+document.addEventListener('paste',e=>{ const fs=clipImages(e); if(!fs.length) return; const fn=PASTE||(page==='payslip'?(f=>psAdd(PS_SEL,f)):null);
+  if(!fn){ flash('要貼截圖：請到「薪資條」點月份，或在繳費狀態按「＋ 截圖」'); return; } e.preventDefault(); fn(fs); });
+function pickFiles(cb){ const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.multiple=true; i.onchange=()=>{ const fs=[...i.files].filter(f=>/^image\//.test(f.type)); if(fs.length) cb(fs); }; i.click(); }
+function viewImg(id,ctx,key){ const m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="box viewer" style="max-width:900px;max-height:94vh;overflow:auto">${phImg(id,'','')}<div class="row" style="margin-top:10px"><button class="danger" id="vDel">刪除這張</button><span class="spacer"></span><button id="vNo">關閉</button></div></div>`;
+  document.body.appendChild(m); m.onclick=e=>{ if(e.target===m) m.remove(); }; m.querySelector('#vNo').onclick=()=>m.remove();
+  m.querySelector('#vDel').onclick=()=>{ if(!confirm('確定要刪除這張圖片嗎？刪除後無法復原。')) return; m.remove(); delPhoto(ctx,key,id); }; }
+async function delPhoto(ctx,key,id){ const o=JSON.stringify(S);
+  if(ctx==='att'){ S.att[key]=(S.att[key]||[]).filter(x=>x!==id); if(!S.att[key].length) delete S.att[key]; }
+  else { const p=S.payslips[key]; if(p){ p.ph=p.ph.filter(x=>x!==id); if(!p.ph.length&&!p.note) delete S.payslips[key]; } }
+  if(!persist()){ S=JSON.parse(o); return; } await phDel([id]); rerender(); flash('已刪除圖片'); }
+function rerender(){ attRender(); if(page==='bills') renderBills(); else if(page==='payslip') renderPayslip(); else if(page==='home') renderHome(); }
+
+/* ---------- 繳費狀態 ---------- */
+const ST_TXT={done:'已繳',skip:'略過',late:'逾期',today:'今天到期',wait:'待繳',moved:'已延後'}, OPEN_ST=['late','today','wait'];
+function ymLabel(ym){ return `${ym.slice(0,4)}年${+ym.slice(5)}月`; }
+function ymShort(ym){ return `${+ym.slice(5)}月`; }
+function billStatus(k,due){ const d=S.recurDone[k]; if(d==='done') return 'done'; if(d==='skip') return 'skip'; const t=today(); return due<t?'late':due===t?'today':'wait'; }
+function billRows(M){ const out=[];
+  S.recurring.forEach(x=>{ if(x.kind==='income'||!(x.start<=M&&(!x.end||M<=x.end))) return; const k=x.id+'|'+M, mv=S.recurMove[k], due=dueDate(M,x.day);
+    out.push(mv&&mv!==M?{x,k,orig:M,show:M,due,st:'moved',to:mv}:{x,k,orig:M,show:M,due,st:billStatus(k,due)}); });
+  Object.entries(S.recurMove).forEach(([k,to])=>{ if(to!==M) return; const [id,orig]=k.split('|'); if(orig===M) return; const x=recById(id); if(!x||x.kind==='income') return;
+    const due=dueDate(M,x.day); out.push({x,k,orig,show:M,due,st:billStatus(k,due),from:orig}); });
+  return out.sort((a,b)=>a.due.localeCompare(b.due)||a.x.name.localeCompare(b.x.name)); }
+function billOpen(){ const cur=today().slice(0,7); let first=cur; S.recurring.forEach(x=>{ if(x.kind!=='income'&&x.start<first) first=x.start; });
+  const out=[]; let ym=first, g=0; while(ym<=cur&&g++<240){ billRows(ym).forEach(b=>{ if(OPEN_ST.includes(b.st)) out.push(b); }); ym=ymAdd(ym,1); }
+  return out.sort((a,b)=>a.due.localeCompare(b.due)); }
+function billByKey(k){ const [id,orig]=String(k).split('|'), x=recById(id); if(!x||!orig) return null; const show=S.recurMove[k]||orig; return {x,k,orig,show,due:dueDate(show,x.day)}; }
+function billRec(b){ return R.find(r=>!r.deleted&&r.recur===b.x.id&&r.recurMonth===b.orig); }
+function billRowHTML(b,compact){ const x=b.x, kq=esc(b.k), freq=x.end&&x.end===x.start?'單次':'每月', dn=x.kind==='debt'&&debtById(x.debt)?debtById(x.debt).name:'';
+  const sub=[x.kind==='debt'?'還款':'支出',freq,b.from?`${ymShort(b.from)}延後過來`:'',compact&&b.show!==today().slice(0,7)?ymLabel(b.show):'',dn&&dn!==x.name?dn:''].filter(Boolean).join('・');
+  const rec=b.st==='done'?billRec(b):null, amt=rec?rec.amount:x.amount;
+  const pill=b.st==='moved'?`<span class="pill moved">已延後 → ${ymShort(b.to)}${S.recurDone[b.k]==='done'?'（已繳）':''}</span>`:`<span class="pill ${b.st}">${ST_TXT[b.st]}</span>`;
+  const att=S.att[b.k]||[];
+  const attH=att.map(id=>phImg(id,'thumb',`viewImg('${esc(id)}','att','${kq}')`)).join('')+`<button class="attbtn" onclick="billAttach('${kq}')" title="貼上或選擇繳費截圖">${att.length?'＋':'＋ 截圖'}</button>`;
+  const acts=b.st==='done'||b.st==='skip'?`<button onclick="billUndo('${kq}')">改回未繳</button>`:b.st==='moved'?(S.recurDone[b.k]==='done'?'':`<button onclick="billUnmove('${kq}')">取消延後</button>`)
+    :`<button class="dark" onclick="billDone('${kq}')">完成</button><button class="danger" onclick="billMove('${kq}')">延後</button>`;
+  return `<div class="brow"><div class="cn"><b>${esc(x.name)}</b><div class="sb">${sub}</div></div><div class="ca">${money(amt)}</div><div class="cs">${pill}</div><div class="cd">${fmtMD(b.due)}</div><div class="cf">${attH}</div><div class="cx">${acts}</div></div>`; }
+let BM=today().slice(0,7), BF='open';
+function renderBills(){ page='bills'; nav(); const rows=billRows(BM), cur=today().slice(0,7);
+  const isOpen=b=>OPEN_ST.includes(b.st), F={open:isOpen,late:b=>b.st==='late',done:b=>b.st==='done',moved:b=>b.st==='moved',all:()=>true};
+  const c={}; Object.keys(F).forEach(k=>c[k]=rows.filter(F[k]).length); const list=rows.filter(F[BF]);
+  const sumOpen=rows.filter(isOpen).reduce((a,b)=>a+b.x.amount,0), sumDone=rows.filter(b=>b.st==='done').reduce((a,b)=>{const r=billRec(b);return a+(r?r.amount:b.x.amount);},0);
+  const prevLate=BM===cur?billOpen().filter(b=>b.show<cur):[];
+  $('#app').innerHTML=`<div class="kpis">
+     ${kpi('本月應繳',bmS(sumOpen+sumDone),`${c.all-c.moved} 筆（不含延後）`,'🧾','var(--brand)','var(--brand-soft)',money(sumOpen+sumDone))}
+     ${kpi('已繳',bmS(sumDone),`${c.done} 筆`,'✅','var(--ok)','var(--ok-soft)',money(sumDone))}
+     ${kpi('還沒繳',bmS(sumOpen),`${c.open} 筆`,'⏳','#e0a100','#fff3d6',money(sumOpen))}
+     ${kpi('逾期',`${c.late} 筆`,c.late?'過了期限還沒按「完成」':'沒有逾期 ✦','⏰','var(--bad)','var(--bad-soft)')}</div>
+   <div class="card"><div class="row" style="margin-bottom:2px"><button onclick="BM=ymAdd(BM,-1);renderBills()" aria-label="上個月">◀</button><h2 style="margin:0 4px">${ymLabel(BM)}</h2><button onclick="BM=ymAdd(BM,1);renderBills()" aria-label="下個月">▶</button>
+       ${BM!==cur?`<button onclick="BM=today().slice(0,7);renderBills()">回到本月</button>`:''}<span class="spacer"></span><span class="small muted">還要繳 <b style="color:var(--bad)">${money(sumOpen)}</b></span></div>
+     <div class="chips">${[['open','未繳'],['late','逾期'],['done','已繳'],['moved','已延後'],['all','全部']].map(([k,nm])=>`<button class="${BF===k?'on':''}" onclick="BF='${k}';renderBills()">${nm}（${c[k]}）</button>`).join('')}</div>
+     ${prevLate.length?`<div class="notice small">⚠️ 之前的月份還有 ${prevLate.length} 筆沒繳：${prevLate.map(b=>`${esc(b.x.name)}（${ymShort(b.show)}）`).join('、')}　<a href="#" onclick="BM='${prevLate[0].show}';BF='open';renderBills();return false">去看看</a></div>`:''}
+     ${list.length?billHead()+list.map(b=>billRowHTML(b)).join(''):`<div class="empty">${BF==='open'?(c.all?'這個月都處理好了 ✦':'這個月沒有要繳的項目'):'沒有符合的項目'}</div>`}</div>
+   <div class="muted small" style="margin:0 4px 14px">按「完成」會記一筆帳（還款會自動減少負債餘額）；按「延後」會把這筆挪到下個月，下個月的清單會多出這一筆。按錯了可以「改回未繳」或「取消延後」。要新增或修改項目，請到「設定 → 每月固定收支」。</div>`; }
+function billDone(k){ const b=billByKey(k); if(!b) return; const x=b.x, d=x.kind==='debt'?debtById(x.debt):null, m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="box"><h2 style="margin:0 0 4px;font-size:17px">✅ ${esc(x.name)} 繳好了</h2><div class="small muted" style="margin-bottom:10px">${ymLabel(b.orig)}${b.show!==b.orig?`（延後到 ${ymShort(b.show)}）`:''}・期限 ${fmtFull(b.due)}</div>
+    <div class="grid" style="grid-template-columns:1fr 1fr"><div><label class="f">實際繳了多少</label><input type="number" id="bdAmt" inputmode="decimal" value="${x.amount}"></div><div><label class="f">哪一天繳的</label><input type="date" id="bdDate" value="${today()}"></div></div>
+    <div style="margin-top:8px"><label class="f">從哪個帳戶</label><select id="bdAcct">${acctOpts(okAcct(x.acct))}</select></div>
+    ${d?`<div class="small muted" style="margin-top:6px">會記成「還${esc(d.name)}」，負債餘額會自動減少。</div>`:''}
+    <div class="row" style="margin-top:12px"><button class="primary" id="bdOk">確定，記好這筆</button><button id="bdNo">取消</button></div></div>`;
+  document.body.appendChild(m); m.querySelector('#bdNo').onclick=()=>m.remove();
+  m.querySelector('#bdOk').onclick=()=>{ const amt=Math.round(Number($('#bdAmt').value)*100)/100, date=$('#bdDate').value;
+    if(!(amt>0)){ alert('金額要大於 0'); return; } if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ alert('請選擇繳費日期'); return; }
+    const r=recurRecord(x,b.orig,date,amt); r.acct=okAcct($('#bdAcct').value); const oD=JSON.stringify(S.recurDone); R.push(r); S.recurDone[k]='done';
+    if(!persist()){ R.pop(); S.recurDone=JSON.parse(oD); return; } m.remove(); rerender(); flash(`已記好 ✦ ${x.name} ${money(amt)}`); }; }
+function billMove(k){ const b=billByKey(k); if(!b) return; const to=ymAdd(b.show,1);
+  if(!confirm(`要把「${b.x.name}」（${ymLabel(b.orig)}）延後到 ${ymLabel(to)} 再繳嗎？\n${ymShort(to)}的繳費清單會多出這一筆，期限是 ${fmtFull(dueDate(to,b.x.day))}。`)) return;
+  const o=JSON.stringify(S.recurMove); S.recurMove[k]=to; if(!persist()){ S.recurMove=JSON.parse(o); return; } rerender(); flash(`已延後到 ${ymShort(to)}`); }
+function billUnmove(k){ const b=billByKey(k); if(!b) return; if(!confirm(`要取消延後，把「${b.x.name}」改回 ${ymLabel(b.orig)} 繳嗎？`)) return;
+  const o=JSON.stringify(S.recurMove); delete S.recurMove[k]; if(!persist()){ S.recurMove=JSON.parse(o); return; } rerender(); flash('已取消延後'); }
+function billUndo(k){ const b=billByKey(k); if(!b) return; const recs=R.filter(r=>!r.deleted&&r.recur===b.x.id&&r.recurMonth===b.orig);
+  if(!confirm(`要把「${b.x.name}」（${ymLabel(b.orig)}）改回「還沒繳」嗎？${recs.length?`\n當時記的那筆帳（${money(recs[0].amount)}）會移到「最近刪除」，30 天內可以救回來。`:''}`)) return;
+  const oR=JSON.stringify(R), oD=JSON.stringify(S.recurDone); recs.forEach(r=>{ r.deleted=true; r.deletedAt=today(); }); delete S.recurDone[k];
+  if(!persist()){ R=JSON.parse(oR); S.recurDone=JSON.parse(oD); return; } rerender(); flash('已改回未繳'); }
+let ATT_K=null;
+function billAttach(k){ if(!billByKey(k)) return; ATT_K=k; const m=document.createElement('div'); m.className='modal'; m.id='attM'; document.body.appendChild(m); m.onclick=e=>{ if(e.target===m) attClose(); }; PASTE=fs=>attAdd(ATT_K,fs); attRender(); }
+function attRender(){ const m=$('#attM'); if(!m||!ATT_K) return; const b=billByKey(ATT_K); if(!b){ attClose(); return; } const l=S.att[ATT_K]||[], kq=esc(ATT_K);
+  m.innerHTML=`<div class="box" style="max-width:520px"><h2 style="margin:0 0 2px;font-size:17px">📎 ${esc(b.x.name)} 的繳費截圖</h2><div class="small muted">${ymLabel(b.orig)}</div>
+    <div class="pastebox"><b>按 Ctrl+V 貼上截圖</b><div class="small muted" style="margin:2px 0 8px">手機請按下面的按鈕選圖片</div><button onclick="pickFiles(fs=>attAdd(ATT_K,fs))">選擇圖片</button></div>
+    <div class="row">${l.map(id=>phImg(id,'thumb',`viewImg('${esc(id)}','att','${kq}')`,'width:76px;height:76px')).join('')||'<span class="small muted">還沒有截圖</span>'}</div>
+    <div class="row" style="margin-top:12px"><span class="spacer"></span><button class="primary" onclick="attClose()">好了</button></div></div>`; }
+function attClose(){ const m=$('#attM'); if(m) m.remove(); ATT_K=null; PASTE=null; rerender(); }
+async function attAdd(k,fs){ if(!k) return; let ids; try{ ids=await saveImages(fs); }catch(e){ alert(PH_FAIL); return; } if(!ids.length) return;
+  const o=JSON.stringify(S.att); S.att[k]=[...(S.att[k]||[]),...ids].slice(0,20); if(!persist()){ S.att=JSON.parse(o); phDel(ids); return; } attRender(); flash(`已加上 ${ids.length} 張截圖 ✦`); }
+
+/* ---------- 薪資條 ---------- */
+let PS_SEL=today().slice(0,7), PS_Y=today().slice(0,4);
+function renderPayslip(){ page='payslip'; nav(); const cur=today().slice(0,7);
+  const years=[...new Set([cur.slice(0,4),...Object.keys(S.payslips).map(k=>k.slice(0,4))])].sort().reverse(); if(!years.includes(PS_Y)) PS_Y=years[0];
+  const months=[...Array(12)].map((_,i)=>`${PS_Y}-${p2(12-i)}`).filter(ym=>ym<=cur||S.payslips[ym]);
+  const n=Object.values(S.payslips).reduce((a,p)=>a+p.ph.length,0);
+  $('#app').innerHTML=`<div class="card"><div class="row"><h2 style="margin:0">📄 ${PS_Y} 年薪資條</h2>${years.length>1?`<select style="width:auto" onchange="PS_Y=this.value;renderPayslip()">${years.map(y=>`<option ${y===PS_Y?'selected':''}>${y}</option>`).join('')}</select>`:''}<span class="spacer"></span><span class="small muted">共 ${n} 張</span></div>
+     <div class="small" style="margin-top:6px">① 點一下要放的月份（會被框起來）　② 按 <b>Ctrl+V</b> 貼上截圖；手機請按「選擇圖片」　③ 點圖片可以看大圖或刪除</div>
+     <div class="small muted" style="margin-top:4px">🔒 薪資條圖片存在這台電腦、這個瀏覽器的大容量空間（IndexedDB），不會上傳。換電腦或換瀏覽器就看不到，記得定期「下載備份」。</div></div>
+   <div class="psgrid">${months.map(ym=>{ const p=S.payslips[ym]||{ph:[],note:''}, sel=ym===PS_SEL;
+     return `<div class="ps ${sel?'sel':''}" onclick="psSel('${ym}')"><div class="row"><b>${+ym.slice(5)} 月</b>${ym===cur?'<span class="tag">本月</span>':''}<span class="spacer"></span>${sel?'<span class="small" style="color:var(--brand-d);font-weight:700">Ctrl+V 會貼到這裡</span>':''}</div>
+       <div class="ims">${p.ph.length?p.ph.map(id=>phImg(id,'',`viewImg('${esc(id)}','ps','${ym}')`)).join(''):'<span class="small muted">點這格，再按 Ctrl+V 貼上</span>'}</div>
+       <div class="row" style="flex-wrap:nowrap"><input type="text" maxlength="80" placeholder="備註（例：加班 34 小時）" value="${esc(p.note)}" onclick="event.stopPropagation()" onchange="psNote('${ym}',this.value)" style="padding:6px 10px;font-size:13px">
+       <button onclick="event.stopPropagation();pickFiles(fs=>psAdd('${ym}',fs))" style="flex:none;padding:6px 10px;font-size:13px">選擇圖片</button></div></div>`; }).join('')}</div>`; }
+function psSel(ym){ if(PS_SEL===ym) return; PS_SEL=ym; renderPayslip(); }
+async function psAdd(ym,fs){ let ids; try{ ids=await saveImages(fs); }catch(e){ alert(PH_FAIL); return; } if(!ids.length) return;
+  const o=JSON.stringify(S.payslips), p=S.payslips[ym]||(S.payslips[ym]={ph:[],note:''}); p.ph=[...p.ph,...ids].slice(0,20);
+  if(!persist()){ S.payslips=JSON.parse(o); phDel(ids); return; } PS_SEL=ym; if(page==='payslip') renderPayslip(); flash(`已放進 ${+ym.slice(5)} 月 ✦`); }
+function psNote(ym,v){ const o=JSON.stringify(S.payslips), p=S.payslips[ym]||(S.payslips[ym]={ph:[],note:''}); p.note=String(v).trim().slice(0,80); if(!p.ph.length&&!p.note) delete S.payslips[ym];
+  if(!persist()){ S.payslips=JSON.parse(o); return; } flash('備註已儲存'); }
+async function phUsage(){ const el=$('#phMB'); if(!el) return; let b=0; for(const id of allPhIds()){ try{ const u=await phGet(id); if(u) b+=u.length*0.75; }catch(e){} } if($('#phMB')) $('#phMB').textContent=(b/1048576).toFixed(1)+' MB（'+allPhIds().length+' 張）'; }
 
 /* ---------- 匯入 Excel ---------- */
 let XLSXP=null;
@@ -1233,13 +1451,15 @@ function renderSettings(){
      <div class="muted small" style="margin-top:6px">只放一張，上傳後會自動縮小。圖存在這個瀏覽器裡，不會上傳。${S.bg.url?'':'目前使用預設的可愛橫幅。'}</div></div>
    <div class="card"><h2>📅 每月固定收支</h2>${recurListHTML()}
      <details style="margin-top:10px"><summary>➕ 新增固定收支</summary><div style="margin-top:8px">${recurFormHTML('nr')}</div><button class="primary" style="margin-top:10px" onclick="addRecur()">新增</button></details>
-     <div class="muted small" style="margin-top:8px">到了每月指定的日期，首頁會提醒你，按「記好」才會真的記帳；當月不一樣可以先改金額，或按「略過」。</div></div>
+     <div class="muted small" style="margin-top:8px">支出和還款會出現在「繳費狀態」，按「完成」才會真的記帳，也可以「延後」到下個月；收入（例如薪水）到了日期會在首頁提醒你按「記好」。</div></div>
    <div class="card"><h2>📥 匯入 Excel</h2>
      <div class="small" style="margin-bottom:8px">1. 先下載範本，照範本的欄位把資料貼進去（不用的工作表可以留空）　2. 選檔案匯入，會先給你預覽，按「確定匯入」才會加進去</div>
      <div class="row"><button onclick="downloadTemplate()">下載範本</button><button class="primary" onclick="$('#xlsFile').click()">選擇 Excel 檔匯入</button><input type="file" id="xlsFile" accept=".xlsx,.xls,.csv" hidden onchange="importExcel(this)"></div>
      <div class="muted small" style="margin-top:8px">匯入是「加進去」，不會蓋掉原本的資料。讀檔需要網路（會從 cdnjs 載入 SheetJS 工具），但檔案只在這台裝置上讀，<b>不會上傳</b>。日期可以寫民國（115.11.10）或西元（2026/11/10）。</div></div>
    <div class="card"><h2>📦 資料</h2><div class="row"><button onclick="go2('trash')">最近刪除（${trashN}）</button><button onclick="exportCSV()">匯出 CSV（Excel 可開）</button><button onclick="backup()">下載備份</button><button onclick="$('#restoreFile').click()">從備份還原</button><input type="file" id="restoreFile" accept=".json" hidden onchange="restore(this)"></div></div>
-   <div class="card"><details><summary>資料保存方式與限制（請務必閱讀）</summary><ul class="small">
+   <div class="card"><details id="dataHelp"><summary>資料保存方式與限制（請務必閱讀）</summary><ul class="small">
+     <li><b>圖片（薪資條、繳費截圖）</b>存在瀏覽器的大容量空間 IndexedDB，一樣<b>只在這台電腦、這個瀏覽器</b>，不會上傳。可放的數量依電腦剩餘空間而定，通常可放上千張。目前圖片約用了 <b id="phMB">…</b>。</li>
+     <li>「下載備份」會把圖片一起放進備份檔，所以檔案會比較大。<b>薪資條是很私密的資料，備份檔不要傳給別人。</b></li>
      <li><b>本機儲存 · 僅在此裝置此瀏覽器有效 · 可匯出備份。</b>資料存在這台裝置、這個瀏覽器裡，不會上傳，也不會同步。</li>
      <li>換瀏覽器、換手機、使用無痕視窗，都看不到原本的資料。清除瀏覽資料會讓紀錄全部消失，且無法復原。</li>
      <li>請定期按「下載備份」，把備份檔放在這台裝置以外的地方（雲端硬碟或寄給自己）。</li>
@@ -1247,6 +1467,7 @@ function renderSettings(){
      <li>自動判斷是用關鍵字規則，<b>不是 AI</b>，也不會上網。判斷錯的時候請自己改分類。</li>
      <li>帳戶名稱請<b>只寫暱稱</b>（例如「台新」），不要寫帳號、卡號或密碼。帳戶餘額是依照你記的帳算出來的，跟銀行實際金額有落差時，請用「校正餘額」。</li>
      <li>打「悠遊卡」會被當成<b>交通</b>分類；用悠遊卡付款請用付款方式下拉選單選。打「悠遊卡加值500」則會記成從現金轉到悠遊卡。</li></ul></details></div>`;
+  phUsage();
 }
 function delRule(i){ if(!confirm(`確定刪除「${S.rules[i].word}」這個常用詞嗎？`)) return; S.rules.splice(i,1); persist(); renderSettings(); }
 function addPerson(){ const v=$('#pIn').value.trim(); if(!v) return; if(S.people.includes(v)){flash('已經有這個對象了');return;} S.people.push(v); persist(); renderSettings(); }
@@ -1267,7 +1488,7 @@ let selT=new Set();
 function trashList(){return R.filter(r=>r.deleted).sort((a,b)=>(b.deletedAt||'').localeCompare(a.deletedAt||''));}
 function daysBetween(a,b){const [y1,m1,d1]=a.split('-').map(Number),[y2,m2,d2]=b.split('-').map(Number);return Math.round((new Date(y2,m2-1,d2)-new Date(y1,m1-1,d1))/86400000);}
 function renderTrash(){
-  page='trash'; $('#nav').innerHTML=''; const rs=trashList(), n=selT.size;
+  page='trash'; nav(); const rs=trashList(), n=selT.size;
   $('#app').innerHTML=`<div class="row" style="margin-bottom:12px"><button onclick="selT=new Set();go2('settings')">← 返回設定</button><h2 style="margin:0 8px;font-size:18px">最近刪除</h2></div>
    <div class="card"><div class="notice small">已刪除超過 30 天的紀錄，會在下次打開本工具時永久刪除。</div>
     <div class="row" style="margin:8px 0"><button onclick="selT=new Set(trashList().map(r=>r.id));renderTrash()" ${rs.length?'':'disabled'}>全選</button><button onclick="selT=new Set();renderTrash()" ${n?'':'disabled'}>全部不選</button>
@@ -1297,19 +1518,22 @@ function exportCSV(){
   const csv=[head,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
   download('﻿'+csv,`xiaozhang_${today()}.csv`,'text/csv;charset=utf-8');
 }
-function backup(){ download(JSON.stringify({app:'casevoraXiaozhang',version:1,exportedAt:new Date().toISOString(),records:live(),settings:S},null,1),`xiaozhang_backup_${today()}.json`,'application/json'); }
+async function backup(){ const photos={}; let miss=0; for(const id of allPhIds()){ try{ const u=await phGet(id); if(u) photos[id]=u; else miss++; }catch(e){ miss++; } }
+  download(JSON.stringify({app:'casevoraXiaozhang',version:2,exportedAt:new Date().toISOString(),records:live(),settings:S,photos},null,1),`xiaozhang_backup_${today()}.json`,'application/json');
+  if(miss) alert(`有 ${miss} 張圖片讀不到，沒有放進備份。`); }
 function restore(inp){
   const f=inp.files[0]; inp.value=''; if(!f) return; const fr=new FileReader();
-  fr.onload=()=>{ let d; try{ d=JSON.parse(fr.result); if(!d||d.app!=='casevoraXiaozhang'||!Array.isArray(d.records)) throw 0; }catch(e){ alert('無法讀取：這不是本工具的備份檔。'); return; }
+  fr.onload=async()=>{ let d; try{ d=JSON.parse(fr.result); if(!d||d.app!=='casevoraXiaozhang'||!Array.isArray(d.records)) throw 0; }catch(e){ alert('無法讀取：這不是本工具的備份檔。'); return; }
     const bad=d.records.some(r=>!r||!/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')||!(Number(r.amount)>0)||!['income','expense','transfer','adjust','debt','save'].includes(r.type)||(r.type==='save'&&!/^[\w-]{1,40}$/.test(String(r.goal)))||(r.type==='debt'&&(!DEBT_OP[r.op]||!/^[\w-]{1,40}$/.test(String(r.debt))))); if(bad){ alert('無法還原：備份檔內有格式不正確的紀錄。'); return; }
-    if(!confirm(`備份檔內有 ${d.records.length} 筆紀錄。\n還原會「取代」目前瀏覽器中的 ${live().length} 筆紀錄和設定，目前「最近刪除」裡的 ${trashList().length} 筆也會一併被取代，確定嗎？`)) return;
+    const photos={}; if(d.photos&&typeof d.photos==='object') Object.entries(d.photos).forEach(([id,u])=>{ if(/^[\w-]{1,60}$/.test(id)&&typeof u==='string'&&/^data:image\/(jpeg|png|webp|gif);base64,/.test(u)) photos[id]=u; });
+    if(!confirm(`備份檔內有 ${d.records.length} 筆紀錄${Object.keys(photos).length?`、${Object.keys(photos).length} 張圖片`:''}。\n還原會「取代」目前瀏覽器中的 ${live().length} 筆紀錄和設定，目前「最近刪除」裡的 ${trashList().length} 筆也會一併被取代，確定嗎？`)) return;
     const oR=R,oS=S; R=d.records.map(r=>({id:/^[\w-]{1,40}$/.test(String(r.id))?String(r.id):newId(),type:r.type,amount:Number(r.amount),item:String(r.item||''),category:r.category||(r.type==='income'?'其他收入':r.type==='transfer'?'轉帳':r.type==='adjust'?'校正':'其他'),date:r.date,who:r.who||'',icon:r.icon||'',createdAt:r.createdAt||'',
       ...(r.type==='transfer'?{from:String(r.from||'cash'),to:String(r.to||'cash')}:{acct:String(r.acct||'cash')}),...(r.type==='adjust'?{sign:Number(r.sign)<0?-1:1}:{}),
       ...(r.type==='debt'?{op:r.op,debt:String(r.debt),debtName:String(r.debtName||'').slice(0,20),debtKind:r.debtKind==='loan'?'loan':'person',exp:r.debtKind==='loan'&&r.op==='pay'}:{}),
       ...(r.type==='save'?{acct:String(r.acct||''),goal:String(r.goal),goalName:String(r.goalName||'').slice(0,20)}:{})}));
     S=fixS(Object.assign(defaultS(),d.settings||{}));
     R.forEach(r=>{ if(r.type==='save'&&!S.goals.some(x=>x.id===r.goal)) S.goals.push({id:r.goal,name:r.goalName||'未命名目標',target:0,mode:'manual',acct:'',deadline:'',done:false,doneAt:''}); });
-    R.forEach(r=>{ if(r.type==='debt'&&!S.debts.some(x=>x.id===r.debt)) S.debts.push({id:r.debt,name:r.debtName||'未命名',kind:r.debtKind,init:0,monthly:0,dueDay:0,payAcct:''}); }); if(!persist()){R=oR;S=oS;return;} applyBg(); flash('還原完成 ✦'); go2('home'); };
+    R.forEach(r=>{ if(r.type==='debt'&&!S.debts.some(x=>x.id===r.debt)) S.debts.push({id:r.debt,name:r.debtName||'未命名',kind:r.debtKind,init:0,monthly:0,dueDay:0,payAcct:''}); }); if(!persist()){R=oR;S=oS;return;} let pbad=0; for(const [id,u] of Object.entries(photos)){ try{ await phPut(u,id); }catch(e){ pbad++; } } if(pbad) alert(`有 ${pbad} 張圖片還原失敗（可能是無痕視窗或空間不足）。`); applyBg(); flash('還原完成 ✦'); go2('home'); };
   fr.readAsText(f);
 }
 window.addEventListener('beforeunload',e=>{ if(dirty){e.preventDefault();e.returnValue='';} });
