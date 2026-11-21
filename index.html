@@ -1893,14 +1893,18 @@ function moneyCard(){ const b=balances(), list=S.accounts.filter(a=>Math.abs(b[a
     <div class="small muted mhint" style="margin-top:6px">從銀行領錢放身上，打「薪資帳戶領1000」，會從帳戶轉到現金，不算花掉。</div></div>`; }
 function budgetCard(){ const B=S.budget.living, ym=today().slice(0,7), sp=livingSpent(ym), left=B-sp, pct=B?Math.min(100,Math.round(sp/B*100)):0;
   const [y,m]=ym.split('-').map(Number), daysLeft=new Date(y,m,0).getDate()-(+today().slice(8))+1;
+  const c=Math.max(0,Math.round(cashOnHand())), capped=left>0&&c<left, usable=left>0?Math.min(left,c):0;
   return `<div class="card o8"><div class="row"><h2 style="margin:0">🍙 本月生活費</h2><span class="spacer"></span><a href="#" class="small" onclick="budgetEdit();return false">改預算</a></div>
     ${B?`<div class="prog"><i style="width:${pct}%;background:${left<0?'var(--bad)':pct>80?'#e0a100':'var(--ok)'}"></i></div>
-      <div class="bs"><span>已花</span><b>${money(sp)} / ${money(B)}</b></div>
-      <div class="bs"><span>${left<0?'超出':'還能花'}</span><b style="color:${left<0?'var(--bad)':'var(--ok)'}">${money(Math.abs(left))}</b></div>
-      ${left>0?`<div class="small muted">剩 ${daysLeft} 天，平均每天可以花 ${money(Math.floor(left/daysLeft))}</div>`:''}
-      ${(()=>{ const c=cashOnHand(), need=Math.max(0,left); return `<div class="bs" style="margin-top:4px"><span>👛 身上現金</span><b>${money(Math.round(c))}</b></div>`+(need>0&&c<need?`<div class="notice small">⚠️ 身上現金比「還能花」少 <b>${money(Math.round(need-c))}</b>。要用錢時，從帳戶領出來（例：打「薪資帳戶領${Math.ceil((need-c)/100)*100}」）。</div>`:need>0?`<div class="small" style="color:var(--ok);font-weight:700">✓ 身上的錢夠用到月底</div>`:''); })()}
+      <div class="bs"><span>已花費</span><b>${money(sp)} / ${money(B)}</b></div>
+      <div class="bs"><span>👛 身上現金</span><b>${money(c)}</b></div>
+      ${left<0?`<div class="bs"><span>超出預算</span><b style="color:var(--bad)">${money(-left)}</b></div>`
+        :`<div class="bs sum"><span>✨ 本月還可以用</span><b style="color:${capped?'#b45309':'var(--ok)'}">${money(usable)}</b></div>
+          ${capped?`<div class="small" style="color:#8a5a00">預算還剩 ${money(left)}，但身上只有 ${money(c)}，先以身上的錢為準。</div>`:''}
+          ${usable>0?`<div class="small muted">剩 ${daysLeft} 天，平均每天可以用 ${money(Math.floor(usable/daysLeft))}</div>`:''}
+          ${capped?`<div class="notice small">💡 要用到完整預算，從帳戶領 <b>${money(Math.ceil((left-c)/100)*100)}</b> 出來（例：打「薪資帳戶領${Math.ceil((left-c)/100)*100}」），領出來後「還可以用」就會變回 ${money(left)}。</div>`:left>0?`<div class="small" style="color:var(--ok);font-weight:700">✓ 身上的錢夠用到月底</div>`:''}`}
       <div class="small muted" style="margin-top:4px">算的是餐飲、交通、生活用品、娛樂、醫療、其他；房租、帳單、還款不算。</div>`
-     :'<div class="small muted" style="margin-top:6px">還沒設定。按「改預算」填每個月的生活費，就會幫你算還能花多少。</div>'}</div>`; }
+     :'<div class="small muted" style="margin-top:6px">還沒設定。按「改預算」填每個月的生活費，就會幫你算還可以用多少。</div>'}</div>`; }
 function budgetEdit(){ const v=prompt('每個月的生活費預算（例：5000；填 0 表示不用）',S.budget.living||''); if(v===null) return; const n=Number(v); if(!(n>=0)){ alert('要填數字'); return; } S.budget.living=Math.round(n); persist(); rerender(); flash('預算已儲存 ✦'); }
 /* ---------- 行事曆 ---------- */
 let CALM=today().slice(0,7), CALV='month', CALD=today();
