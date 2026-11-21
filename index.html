@@ -1951,6 +1951,7 @@ function parseYM(v){
   const s=String(v??'').trim(); let m=s.match(/^(\d{2,4})\s*[.\/\-年]\s*(\d{1,2})\s*(?:月|[.\/\-]\s*\d{1,2}\s*日?)?$/);
   if(!m) return ''; let y=+m[1]; const mo=+m[2]; if(y<1911) y+=1911; return mo>=1&&mo<=12?`${y}-${p2(mo)}`:'';
 }
+function fixAcctName(n){ const s=String(n??'').trim(); if(!s) return ''; if(s==='薪轉帳戶') return '薪資帳戶'; return /領|轉|加值|\+值/.test(s)?(s.replace(/領|轉|加值|\+值/g,'')||'帳戶'):s; }
 function findAcctByName(n){ n=String(n??'').trim().toLowerCase(); return n?S.accounts.find(a=>a.name.toLowerCase()===n):null; }
 function rowsOf(X,wb,name){ const ws=wb.Sheets[name]; if(!ws) return [];
   const a=X.utils.sheet_to_json(ws,{header:1,defval:'',raw:true}); if(!a.length) return [];
@@ -1960,13 +1961,13 @@ function buildPlan(X,wb){
   const plan={accts:[],debts:[],recs:[],recur:[],ot:[],bases:[],allow:[],bonusFrom:null,budget:null,goals:[],skip:[]}, skip=(sh,n,why)=>plan.skip.push(`${sh} 第 ${n} 列：${why}`);
   const newAcctNames=new Set(), newDebtNames=new Set();
   const TYPEMAP={現金:'cash',銀行:'bank',銀行帳戶:'bank',電子支付:'epay',信用卡:'card',其他:'other',其他帳戶:'other'};
-  rowsOf(X,wb,'帳戶').forEach(r=>{ const name=String(r.get('名稱')).trim(), bal=numOf(r.get('目前餘額'));
-    if(!name) return skip('帳戶',r.n,'沒有名稱'); if(/\d{6,}/.test(name.replace(/[\s-]/g,''))) return skip('帳戶',r.n,'名稱像帳號或卡號，請只寫暱稱'); if(/領|轉|加值|\+值/.test(name)) return skip('帳戶',r.n,`「${name}」名稱裡有「領、轉、加值」，快速記帳會當成轉帳，請改名（例：薪資帳戶）`);
+  rowsOf(X,wb,'帳戶').forEach(r=>{ const name=fixAcctName(r.get('名稱')), bal=numOf(r.get('目前餘額'));
+    if(!name) return skip('帳戶',r.n,'沒有名稱'); if(/\d{6,}/.test(name.replace(/[\s-]/g,''))) return skip('帳戶',r.n,'名稱像帳號或卡號，請只寫暱稱'); 
     if(findAcctByName(name)||newAcctNames.has(name.toLowerCase())) return skip('帳戶',r.n,`「${name}」已經有了`);
     if(Number.isNaN(bal)&&String(r.get('目前餘額')).trim()!=='') return skip('帳戶',r.n,'餘額不是數字');
     newAcctNames.add(name.toLowerCase()); const at=TYPEMAP[String(r.get('類型')).trim()]||'other';
     plan.accts.push({id:newId(),name:name.slice(0,20),icon:{cash:'💵',bank:'🏦',epay:'📱',card:'💳',other:'🗂️'}[at],init:Number.isNaN(bal)?0:Math.round(bal),dueDay:0,atype:at}); });
-  const acctId=n=>{ const s=String(n??'').trim(); if(!s) return ''; const a=findAcctByName(s); if(a) return a.id; const p=plan.accts.find(x=>x.name.toLowerCase()===s.toLowerCase()); return p?p.id:null; };
+  const acctId=n=>{ const s=fixAcctName(n); if(!s) return ''; const a=findAcctByName(s); if(a) return a.id; const p=plan.accts.find(x=>x.name.toLowerCase()===s.toLowerCase()); return p?p.id:null; };
   const KIND={貸款:['loan','loan'],分期:['loan','inst'],分期付款:['loan','inst'],其他債務:['loan','other'],借人:['person',1],借出:['person',-1]};
   rowsOf(X,wb,'負債').forEach(r=>{ const name=String(r.get('名稱')).trim(), k=KIND[String(r.get('種類')).trim()], tot=numOf(r.get('總額')), paidRaw=numOf(r.get('已還')), paid=Number.isNaN(paidRaw)?0:paidRaw, mon=numOf(r.get('每月'));
     if(!name) return skip('負債',r.n,'沒有名稱'); if(!k) return skip('負債',r.n,'「種類」要寫：貸款、分期、其他債務、借人、借出');
