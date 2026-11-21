@@ -129,7 +129,8 @@ details summary{cursor:pointer;font-weight:700}
 #side{max-width:760px;margin:0 auto;padding:12px 16px 0}
 #side .brand,#side .ws,#side .foot{display:none}
 nav .cnt{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;line-height:18px;text-align:center}
-.phead{display:flex;align-items:flex-start;gap:12px;margin:8px 0 12px}
+.phead{display:block;margin:8px 0 12px}
+.phead .ph1{display:flex;align-items:center;gap:10px}
 .phead h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.5px}
 .phead .en{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:2.5px;color:var(--brand-d)}
 .phead .en:before{content:"";width:22px;height:2px;background:var(--brand)}
@@ -305,6 +306,20 @@ body.glass .card .muted,body.glass .kpi .s,body.glass .kpi .t{color:#2a4552}
 .bs .tag{font-size:11px}
 .billmini .cf{display:none}
 @media (min-width:900px){.billmini .brow{grid-template-columns:minmax(0,2fr) 90px 80px 56px auto;grid-template-areas:"n a s d x"}}
+
+@media (max-width:899px){
+  .phead{padding:10px 14px!important;margin:6px 0 10px}
+  .phead h1{font-size:20px}
+  .phead .en{display:none}
+  .phead .desc{font-size:13px;margin-top:2px;line-height:1.5}
+  .phead .badge{font-size:11px;padding:2px 10px}
+  .moneyc{padding:12px 14px}
+  .moneyc h2{font-size:16px}
+  .moneyc .mlist{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;margin-top:4px}
+  .moneyc .mlist .bs{font-size:14px;padding:2px 0}
+  .moneyc .mbtn{padding:6px 10px;font-size:14px;margin-top:6px!important}
+  .moneyc .mhint{display:none}
+}
 </style>
 </head>
 <body>
@@ -702,7 +717,7 @@ function nav(hk){
   const late=billOpen().filter(b=>b.st==='late').length;
   $('#nav').innerHTML=[['home','🏠 首頁'],['bills','🧾 繳費狀態'],['cal','📅 行事曆'],['payslip','📄 薪資條'],['ot','⏱️ 加班'],['accounts','👛 帳戶'],['debts','💳 負債'],['savings','🎯 儲蓄'],['manage','📊 帳務管理'],['opts','⭐ 常用選項'],['settings','⚙️ 設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}${k==='bills'&&late?`<span class="cnt" title="逾期 ${late} 筆">${late}</span>`:''}</button>`).join('');
   const h=PHEAD[hk||page]||PHEAD.home;
-  $('#phead').innerHTML=`<div class="phead"><div style="min-width:0"><h1>${h[0]}</h1><div class="en">${h[1]}</div><div class="desc">${h[2]}</div></div><span class="badge">● 本機資料模式</span></div>
+  $('#phead').innerHTML=`<div class="phead"><div class="ph1"><h1>${h[0]}</h1><span class="badge">● 本機資料模式</span></div><div class="en">${h[1]}</div><div class="desc">${h[2]}</div></div>
     <div class="nbar"><span class="lab">重要</span><span>本機儲存 · 僅在此裝置此瀏覽器有效 · 請勿用無痕視窗 · 定期下載備份</span><button onclick="openGuide()">查看使用說明</button></div>`;
 }
 function showHelp(){ go('settings'); const d=$('#dataHelp'); if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); } }
@@ -1860,10 +1875,11 @@ const LIVING=['餐飲','交通','生活用品','娛樂','醫療','其他'];
 function livingSpent(ym){ return live().filter(r=>r.date.startsWith(ym)&&r.type==='expense'&&LIVING.includes(r.category)).reduce((a,r)=>a+r.amount,0); }
 function cashOnHand(){ const b=balances(); return S.accounts.filter(a=>a.atype==='cash').reduce((s,a)=>s+Math.max(0,b[a.id]||0),0); }
 function moneyCard(){ const b=balances(), list=S.accounts.filter(a=>Math.abs(b[a.id]||0)>0.001||a.id==='cash'), tot=S.accounts.reduce((s,a)=>s+(b[a.id]||0),0);
-  return `<div class="card o8"><div class="row"><h2 style="margin:0">👛 我的錢</h2><span class="spacer"></span><b style="color:${tot<0?'var(--bad)':'var(--ink)'}">${bm(Math.round(tot))}</b></div>
-    ${list.map(a=>`<div class="bs"><span>${a.icon||'💳'} ${esc(a.name)}${a.atype==='cash'?' <span class="tag">身上</span>':''}</span><b style="color:${(b[a.id]||0)<0?'var(--bad)':'var(--ink)'}">${bm(Math.round((b[a.id]||0)*100)/100)}</b></div>`).join('')}
-    <button class="primary" style="width:100%;margin-top:8px" onclick="balModal()">💰 填／校正每個帳戶的錢</button>
-    <div class="small muted" style="margin-top:6px">從銀行領錢放身上，打「薪資帳戶領1000」，會從帳戶轉到現金，不算花掉。</div></div>`; }
+  return `<div class="card o4 moneyc"><div class="row"><h2 style="margin:0">👛 我的錢</h2><span class="spacer"></span><b style="color:${tot<0?'var(--bad)':'var(--ink)'}">${bm(Math.round(tot))}</b></div>
+    <div class="mlist">${list.map(a=>`<div class="bs"><span>${a.icon||'💳'} ${esc(a.name)}${a.atype==='cash'?' <span class="tag">身上</span>':''}</span><b style="color:${(b[a.id]||0)<0?'var(--bad)':'var(--ink)'}">${bm(Math.round((b[a.id]||0)*100)/100)}</b></div>`).join('')}
+</div>
+    <button class="primary mbtn" style="width:100%;margin-top:8px" onclick="balModal()">💰 填／校正每個帳戶的錢</button>
+    <div class="small muted mhint" style="margin-top:6px">從銀行領錢放身上，打「薪資帳戶領1000」，會從帳戶轉到現金，不算花掉。</div></div>`; }
 function budgetCard(){ const B=S.budget.living, ym=today().slice(0,7), sp=livingSpent(ym), left=B-sp, pct=B?Math.min(100,Math.round(sp/B*100)):0;
   const [y,m]=ym.split('-').map(Number), daysLeft=new Date(y,m,0).getDate()-(+today().slice(8))+1;
   return `<div class="card o8"><div class="row"><h2 style="margin:0">🍙 本月生活費</h2><span class="spacer"></span><a href="#" class="small" onclick="budgetEdit();return false">改預算</a></div>
