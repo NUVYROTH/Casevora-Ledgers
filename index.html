@@ -529,6 +529,9 @@ function classify(item){
 function parseInput(raw){
   let t=String(raw||'').trim().replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/，/g,',').replace(/／/g,'/').replace(/＄/g,'$');
   if(!t) return {empty:true};
+  /* 名稱裡有數字的存錢目標（例：存滿13000）：先遮起來，避免數字被當成金額或日期 */
+  const GK='abcdefghijklmnopqrst', gmask=[]; S.goals.filter(g=>/\d/.test(g.name)).sort((a,b)=>b.name.length-a.name.length).forEach(g=>{ if(gmask.length>=GK.length) return; const i=t.toLowerCase().indexOf(g.name.toLowerCase()); if(i>=0){ t=t.slice(0,i)+`⟦G${GK[gmask.length]}⟧`+t.slice(i+g.name.length); gmask.push(g.name); } });
+  const unmask=x=>x.replace(/⟦G([a-t])⟧/g,(_,c)=>gmask[GK.indexOf(c)]||'');
   /* 帳戶與轉帳：先把帳戶名稱找出來、從文字中拿掉，避免影響金額與項目判斷 */
   const hitsAll=findAccts(t), tk=t.match(/領|轉|加值|\+值/);
   let transfer=null, acct='';
@@ -556,6 +559,7 @@ function parseInput(raw){
   t=t.replace(/(\d),(?=\d{3})/g,'$1').replace(/[$元塊圓]/g,' ');
   let amount=null; const nums=[...t.matchAll(/\d+(?:\.\d+)?/g)];
   if(nums.length){const last=nums[nums.length-1]; amount=Number(last[0]); t=t.slice(0,last.index)+' '+t.slice(last.index+last[0].length);}
+  t=unmask(t);
   const goal=transfer?null:findGoal(t.replace(/\s+/g,''));
   const debt=(transfer||goal)?null:findDebt(t.replace(/\s+/g,'').replace(/^買/,''));
   let who=''; for(const p of S.people.slice().sort((a,b)=>b.length-a.length)){ if(p&&t.includes(p)){who=p;t=t.replace(p,' ');break;} }
@@ -1247,7 +1251,7 @@ function goalFormHTML(pre,g){ g=g||{};
 }
 function readGoalForm(pre,selfId){
   const name=$('#'+pre+'Name').value.trim(), tg=parseInit($('#'+pre+'Tg').value), mode=$('#'+pre+'Mode').value, acct=$('#'+pre+'Acct').value, dl=$('#'+pre+'Dl').value;
-  if(!name){alert('請填寫名稱');return null;} if(/\d/.test(name)){alert('名稱裡不要有數字（會跟金額搞混）');return null;}
+  if(!name){alert('請填寫名稱');return null;}
   if(/領|轉|加值|\+值|借|還/.test(name)){alert('名稱裡不能有「領、轉、加值、借、還」這些字，小帳會判斷錯');return null;}
   if(S.accounts.some(a=>a.name.toLowerCase()===name.toLowerCase())){alert('名稱不能跟帳戶一樣');return null;}
   if(S.goals.some(g=>g.id!==selfId&&g.name.toLowerCase()===name.toLowerCase())){alert('已經有同名的目標了');return null;}
@@ -1975,7 +1979,7 @@ function buildPlan(X,wb){
     plan.recur.push({id:newId(),name:name.slice(0,20),kind,amount:Math.round(Math.abs(amt)),day,start,end,acct:a||'cash',debt:d,every}); });
   rowsOf(X,wb,'預算').forEach(r=>{ const n=String(r.get('項目')).trim(), v=numOf(r.get('每月金額')); if(/生活/.test(n)&&v>=0&&Math.round(v)!==S.budget.living) plan.budget=Math.round(v); });
   rowsOf(X,wb,'儲蓄目標').forEach(r=>{ const name=String(r.get('名稱')).trim().slice(0,20), tg=numOf(r.get('目標金額')), dS=String(r.get('期限')).trim(), dl=dS?parseDateAny(r.get('期限')):'';
-    if(!name) return skip('儲蓄目標',r.n,'沒有名稱'); if(/\d/.test(name)) return skip('儲蓄目標',r.n,'名稱裡不要有數字'); if(!(tg>0)) return skip('儲蓄目標',r.n,'目標金額要大於 0'); if(dS&&!dl) return skip('儲蓄目標',r.n,'期限看不懂');
+    if(!name) return skip('儲蓄目標',r.n,'沒有名稱'); if(!(tg>0)) return skip('儲蓄目標',r.n,'目標金額要大於 0'); if(dS&&!dl) return skip('儲蓄目標',r.n,'期限看不懂');
     if(S.goals.some(g=>g.name===name)) return skip('儲蓄目標',r.n,`「${name}」已經有了`); plan.goals.push({id:newId(),name,target:Math.round(tg),mode:'manual',acct:'',deadline:dl,done:false,doneAt:''}); });
   const OTK={平日:'wd',平日加班:'wd',休息日:'rest',休息日加班:'rest',休息:'rest',休息加班:'rest',國定假日:'hol',例假:'hol',國定假日加班:'hol',事假:'lv_personal',病假:'lv_sick',生理假:'lv_men',颱風假:'lv_typhoon',公傷假:'lv_injury',公傷病假:'lv_injury'};
   rowsOf(X,wb,'加班').forEach(r=>{ const date=parseDateAny(r.get('日期')), k=OTK[String(r.get('類型')).trim()], h=numOf(r.get('申報時數')), aS=String(r.get('核准時數')).trim(), a=aS===''?null:numOf(r.get('核准時數'));
