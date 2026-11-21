@@ -1544,7 +1544,7 @@ function renderPayslip(){ page='payslip'; nav(); const cur=today().slice(0,7);
    <div class="psgrid">${months.map(ym=>{ const p=S.payslips[ym]||{ph:[],note:''}, sel=ym===PS_SEL;
      return `<div class="ps ${sel?'sel':''}" onclick="psSel('${ym}')"><div class="row"><b>${+ym.slice(5)} 月</b>${ym===cur?'<span class="tag">本月</span>':''}<span class="spacer"></span>${sel?'<span class="small" style="color:var(--brand-d);font-weight:700">Ctrl+V 會貼到這裡</span>':''}</div>
        <div class="ims">${p.ph.length?p.ph.map(id=>phImg(id,'',`viewImg('${esc(id)}','ps','${ym}')`)).join(''):'<span class="small muted">點這格，再按 Ctrl+V 貼上</span>'}</div>
-       <div class="row" style="flex-wrap:nowrap"><input type="text" maxlength="80" placeholder="備註（例：加班 34 小時）" value="${esc(p.note)}" onclick="event.stopPropagation()" onchange="psNote('${ym}',this.value)" style="padding:6px 10px;font-size:13px">
+       <div class="row" style="flex-wrap:nowrap"><input type="text" maxlength="80" placeholder="備註（例：加班費5111）" value="${esc(p.note)}" onclick="event.stopPropagation()" onchange="psNote('${ym}',this.value)" style="padding:6px 10px;font-size:13px">
        <button onclick="event.stopPropagation();pickFiles(fs=>psAdd('${ym}',fs))" style="flex:none;padding:6px 10px;font-size:13px">選擇圖片</button></div></div>`; }).join('')}</div>`; }
 function psSel(ym){ if(PS_SEL===ym) return; PS_SEL=ym; renderPayslip(); }
 async function psAdd(ym,fs){ let ids; try{ ids=await saveImages(fs); }catch(e){ alert(PH_FAIL); return; } if(!ids.length) return;
@@ -1567,7 +1567,7 @@ let OTM=today().slice(0,7);
 function renderOT(){ page='ot'; nav(); const M=OTM, cur=today().slice(0,7), days=S.ot.days.filter(d=>d.date.startsWith(M)).sort((a,b)=>a.date.localeCompare(b.date));
   const ots=days.filter(d=>!isLeave(d.kind)), lvs=days.filter(d=>isLeave(d.kind)), calc=new Map(ots.map(d=>[d.id,otCalc(d)]));
   const sumAppr=ots.reduce((a,d)=>a+calc.get(d.id).H,0), sumReq=ots.reduce((a,d)=>a+d.hrs,0), cut=sumReq-sumAppr, cap=ots.reduce((a,d)=>a+calc.get(d.id).cap,0);
-  const pay=Math.round(ots.reduce((a,d)=>a+calc.get(d.id).pay,0)), paid=S.ot.paid[M], diff=paid===undefined?null:paid-pay, noBase=ots.some(d=>!otBase(d.date));
+  const pay=Math.round(ots.reduce((a,d)=>a+calc.get(d.id).pay,0)), noteYM=ymAdd(M,1), noteAmt=payslipOT(noteYM), own=S.ot.paid[M], paid=own!==undefined?own:(noteAmt??undefined), fromNote=own===undefined&&noteAmt!==null, diff=paid===undefined?null:paid-pay, noBase=ots.some(d=>!otBase(d.date));
   const byKind=k=>ots.filter(d=>d.kind===k).reduce((a,d)=>a+calc.get(d.id).H,0);
   const lvSum={}; lvs.forEach(d=>lvSum[d.kind]=(lvSum[d.kind]||0)+d.hrs); const yr=M.slice(0,4), lvYear={}; S.ot.days.filter(d=>isLeave(d.kind)&&d.date.startsWith(yr)).forEach(d=>lvYear[d.kind]=(lvYear[d.kind]||0)+d.hrs);
   const ps=[M,ymAdd(M,1)].map(ym=>({ym,l:(S.payslips[ym]||{ph:[]}).ph}));
@@ -1576,7 +1576,7 @@ function renderOT(){ page='ot'; nav(); const M=OTM, cur=today().slice(0,7), days
    <div class="kpis">
     ${kpi('加班時數（核准）',hh(sumAppr),`申報 ${hh(sumReq)}${cut>0?`・<b style="color:var(--bad)">被扣 ${hh(cut)}</b>`:''}`,'⏱️','var(--brand)','var(--brand-soft)')}
     ${kpi('我算的加班費',money(pay),`平日 ${byKind('wd')}h・休息日 ${byKind('rest')}h・假日 ${byKind('hol')}h`,'🧮','var(--info)','#efe9fb')}
-    ${kpi('薪資條上的加班費',paid===undefined?'—':money(paid),paid===undefined?'在下面填入後會自動比對':'公司算的','📄','var(--ok)','var(--ok-soft)')}
+    ${kpi('薪資條上的加班費',paid===undefined?'—':money(paid),paid===undefined?`在 ${ymShort(noteYM)}薪資條備註寫加班費，或在下面填`:fromNote?`從 ${ymShort(noteYM)}薪資條備註帶入`:'公司算的','📄','var(--ok)','var(--ok-soft)')}
     ${kpi('差額（公司給的 − 我算的）',diff===null?'—':(diff===0?'$0 ✦':(diff>0?'+':'-')+money(Math.abs(diff))),diff===null?'填了薪資條金額才會顯示':diff===0?'一樣，沒算錯 ✦':diff<0?`<b style="color:var(--bad)">公司少給你 ${money(-diff)}</b>，可以拿去問人資`:`公司多給你 ${money(diff)}`,'⚖️',diff!==null&&diff<0?'var(--bad)':'#e0a100',diff!==null&&diff<0?'var(--bad-soft)':'#fff3d6')}</div>
    <div class="dash"><div class="col">
     <div class="card"><div class="row" style="margin-bottom:6px"><button onclick="OTM=ymAdd(OTM,-1);renderOT()" aria-label="上個月">◀</button><h2 style="margin:0 4px">${ymLabel(M)}</h2><button onclick="OTM=ymAdd(OTM,1);renderOT()" aria-label="下個月">▶</button>${M!==cur?`<button onclick="OTM=today().slice(0,7);renderOT()">回到本月</button>`:''}</div>
@@ -1599,9 +1599,9 @@ function renderOT(){ page='ot'; nav(); const M=OTM, cur=today().slice(0,7), days
      ${lvs.some(d=>d.kind==='lv_sick'||d.kind==='lv_injury')?`<div class="notice small">📎 這個月有病假／公傷假：記得交<b>收據或醫生證明（宜休養）</b>，公傷假要附診斷證明。</div>`:''}
      <div class="small muted" style="margin-top:4px">${yr} 年累計：${Object.keys(lvYear).length?Object.entries(lvYear).map(([k,v])=>`${OT_KIND[k]} ${v} 小時`).join('、'):'沒有'}。之後節金／獎金按請假比例扣時，可以用這個數字對。</div></div>
    </div><div class="col">
-    <div class="card"><h2>📄 對薪資條</h2><label class="f">薪資條上「${ymShort(M)}加班」的加班費</label>
-     <div class="quick"><input type="number" id="otPaid" inputmode="numeric" value="${paid===undefined?'':paid}" placeholder="例：3000" style="font-size:16px;padding:9px 12px"><button class="primary" onclick="otSavePaid()" style="font-size:15px;padding:0 14px">存</button></div>
-     <div class="small muted" style="margin-top:6px">加班費常常是下個月才發，所以兩個月的薪資條都放在這裡給你對：</div>
+    <div class="card"><h2>📄 對薪資條</h2><label class="f">${ymShort(M)}加班 → ${ymShort(noteYM)}薪資條上的加班費</label>
+     <div class="quick"><input type="number" id="otPaid" inputmode="numeric" value="${own===undefined?'':own}" placeholder="${fromNote?`備註帶入 ${noteAmt}`:'例：3000'}" style="font-size:16px;padding:9px 12px"><button class="primary" onclick="otSavePaid()" style="font-size:15px;padding:0 14px">存</button></div>
+     <div class="small muted" style="margin-top:6px">${fromNote?`✓ 已從 ${ymShort(noteYM)}薪資條備註帶入 ${money(noteAmt)}；要改的話直接在上面填。`:`小訣竅：在「📄 薪資條」${ymShort(noteYM)}那格的備註只寫數字（例：5111）或「加班費5111」，這裡就會自動帶入。`}<br>加班費是下個月才發，兩個月的薪資條都放在這裡給你對：</div>
      ${ps.map(x=>`<div style="margin-top:6px"><b class="small">${ymShort(x.ym)}薪資條</b> ${x.l.length?x.l.map(id=>phImg(id,'thumb',`viewImg('${esc(id)}','ps','${x.ym}')`,'width:56px;height:56px')).join(''):`<span class="small muted">還沒放（<a href="#" onclick="PS_SEL='${x.ym}';PS_Y='${x.ym.slice(0,4)}';go('payslip');return false">去放</a>）</span>`}</div>`).join('')}</div>
     ${bonusCard(M)}
     <div class="card"><h2>💼 月薪紀錄</h2><div class="small muted" style="margin-bottom:6px">時薪＝月薪 ÷ 30 ÷ 8。調薪時新增一筆，那天之後的加班會用新的月薪算。</div>
@@ -1631,6 +1631,7 @@ function otEdit(id){ const d=S.ot.days.find(x=>x.id===id); if(!d) return; const 
   document.body.appendChild(m); m.querySelector('#oeNo').onclick=()=>m.remove();
   m.querySelector('#oeDel').onclick=()=>{ if(!confirm(`確定刪除 ${fmtMD(d.date)} 的${OT_KIND[d.kind]}紀錄嗎？`)) return; const o=JSON.stringify(S.ot); S.ot.days=S.ot.days.filter(x=>x.id!==id); if(!persist()){ S.ot=JSON.parse(o); return; } m.remove(); renderOT(); flash('已刪除'); };
   m.querySelector('#oeOk').onclick=()=>{ const f=otRead('oe'); if(!f) return; const o=JSON.stringify(S.ot); Object.assign(d,f); if(!persist()){ S.ot=JSON.parse(o); return; } m.remove(); renderOT(); flash('已儲存 ✦'); }; }
+function payslipOT(ym){ const n=String((S.payslips[ym]||{}).note||'').replace(/，/g,','); const m=n.match(/^\s*\$?\s*(\d[\d,]*)\s*元?\s*$/)||n.match(/加班費\s*[:：]?\s*\$?\s*(\d[\d,]*)(?!\s*(小時|h|H|hr))/); if(!m) return null; const v=Number(m[1].replace(/,/g,'')); return v>0?v:null; }
 function otSavePaid(){ const v=$('#otPaid').value.trim(), o=JSON.stringify(S.ot); if(v===''){ delete S.ot.paid[OTM]; } else { const n=Number(v); if(!(n>=0)){ alert('金額要是數字'); return; } S.ot.paid[OTM]=Math.round(n); } if(!persist()){ S.ot=JSON.parse(o); return; } renderOT(); flash('已儲存'); }
 function otAddBase(){ const from=$('#obFrom').value, amt=Number($('#obAmt').value); if(!/^\d{4}-\d{2}-\d{2}$/.test(from)){ alert('請選從哪天開始'); return; } if(!(amt>0)){ alert('月薪要大於 0'); return; }
   const o=JSON.stringify(S.ot); S.ot.bases=S.ot.bases.filter(b=>b.from!==from); S.ot.bases.push({from,amt:Math.round(amt)}); S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(!persist()){ S.ot=JSON.parse(o); return; } syncSalary(Math.round(amt)); renderOT(); flash('已新增月薪 ✦'); }
