@@ -157,6 +157,9 @@ button.dark:hover{background:#2f2424}
 .ps .ims img{height:86px;max-width:100%;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
 .pastebox{border:2px dashed var(--brand);background:#fff7f4;border-radius:14px;padding:16px;text-align:center;margin:8px 0}
 .viewer img{max-width:100%;max-height:70vh;display:block;margin:0 auto;border-radius:10px}
+.tscroll{overflow-x:auto;max-width:100%}
+.ottb th,.ottb td{padding:7px 4px}
+@media (max-width:600px){.ottb .hm{display:none}}
 .prog{height:10px;border-radius:999px;background:var(--brand-soft);overflow:hidden;margin:8px 0 4px}
 .prog i{display:block;height:100%;background:var(--ok)}
 @media (min-width:900px){
@@ -216,6 +219,7 @@ button.dark:hover{background:#2f2424}
 <main><div id="phead"></div><div id="app"></div></main>
 <script>
 const KEY_R='casevoraXiaozhang_v1', KEY_S='casevoraXiaozhang_v1_settings';
+const OT_KIND={wd:'平日加班',rest:'休息日加班',hol:'國定假日／例假加班',lv_personal:'事假',lv_sick:'病假',lv_men:'生理假',lv_typhoon:'颱風假'};
 const EXP=['餐飲','交通','生活用品','房租','娛樂','醫療','帳單','其他'];
 const INC=['薪資','兼職','其他收入'];
 const DEF_ICON={餐飲:'🍙',交通:'🚌',生活用品:'🧻',房租:'🏠',娛樂:'🎮',醫療:'💊',帳單:'🧾',其他:'🧸',薪資:'💰',兼職:'🐥',其他收入:'🎁'};
@@ -242,7 +246,7 @@ function download(content,name,type){const a=document.createElement('a');a.href=
 
 /* ---------- 資料 ---------- */
 let R=loadR(), S=loadS();
-function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{}};}
+function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{},ot:{bases:[],days:[],paid:{}}};}
 function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stringify(DEF_ACCTS));
   s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0,dueDay:dayOk(a.dueDay),atype:ACCT_TYPES[a.atype]?a.atype:defType(a.id)})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0,dueDay:0});
   if(!Array.isArray(s.debts)) s.debts=[];
@@ -254,6 +258,10 @@ function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stri
   const isObj=o=>o&&typeof o==='object'&&!Array.isArray(o), KEYRE=/^[\w-]{1,40}\|\d{4}-\d{2}$/, YMRE=/^\d{4}-\d{2}$/, phList=a=>Array.isArray(a)?a.filter(i=>/^[\w-]{1,60}$/.test(String(i))).map(String).slice(0,20):[];
   const mv={}; if(isObj(s.recurMove)) Object.entries(s.recurMove).forEach(([k,v])=>{ if(KEYRE.test(k)&&YMRE.test(String(v))) mv[k]=String(v); }); s.recurMove=mv;
   const at={}; if(isObj(s.att)) Object.entries(s.att).forEach(([k,v])=>{ const l=phList(v); if(KEYRE.test(k)&&l.length) at[k]=l; }); s.att=at;
+  const ot=isObj(s.ot)?s.ot:{}, DRE=/^\d{4}-\d{2}-\d{2}$/, half=v=>Math.round(Number(v)*2)/2;
+  s.ot={bases:(Array.isArray(ot.bases)?ot.bases:[]).filter(b=>b&&DRE.test(String(b.from))&&Number(b.amt)>0).map(b=>({from:String(b.from),amt:Math.round(Number(b.amt))})).sort((a,b)=>a.from.localeCompare(b.from)),
+    days:(Array.isArray(ot.days)?ot.days:[]).filter(d=>d&&/^[\w-]{1,40}$/.test(String(d.id))&&DRE.test(String(d.date))&&OT_KIND[d.kind]&&half(d.hrs)>0).map(d=>({id:String(d.id),date:String(d.date),kind:d.kind,hrs:Math.min(24,half(d.hrs)),appr:Number.isFinite(Number(d.appr))&&String(d.appr)!==''&&d.appr!==null?Math.max(0,Math.min(24,half(d.appr))):null,note:String(d.note||'').slice(0,40)})),
+    paid:{}}; if(isObj(ot.paid)) Object.entries(ot.paid).forEach(([k,v])=>{ if(/^\d{4}-\d{2}$/.test(k)&&Number(v)>=0&&String(v)!=='') s.ot.paid[k]=Math.round(Number(v)); });
   const ps={}; if(isObj(s.payslips)) Object.entries(s.payslips).forEach(([k,v])=>{ if(!YMRE.test(k)||!isObj(v)) return; const l=phList(v.ph), note=String(v.note||'').slice(0,80); if(l.length||note) ps[k]={ph:l,note}; }); s.payslips=ps;
   if(!Array.isArray(s.goals)) s.goals=[];
   s.goals=s.goals.filter(g=>g&&/^[\w-]{1,40}$/.test(String(g.id))&&String(g.name||'').trim()).map(g=>({id:String(g.id),name:String(g.name).trim().slice(0,20),target:Number(g.target)>0?Number(g.target):0,
@@ -530,17 +538,17 @@ function answerAsk(kind){
 let page='home', back='home', mg={view:'mrep',day:today(),month:today().slice(0,7),year:today().slice(0,4),cat:''};
 let cur=null, dirty=false;
 const PHEAD={home:['記帳總覽','LEDGER DASHBOARD','今天花了多少、這個月還要繳什麼，一眼看清楚。'],bills:['繳費狀態','BILLS & PAYMENTS','每一筆該繳的錢：繳了沒、哪天到期、有沒有逾期。'],
-  payslip:['薪資條','MONTHLY PAYSLIPS','每個月的薪資條截圖放在這裡：點一下月份，再按 Ctrl+V 就能貼上。'],accounts:['帳戶','ACCOUNTS','每個帳戶現在有多少錢。'],debts:['負債','DEBTS & LOANS','貸款、分期和借貸：還剩多少、每月要繳多少。'],
+  ot:['加班與請假','OVERTIME & LEAVE','每天記實際時數，程式依勞基法自動分段算加班費，月底跟薪資條對一對。'],payslip:['薪資條','MONTHLY PAYSLIPS','每個月的薪資條截圖放在這裡：點一下月份，再按 Ctrl+V 就能貼上。'],accounts:['帳戶','ACCOUNTS','每個帳戶現在有多少錢。'],debts:['負債','DEBTS & LOANS','貸款、分期和借貸：還剩多少、每月要繳多少。'],
   savings:['儲蓄','SAVING GOALS','存錢目標和進度。'],manage:['帳務管理','REPORTS','月報表、年報表和搜尋。'],settings:['設定','SETTINGS','固定收支、匯入、備份和資料保存方式。'],trash:['最近刪除','RECENTLY DELETED','刪除的紀錄保留 30 天。'],edit:['修改紀錄','EDIT RECORD','改完記得按「儲存」。']};
 function nav(hk){
   const late=billOpen().filter(b=>b.st==='late').length;
-  $('#nav').innerHTML=[['home','🏠 首頁'],['bills','🧾 繳費狀態'],['payslip','📄 薪資條'],['accounts','👛 帳戶'],['debts','💳 負債'],['savings','🎯 儲蓄'],['manage','📊 帳務管理'],['settings','⚙️ 設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}${k==='bills'&&late?`<span class="cnt" title="逾期 ${late} 筆">${late}</span>`:''}</button>`).join('');
+  $('#nav').innerHTML=[['home','🏠 首頁'],['bills','🧾 繳費狀態'],['payslip','📄 薪資條'],['ot','⏱️ 加班'],['accounts','👛 帳戶'],['debts','💳 負債'],['savings','🎯 儲蓄'],['manage','📊 帳務管理'],['settings','⚙️ 設定']].map(([k,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${n}${k==='bills'&&late?`<span class="cnt" title="逾期 ${late} 筆">${late}</span>`:''}</button>`).join('');
   const h=PHEAD[hk||page]||PHEAD.home;
   $('#phead').innerHTML=`<div class="phead"><div style="min-width:0"><h1>${h[0]}</h1><div class="en">${h[1]}</div><div class="desc">${h[2]}</div></div><span class="badge">● 本機資料模式</span></div>
     <div class="nbar"><span class="lab">重要</span><span>本機儲存 · 僅在此裝置此瀏覽器有效 · 請勿用無痕視窗 · 定期下載備份</span><button onclick="showHelp()">查看使用說明</button></div>`;
 }
 function showHelp(){ go('settings'); const d=$('#dataHelp'); if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); } }
-function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,bills:renderBills,payslip:renderPayslip,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,bills:renderBills,payslip:renderPayslip,ot:renderOT,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function applyBg(){
   const b=S.bg||{}; document.body.classList.remove('bgpage','bgboth'); const h=$('#hd'); h.classList.remove('custom'); h.style.backgroundImage='';
   if(!b.url) return;
@@ -807,7 +815,7 @@ function setEdit(f,v){
   const dm=$('#dm'); if(dm) dm.innerHTML='<span class="dirty">● 有尚未儲存的修改</span>';
 }
 function leaveEdit(){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; go2(back); }
-function go2(k){ page=k; ({home:renderHome,bills:renderBills,payslip:renderPayslip,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function go2(k){ page=k; ({home:renderHome,bills:renderBills,payslip:renderPayslip,ot:renderOT,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function saveEdit(){
   const r=cur, amt=Number(r.amount);
   if(r.type==='save'){
@@ -1337,6 +1345,84 @@ function psNote(ym,v){ const o=JSON.stringify(S.payslips), p=S.payslips[ym]||(S.
   if(!persist()){ S.payslips=JSON.parse(o); return; } flash('備註已儲存'); }
 async function phUsage(){ const el=$('#phMB'); if(!el) return; let b=0; for(const id of allPhIds()){ try{ const u=await phGet(id); if(u) b+=u.length*0.75; }catch(e){} } if($('#phMB')) $('#phMB').textContent=(b/1048576).toFixed(1)+' MB（'+allPhIds().length+' 張）'; }
 
+/* ---------- 加班與請假（依勞基法一般算法估算，實際以公司規定與薪資條為準） ---------- */
+const isLeave=k=>k.startsWith('lv_'), WK='日一二三四五六';
+function otBase(date){ let a=0; S.ot.bases.forEach(b=>{ if(b.from<=date) a=b.amt; }); return a; }
+function otCalc(d){ const H=d.appr===null?d.hrs:d.appr, base=otBase(d.date), h=base/240, r={H,base,pay:0,parts:[],over:0,cap:0};
+  if(isLeave(d.kind)||!base) return r; const seg=(x,lo,hi,m,lab)=>{ const t=Math.max(0,Math.min(x,hi)-lo); if(t>0){ r.pay+=t*h*m; r.parts.push(`${t}h×${lab}`); } return t; };
+  if(d.kind==='wd'){ seg(H,0,2,4/3,'4/3'); seg(H,2,4,5/3,'5/3'); if(H>4){ r.over=H-4; seg(H,4,24,5/3,'5/3'); } r.cap=H; }
+  else if(d.kind==='rest'){ seg(H,0,2,4/3,'4/3'); seg(H,2,8,5/3,'5/3'); seg(H,8,12,8/3,'8/3'); if(H>12){ r.over=H-12; seg(H,12,24,8/3,'8/3'); } r.cap=H; }
+  else { if(H>0){ r.pay+=base/30; r.parts.push('8h內＝多給1日'); } seg(H,8,10,4/3,'4/3'); seg(H,10,12,5/3,'5/3'); if(H>12){ r.over=H-12; seg(H,12,24,5/3,'5/3'); } r.cap=Math.max(0,H-8); }
+  return r; }
+let OTM=today().slice(0,7);
+function renderOT(){ page='ot'; nav(); const M=OTM, cur=today().slice(0,7), days=S.ot.days.filter(d=>d.date.startsWith(M)).sort((a,b)=>a.date.localeCompare(b.date));
+  const ots=days.filter(d=>!isLeave(d.kind)), lvs=days.filter(d=>isLeave(d.kind)), calc=new Map(ots.map(d=>[d.id,otCalc(d)]));
+  const sumAppr=ots.reduce((a,d)=>a+calc.get(d.id).H,0), sumReq=ots.reduce((a,d)=>a+d.hrs,0), cut=sumReq-sumAppr, cap=ots.reduce((a,d)=>a+calc.get(d.id).cap,0);
+  const pay=Math.round(ots.reduce((a,d)=>a+calc.get(d.id).pay,0)), paid=S.ot.paid[M], diff=paid===undefined?null:paid-pay, noBase=ots.some(d=>!otBase(d.date));
+  const byKind=k=>ots.filter(d=>d.kind===k).reduce((a,d)=>a+calc.get(d.id).H,0);
+  const lvSum={}; lvs.forEach(d=>lvSum[d.kind]=(lvSum[d.kind]||0)+d.hrs); const yr=M.slice(0,4), lvYear={}; S.ot.days.filter(d=>isLeave(d.kind)&&d.date.startsWith(yr)).forEach(d=>lvYear[d.kind]=(lvYear[d.kind]||0)+d.hrs);
+  const ps=[M,ymAdd(M,1)].map(ym=>({ym,l:(S.payslips[ym]||{ph:[]}).ph}));
+  const hh=n=>`${Math.round(n*10)/10} 小時`;
+  $('#app').innerHTML=`${noBase?`<div class="notice">⚠️ 還沒設定月薪，算不出加班費。請先在下面「月薪紀錄」填上月薪和從哪天開始。</div>`:''}
+   <div class="kpis">
+    ${kpi('加班時數（核准）',hh(sumAppr),`申報 ${hh(sumReq)}${cut>0?`・<b style="color:var(--bad)">被扣 ${hh(cut)}</b>`:''}`,'⏱️','var(--brand)','var(--brand-soft)')}
+    ${kpi('我算的加班費',money(pay),`平日 ${byKind('wd')}h・休息日 ${byKind('rest')}h・假日 ${byKind('hol')}h`,'🧮','var(--info)','#efe9fb')}
+    ${kpi('薪資條上的加班費',paid===undefined?'—':money(paid),paid===undefined?'在下面填入後會自動比對':'公司算的','📄','var(--ok)','var(--ok-soft)')}
+    ${kpi('差額',diff===null?'—':(diff===0?'$0 ✦':(diff>0?'+':'-')+money(Math.abs(diff))),diff===null?'填了薪資條金額才會顯示':diff===0?'一樣，沒算錯':diff<0?'公司給的比我算的少':'公司給的比我算的多','⚖️',diff!==null&&diff<0?'var(--bad)':'#e0a100',diff!==null&&diff<0?'var(--bad-soft)':'#fff3d6')}</div>
+   <div class="dash"><div class="col">
+    <div class="card"><div class="row" style="margin-bottom:6px"><button onclick="OTM=ymAdd(OTM,-1);renderOT()" aria-label="上個月">◀</button><h2 style="margin:0 4px">${ymLabel(M)}</h2><button onclick="OTM=ymAdd(OTM,1);renderOT()" aria-label="下個月">▶</button>${M!==cur?`<button onclick="OTM=today().slice(0,7);renderOT()">回到本月</button>`:''}</div>
+     <details ${days.length?'':'open'} style="margin-bottom:8px"><summary>➕ 新增一天</summary><div class="grid" style="margin-top:8px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+       <div><label class="f">日期</label><input type="date" id="otDate" value="${M===cur?today():M+'-01'}" onchange="otGuess()"></div>
+       <div><label class="f">類型</label><select id="otKind">${Object.entries(OT_KIND).map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select></div>
+       <div><label class="f">申報時數</label><input type="number" id="otHrs" step="0.5" min="0.5" inputmode="decimal" placeholder="例：2"></div>
+       <div><label class="f">核准時數（被扣才填）</label><input type="number" id="otAppr" step="0.5" min="0" inputmode="decimal" placeholder="同申報"></div>
+       <div style="grid-column:1/-1"><label class="f">備註</label><input type="text" id="otNote" maxlength="40" placeholder="例：有問題 -0.5、重新送單"></div></div>
+       <button class="primary" style="margin-top:8px" onclick="otAdd()">新增</button></details>
+     ${ots.length?`<div class="tscroll"><table class="ottb"><thead><tr><th>日期</th><th>類型</th><th style="text-align:right">核准</th><th class="hm">怎麼算</th><th style="text-align:right">金額</th><th></th></tr></thead><tbody>${ots.map(d=>{ const c=calc.get(d.id);
+        return `<tr><td style="white-space:nowrap">${fmtMD(d.date)}（${WK[new Date(d.date+'T00:00').getDay()]}）</td><td>${OT_KIND[d.kind].replace('加班','')}${d.note?`<div class="small muted">${esc(d.note)}</div>`:''}</td>
+         <td style="text-align:right;white-space:nowrap">${c.H}h${d.appr!==null&&d.appr!==d.hrs?`<div class="small" style="color:var(--bad)">申報 ${d.hrs}h</div>`:''}</td><td class="small hm">${c.parts.join(' + ')||'—'}${c.over?`<div style="color:var(--bad)">⚠️ 超過一天上限</div>`:''}</td>
+         <td style="text-align:right">${c.base?money(Math.round(c.pay)):'—'}</td><td style="white-space:nowrap"><button style="padding:2px 8px;font-size:12px" onclick="otEdit('${d.id}')">修改</button></td></tr>`; }).join('')}</tbody></table></div>`:'<div class="empty">這個月還沒有加班紀錄</div>'}
+     ${cap>46?`<div class="notice small">⚠️ 這個月加班 ${hh(cap)}，超過勞基法一般上限 46 小時。</div>`:''}</div>
+    <div class="card"><h2>🌂 請假（${ymLabel(M)}）</h2>
+     ${lvs.length?lvs.map(d=>`<div class="bs"><span>${fmtMD(d.date)} ${OT_KIND[d.kind]}${d.note?` <span class="small muted">${esc(d.note)}</span>`:''}</span><span>${d.hrs} 小時 <a href="#" onclick="otEdit('${d.id}');return false" class="small">修改</a></span></div>`).join(''):'<div class="small muted">這個月沒有請假紀錄。用上面「新增一天」，類型選事假／病假／生理假／颱風假。</div>'}
+     <div class="small muted" style="margin-top:8px">${yr} 年累計：${Object.keys(lvYear).length?Object.entries(lvYear).map(([k,v])=>`${OT_KIND[k]} ${v} 小時`).join('、'):'沒有'}。之後節金／獎金按請假比例扣時，可以用這個數字對。</div></div>
+   </div><div class="col">
+    <div class="card"><h2>📄 對薪資條</h2><label class="f">薪資條上「${ymShort(M)}加班」的加班費</label>
+     <div class="quick"><input type="number" id="otPaid" inputmode="numeric" value="${paid===undefined?'':paid}" placeholder="例：9422" style="font-size:16px;padding:9px 12px"><button class="primary" onclick="otSavePaid()" style="font-size:15px;padding:0 14px">存</button></div>
+     <div class="small muted" style="margin-top:6px">加班費常常是下個月才發，所以兩個月的薪資條都放在這裡給你對：</div>
+     ${ps.map(x=>`<div style="margin-top:6px"><b class="small">${ymShort(x.ym)}薪資條</b> ${x.l.length?x.l.map(id=>phImg(id,'thumb',`viewImg('${esc(id)}','ps','${x.ym}')`,'width:56px;height:56px')).join(''):`<span class="small muted">還沒放（<a href="#" onclick="PS_SEL='${x.ym}';PS_Y='${x.ym.slice(0,4)}';go('payslip');return false">去放</a>）</span>`}</div>`).join('')}</div>
+    <div class="card"><h2>💼 月薪紀錄</h2><div class="small muted" style="margin-bottom:6px">時薪＝月薪 ÷ 30 ÷ 8。調薪時新增一筆，那天之後的加班會用新的月薪算。</div>
+     ${S.ot.bases.length?S.ot.bases.map((b,i)=>`<div class="bs"><span>${fmtFull(b.from)} 起</span><span>${money(b.amt)}（時薪 ${money(Math.round(b.amt/240*100)/100)}）<a href="#" onclick="otDelBase(${i});return false" style="color:var(--bad);margin-left:6px">✕</a></span></div>`).join(''):'<div class="small muted">還沒有月薪紀錄</div>'}
+     <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:8px"><div><label class="f">從哪天開始</label><input type="date" id="obFrom"></div><div><label class="f">月薪</label><input type="number" id="obAmt" inputmode="numeric" placeholder="49900"></div></div>
+     <button style="margin-top:8px" onclick="otAddBase()">新增月薪</button></div>
+    <div class="card"><details><summary>怎麼算的？（勞基法一般算法）</summary><ul class="small" style="padding-left:18px">
+     <li><b>平日</b>：前 2 小時 × 4/3，第 3～4 小時 × 5/3。<b>每一天分開算</b>。</li>
+     <li><b>休息日</b>：前 2 小時 × 4/3，第 3～8 小時 × 5/3，第 9～12 小時 × 8/3。</li>
+     <li><b>國定假日／例假</b>：8 小時以內多給 1 天薪水（月薪 ÷ 30），超過 8 小時的部分再 × 4/3、× 5/3。</li>
+     <li>用「核准時數」算（沒填就用申報時數），以 0.5 小時為單位。</li>
+     <li>這是一般算法的<b>估算</b>，公司若有特別約定，以公司規定和薪資條為準；有疑問可打勞工諮詢專線 1955。</li></ul></details></div>
+   </div></div>`;
+  otGuess(); }
+function otGuess(){ const el=$('#otDate'), k=$('#otKind'); if(!el||!k||!el.value) return; const w=new Date(el.value+'T00:00').getDay(); if(isLeave(k.value)) return; k.value=w===6?'rest':w===0?'hol':'wd'; }
+function otRead(pre){ const date=$('#'+pre+'Date').value, kind=$('#'+pre+'Kind').value, hs=$('#'+pre+'Hrs').value.trim(), as=$('#'+pre+'Appr').value.trim(), hrs=Number(hs), appr=as===''?null:Number(as);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ alert('請選日期'); return null; } if(!(hrs>0)||hrs*2!==Math.round(hrs*2)||hrs>24){ alert('申報時數要以 0.5 小時為單位，例如 1.5、2'); return null; }
+  if(appr!==null&&(!(appr>=0)||appr*2!==Math.round(appr*2)||appr>hrs)){ alert('核准時數要以 0.5 為單位，而且不能比申報多'); return null; }
+  return {date,kind,hrs,appr:appr===hrs?null:appr,note:$('#'+pre+'Note').value.trim().slice(0,40)}; }
+function otAdd(){ const f=otRead('ot'); if(!f) return; const o=JSON.stringify(S.ot); S.ot.days.push(Object.assign({id:newId()},f)); if(!persist()){ S.ot=JSON.parse(o); return; } OTM=f.date.slice(0,7); renderOT(); flash(`已記 ${fmtMD(f.date)} ${OT_KIND[f.kind]} ${f.appr??f.hrs} 小時 ✦`); }
+function otEdit(id){ const d=S.ot.days.find(x=>x.id===id); if(!d) return; const m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="box"><h2 style="margin:0 0 10px;font-size:17px">修改 ${fmtMD(d.date)}</h2><div class="grid" style="grid-template-columns:1fr 1fr">
+    <div><label class="f">日期</label><input type="date" id="oeDate" value="${d.date}"></div><div><label class="f">類型</label><select id="oeKind">${Object.entries(OT_KIND).map(([k,n])=>`<option value="${k}" ${k===d.kind?'selected':''}>${n}</option>`).join('')}</select></div>
+    <div><label class="f">申報時數</label><input type="number" id="oeHrs" step="0.5" value="${d.hrs}"></div><div><label class="f">核准時數</label><input type="number" id="oeAppr" step="0.5" value="${d.appr===null?'':d.appr}" placeholder="同申報"></div>
+    <div style="grid-column:1/-1"><label class="f">備註</label><input type="text" id="oeNote" maxlength="40" value="${esc(d.note)}"></div></div>
+    <div class="row" style="margin-top:12px"><button class="primary" id="oeOk">儲存</button><button id="oeNo">取消</button><span class="spacer"></span><button class="danger" id="oeDel">刪除</button></div></div>`;
+  document.body.appendChild(m); m.querySelector('#oeNo').onclick=()=>m.remove();
+  m.querySelector('#oeDel').onclick=()=>{ if(!confirm(`確定刪除 ${fmtMD(d.date)} 的${OT_KIND[d.kind]}紀錄嗎？`)) return; const o=JSON.stringify(S.ot); S.ot.days=S.ot.days.filter(x=>x.id!==id); if(!persist()){ S.ot=JSON.parse(o); return; } m.remove(); renderOT(); flash('已刪除'); };
+  m.querySelector('#oeOk').onclick=()=>{ const f=otRead('oe'); if(!f) return; const o=JSON.stringify(S.ot); Object.assign(d,f); if(!persist()){ S.ot=JSON.parse(o); return; } m.remove(); renderOT(); flash('已儲存 ✦'); }; }
+function otSavePaid(){ const v=$('#otPaid').value.trim(), o=JSON.stringify(S.ot); if(v===''){ delete S.ot.paid[OTM]; } else { const n=Number(v); if(!(n>=0)){ alert('金額要是數字'); return; } S.ot.paid[OTM]=Math.round(n); } if(!persist()){ S.ot=JSON.parse(o); return; } renderOT(); flash('已儲存'); }
+function otAddBase(){ const from=$('#obFrom').value, amt=Number($('#obAmt').value); if(!/^\d{4}-\d{2}-\d{2}$/.test(from)){ alert('請選從哪天開始'); return; } if(!(amt>0)){ alert('月薪要大於 0'); return; }
+  const o=JSON.stringify(S.ot); S.ot.bases=S.ot.bases.filter(b=>b.from!==from); S.ot.bases.push({from,amt:Math.round(amt)}); S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(!persist()){ S.ot=JSON.parse(o); return; } renderOT(); flash('已新增月薪 ✦'); }
+function otDelBase(i){ const b=S.ot.bases[i]; if(!b||!confirm(`確定刪除「${fmtFull(b.from)} 起 ${money(b.amt)}」這筆月薪紀錄嗎？`)) return; const o=JSON.stringify(S.ot); S.ot.bases.splice(i,1); if(!persist()){ S.ot=JSON.parse(o); return; } renderOT(); }
+
 /* ---------- 匯入 Excel ---------- */
 let XLSXP=null;
 function loadXLSX(){ if(window.XLSX) return Promise.resolve(window.XLSX); if(XLSXP) return XLSXP;
@@ -1346,12 +1432,14 @@ const TPL={
   帳戶:[['名稱','類型','目前餘額'],['測試銀行','銀行','52000'],['現金','現金','3000']],
   負債:[['名稱','種類','總額','已還','每月','到期日','從哪個帳戶繳'],['測試貸款','貸款','600000','120000','12000','2030/5/27','測試銀行'],['王小明','借人','50000','10000','','',''],['李小華','借出','3000','0','','','']],
   固定收支:[['項目','類型','金額','每月幾號','開始','結束','帳戶','連到哪筆負債'],['薪水','收入','45000','10','115.11','','測試銀行',''],['房租','支出','8000','5','115.11','','測試銀行',''],['測試貸款','還負債','12000','10','115.11','119.5','測試銀行','測試貸款']],
+  加班:[['日期','類型','申報時數','核准時數','備註'],['115.11.2','平日','2','',''],['2026/11/4','平日','1','0.5','有問題 -0.5'],['115.11.21','休息日','8','',''],['115.11.12','事假','4','','']],
+  月薪:[['從哪天開始','月薪'],['115.9.1','30000'],['115.11.1','32000']],
   記帳紀錄:[['日期','收入或支出','項目','金額','帳戶','分類（可不填）'],['115.11.1','支出','早餐','65','現金',''],['2026/11/2','收入','獎金','3000','測試銀行','']]
 };
 async function downloadTemplate(){
   let X; try{ X=await loadXLSX(); }catch(e){ alert('需要網路才能產生 Excel 範本，請連上網路再試一次。'); return; }
   const wb=X.utils.book_new();
-  X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet([['小帳匯入範本：照各工作表的欄位填，第一列（標題）不要改。範例都是假資料，請換成你的資料或刪掉。'],['日期可寫 115.11.10 或 2026/11/10；月份可寫 115.11 或 2026/11。'],['負債的「種類」：貸款、分期、其他債務、借人（我欠別人）、借出（別人欠我）。'],['固定收支的「類型」：收入、支出、還負債（要填「連到哪筆負債」）。'],['帳戶的「類型」：現金、銀行、電子支付、信用卡、其他；信用卡欠款請填負數。']]),'說明');
+  X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet([['小帳匯入範本：照各工作表的欄位填，第一列（標題）不要改。範例都是假資料，請換成你的資料或刪掉。'],['日期可寫 115.11.10 或 2026/11/10；月份可寫 115.11 或 2026/11。'],['負債的「種類」：貸款、分期、其他債務、借人（我欠別人）、借出（別人欠我）。'],['固定收支的「類型」：收入、支出、還負債（要填「連到哪筆負債」）。'],['帳戶的「類型」：現金、銀行、電子支付、信用卡、其他；信用卡欠款請填負數。'],['加班的「類型」：平日、休息日、國定假日（例假也填這個）、事假、病假、生理假、颱風假；時數以 0.5 小時為單位，核准時數被扣才填。']]),'說明');
   Object.entries(TPL).forEach(([n,a])=>X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(a),n));
   X.writeFile(wb,'xiaozhang_import_template.xlsx');
 }
@@ -1376,7 +1464,7 @@ async function importExcel(inp){
   const f=inp.files[0]; inp.value=''; if(!f) return;
   let X; try{ X=await loadXLSX(); }catch(e){ alert('需要網路才能讀 Excel，請連上網路再試一次。'); return; }
   let wb; try{ wb=X.read(await f.arrayBuffer(),{type:'array',cellDates:true}); }catch(e){ alert('讀不出這個檔案，請確認是 Excel（.xlsx）檔。'); return; }
-  const plan={accts:[],debts:[],recs:[],recur:[],skip:[]}, skip=(sh,n,why)=>plan.skip.push(`${sh} 第 ${n} 列：${why}`);
+  const plan={accts:[],debts:[],recs:[],recur:[],ot:[],bases:[],skip:[]}, skip=(sh,n,why)=>plan.skip.push(`${sh} 第 ${n} 列：${why}`);
   const newAcctNames=new Set(), newDebtNames=new Set();
   const TYPEMAP={現金:'cash',銀行:'bank',銀行帳戶:'bank',電子支付:'epay',信用卡:'card',其他:'other',其他帳戶:'other'};
   rowsOf(X,wb,'帳戶').forEach(r=>{ const name=String(r.get('名稱')).trim(), bal=numOf(r.get('目前餘額'));
@@ -1405,7 +1493,18 @@ async function importExcel(inp){
     if(!start) return skip('固定收支',r.n,'「開始」看不懂，請寫 115.11 或 2026/11'); if(endS&&!end) return skip('固定收支',r.n,'「結束」看不懂');
     const a=acctId(r.get('帳戶')); if(a===null) return skip('固定收支',r.n,`找不到帳戶「${r.get('帳戶')}」`);
     let d=''; if(kind==='debt'){ d=debtId(r.get('連到哪筆負債')); if(!d) return skip('固定收支',r.n,`找不到負債「${r.get('連到哪筆負債')}」`); }
+    const same=S.recurring.some(y=>y.name===name.slice(0,20)&&y.kind===kind&&y.amount===Math.round(Math.abs(amt))&&y.day===day&&y.start===start&&y.end===end);
+    if(same) return skip('固定收支',r.n,`「${name}」${start.replace('-','/')} 起這筆已經有了（可能匯入過）`);
     plan.recur.push({id:newId(),name:name.slice(0,20),kind,amount:Math.round(Math.abs(amt)),day,start,end,acct:a||'cash',debt:d}); });
+  const OTK={平日:'wd',平日加班:'wd',休息日:'rest',休息日加班:'rest',國定假日:'hol',例假:'hol',國定假日加班:'hol',事假:'lv_personal',病假:'lv_sick',生理假:'lv_men',颱風假:'lv_typhoon'};
+  rowsOf(X,wb,'加班').forEach(r=>{ const date=parseDateAny(r.get('日期')), k=OTK[String(r.get('類型')).trim()], h=numOf(r.get('申報時數')), aS=String(r.get('核准時數')).trim(), a=aS===''?null:numOf(r.get('核准時數'));
+    if(!date) return skip('加班',r.n,'日期看不懂'); if(!k) return skip('加班',r.n,'「類型」要寫：平日、休息日、國定假日、事假、病假、生理假、颱風假');
+    if(!(h>0)||h*2!==Math.round(h*2)) return skip('加班',r.n,'申報時數要以 0.5 小時為單位'); if(a!==null&&(!(a>=0)||a>h||a*2!==Math.round(a*2))) return skip('加班',r.n,'核准時數要以 0.5 為單位，而且不能比申報多');
+    if(S.ot.days.some(d=>d.date===date&&d.kind===k&&d.hrs===h)) return skip('加班',r.n,`${fmtFull(date)} 這筆已經有了（可能匯入過）`);
+    plan.ot.push({id:newId(),date,kind:k,hrs:h,appr:a===h?null:a,note:String(r.get('備註')||'').trim().slice(0,40)}); });
+  rowsOf(X,wb,'月薪').forEach(r=>{ const from=parseDateAny(r.get('從哪天開始')), amt=numOf(r.get('月薪'));
+    if(!from) return skip('月薪',r.n,'日期看不懂'); if(!(amt>0)) return skip('月薪',r.n,'月薪要大於 0'); if(S.ot.bases.some(b=>b.from===from&&b.amt===Math.round(amt))) return;
+    plan.bases.push({from,amt:Math.round(amt)}); });
   rowsOf(X,wb,'記帳紀錄').forEach(r=>{ const date=parseDateAny(r.get('日期')), t=String(r.get('收入或支出')).trim(), item=String(r.get('項目')).trim(), amt=numOf(r.get('金額'));
     if(!date) return skip('記帳紀錄',r.n,'日期看不懂，請寫 115.11.10 或 2026/11/10'); if(!item) return skip('記帳紀錄',r.n,'沒有項目');
     if(Number.isNaN(amt)||amt===0) return skip('記帳紀錄',r.n,'金額要是數字'); const type=t==='收入'?'income':t==='支出'?'expense':(amt<0?'expense':null);
@@ -1417,19 +1516,21 @@ async function importExcel(inp){
   PENDING_IMPORT=plan; showImportPreview(plan);
 }
 function showImportPreview(p){
-  const n=p.accts.length+p.debts.length+p.recur.length+p.recs.length, m=document.createElement('div'); m.className='modal';
+  const n=p.accts.length+p.debts.length+p.recur.length+p.recs.length+p.ot.length+p.bases.length, m=document.createElement('div'); m.className='modal';
   const sec=(t,list,fmt)=>list.length?`<div class="dayh"><span>${t}（${list.length}）</span></div>${list.slice(0,30).map(x=>`<div class="bs" style="font-size:13px">${fmt(x)}</div>`).join('')}${list.length>30?`<div class="muted small">…還有 ${list.length-30} 筆</div>`:''}`:'';
   m.innerHTML=`<div class="box" style="max-height:85vh;overflow:auto"><h2 style="margin:0 0 6px;font-size:17px">📥 匯入預覽</h2>
-    <div class="small muted" style="margin-bottom:6px">${n?`將新增 <b>${n}</b> 項。這些會「加進去」，不會蓋掉原本的資料。`:'沒有可以匯入的資料。'}</div>
+    <div class="small muted" style="margin-bottom:6px">${n?`將新增 <b>${n}</b> 項。這些會「加進去」，不會蓋掉原本的資料。`:p.skip.length?'沒有可以匯入的資料。':'沒有可以匯入的資料。<br>記帳幫手只看得懂<b>範本格式</b>：工作表要叫「帳戶」「負債」「固定收支」「加班」「月薪」「記帳紀錄」，第一列是範本的標題。自己做的表請先按「下載範本」，把資料照欄位貼進去再匯入。'}</div>
     ${sec('👛 帳戶',p.accts,x=>`<span>${esc(x.name)}</span><span>${bm(x.init)}</span>`)}
     ${sec('💳 負債',p.debts,x=>`<span>${esc(x.name)}・${x.kind==='loan'?LOAN_SUB[x.sub].slice(2).trim():(x.init>=0?'我欠':'欠我')}</span><span>${x.init>=0?'還欠':'對方還欠'} ${money(Math.abs(x.init))} / 總額 ${money(x.orig)}</span>`)}
     ${sec('📅 固定收支',p.recur,x=>`<span>${esc(x.name)}・每月 ${x.day} 號・${x.start.replace('-','/')} 起</span><span>${x.kind==='income'?'+':'-'}${money(x.amount)}</span>`)}
+    ${sec('💼 月薪',p.bases,x=>`<span>${fmtFull(x.from)} 起</span><span>${money(x.amt)}</span>`)}
+    ${sec('⏱️ 加班與請假',p.ot,x=>`<span>${fmtFull(x.date)} ${OT_KIND[x.kind]}</span><span>${x.appr===null?x.hrs:x.appr} 小時${x.appr!==null?`（申報 ${x.hrs}）`:''}</span>`)}
     ${sec('🧾 記帳紀錄',p.recs,x=>`<span>${fmtFull(x.date)} ${esc(x.item)}</span><span>${x.type==='income'?'+':'-'}${money(x.amount)}</span>`)}
     ${p.skip.length?`<div class="notice small" style="margin-top:10px"><b>⚠️ 這些列沒有匯入（${p.skip.length}）：</b><br>${p.skip.map(esc).join('<br>')}</div>`:''}
     <div class="row" style="margin-top:12px">${n?'<button class="primary" id="ipOk">確定匯入</button>':''}<button id="ipNo">${n?'取消':'關閉'}</button></div></div>`;
   document.body.appendChild(m); m.querySelector('#ipNo').onclick=()=>{PENDING_IMPORT=null;m.remove();};
   const ok=m.querySelector('#ipOk'); if(ok) ok.onclick=()=>{ const oR=JSON.stringify(R), oS=JSON.stringify(S);
-    S.accounts.push(...p.accts); S.debts.push(...p.debts); S.recurring.push(...p.recur); R.push(...p.recs); if(p.accts.length) S.acctInitDone=true;
+    S.accounts.push(...p.accts); S.debts.push(...p.debts); S.recurring.push(...p.recur); R.push(...p.recs); S.ot.days.push(...p.ot); S.ot.bases.push(...p.bases); S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(p.accts.length) S.acctInitDone=true;
     if(!persist()){R=JSON.parse(oR);S=JSON.parse(oS);return;} PENDING_IMPORT=null; m.remove(); renderSettings(); flash(`匯入完成 ✦ 新增 ${n} 項`); };
 }
 
