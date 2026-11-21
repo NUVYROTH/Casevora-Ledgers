@@ -801,8 +801,8 @@ function renderHome(){
       ${recent.length?recent.map(recRow).join(''):'<div class="empty">還沒有紀錄喔，在上面打一筆試試看 ✦</div>'}
       ${live().length>n?'<div class="muted small" style="margin-top:6px">更早的紀錄請到「帳務管理」選日期或月份查看。</div>':''}</div>
    </div><div class="col">
-    ${moneyCard()}
     ${budgetCard()}
+    ${moneyCard()}
     <div class="card o8"><div class="row"><h2 style="margin:0">處理狀態</h2><span class="spacer"></span><span class="small muted">${ymLabel(ym)}</span></div>
       <div class="prog"><i style="width:${pct}%"></i></div><div class="small muted">本月繳費進度 ${doneM} / ${needM}（${pct}%）</div>
       <div style="margin-top:8px">${[['done','已繳','done'],['wait','待繳','open'],['today','今天到期','open'],['late','逾期','late'],['moved','已延後','moved']].map(([k,nm,f])=>`<div class="bs clickrow" role="button" tabindex="0" onclick="BM=today().slice(0,7);BF='${f}';go('bills')" onkeydown="if(event.key==='Enter')this.click()" title="點一下看是哪幾筆"><span><span class="pill ${k}">${nm}</span></span><b>${cntM(k)} 筆 ›</b></div>`).join('')}</div>
@@ -1904,7 +1904,7 @@ function moneyCard(){ const b=balances(), ym=today().slice(0,7), f=monthFlow(ym)
   S.accounts.forEach(a=>{ const v=b[a.id]||0; if(v>0) grp[a.atype==='card'?'other':(grp[a.atype]!==undefined?a.atype:'other')]+=v; });
   const have=Math.round(grp.cash+grp.bank+grp.epay+grp.other), list=S.accounts.filter(a=>Math.abs(b[a.id]||0)>0.001||a.id==='cash');
   const chip=(ic,t,v)=>v?`<div class="mchip"><span>${ic} ${t}</span><b>${money(Math.round(v))}</b></div>`:'';
-  return `<div class="card o4 moneyc"><div class="row"><h2 style="margin:0">👛 我的錢</h2><span class="spacer"></span><a href="#" class="small" onclick="balModal();return false">填／校正</a></div>
+  return `<div class="card o8 moneyc"><div class="row"><h2 style="margin:0">👛 我的錢</h2><span class="spacer"></span><a href="#" class="small" onclick="balModal();return false">填／校正</a></div>
     <div class="mtotal"><div class="small muted">現在總共有（身上＋銀行＋電子支付）</div><div class="big">${money(have)}</div>
       ${cardDebt>0?`<div class="small" style="color:var(--bad)">信用卡／負數帳戶 -${money(Math.round(cardDebt))}，扣掉後 ${bm(Math.round(have-cardDebt))}</div>`:''}</div>
     <div class="mchips">${chip('💵','身上',grp.cash)}${chip('🏦','銀行',grp.bank)}${chip('📱','電子支付',grp.epay)}${chip('🗂️','其他',grp.other)}${have?'':'<div class="small muted">還沒填，按右上「填／校正」</div>'}</div>
@@ -1915,7 +1915,7 @@ function moneyCard(){ const b=balances(), ym=today().slice(0,7), f=monthFlow(ym)
 function budgetCard(){ const B=S.budget.living, ym=today().slice(0,7), sp=livingSpent(ym), left=B-sp, pct=B?Math.min(100,Math.round(sp/B*100)):0;
   const [y,m]=ym.split('-').map(Number), daysLeft=new Date(y,m,0).getDate()-(+today().slice(8))+1;
   const c=Math.max(0,Math.round(cashOnHand())), capped=left>0&&c<left, usable=left>0?Math.min(left,c):0;
-  return `<div class="card o8"><div class="row"><h2 style="margin:0">🍙 本月生活費</h2><span class="spacer"></span><a href="#" class="small" onclick="budgetEdit();return false">改預算</a></div>
+  return `<div class="card o4"><div class="row"><h2 style="margin:0">🍙 本月生活費</h2><span class="spacer"></span><a href="#" class="small" onclick="budgetEdit();return false">改預算</a></div>
     ${B?`<div class="prog"><i style="width:${pct}%;background:${left<0?'var(--bad)':pct>80?'#e0a100':'var(--ok)'}"></i></div>
       <div class="bs"><span>已花費</span><b>${money(sp)} / ${money(B)}</b></div>
       <div class="bs"><span>👛 身上現金</span><b>${money(c)}</b></div>
