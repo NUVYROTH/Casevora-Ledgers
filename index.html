@@ -245,6 +245,12 @@ button.dark:hover{background:#2f2424}
 .impmode .opt.danger:has(input:checked){border-color:var(--bad);background:var(--bad-soft)}
 button.dangerfill{background:var(--bad);border-color:var(--bad);color:#fff}
 button.dangerfill:hover{background:#b93c37}
+
+.pie{display:flex;align-items:center;gap:14px}
+.pie svg{width:42%;max-width:180px;flex:none}
+.pleg{flex:1;min-width:0}
+.pleg .bs.on{background:var(--brand-soft);font-weight:700}
+@media (max-width:420px){.pie{flex-direction:column;align-items:stretch}.pie svg{width:60%;margin:0 auto}}
 </style>
 </head>
 <body>
@@ -676,7 +682,7 @@ function renderHome(){
     <div class="card o8"><div class="row"><h2 style="margin:0">需要注意</h2><span class="spacer"></span><span class="small muted">逾期最久</span></div>
       ${lateOld.length?lateOld.map(b=>`<div class="bs clickrow" role="button" tabindex="0" onclick="BM='${b.show}';BF='late';go('bills')" onkeydown="if(event.key==='Enter')this.click()"><span>${esc(b.x.name)} <span class="small muted">${fmtMD(b.due)}</span></span><b style="color:var(--bad)">${money(b.x.amount)}</b></div>`).join(''):'<div class="small muted" style="margin-top:6px">目前沒有逾期的繳費 ✦</div>'}</div>
     ${backupCard()}
-    <div class="card o8 desk"><h2>🍩 本月支出分類<span class="sub">點這裡看完整月報表 →</span></h2><div onclick="mg.view='mrep';mg.month=today().slice(0,7);go('manage')" style="cursor:pointer">${donut(mc)}</div></div>
+    <div class="card o8"><h2>🍩 本月支出分類<span class="sub">點這裡看完整月報表 →</span></h2><div onclick="mg.view='mrep';mg.month=today().slice(0,7);go('manage')" style="cursor:pointer">${donut(mc)}</div></div>
     <div class="card o8 desk"><h2>📈 淨資產變化</h2>${nwChart(6)}</div>
    </div></div>`;
 }
@@ -691,19 +697,22 @@ function rateTxt(i,o){ return i>0?Math.round((i-o)/i*100)+'%':'—'; }
 function tile(cls,v,label,extra){ return `<div class="stat ${cls}"><div class="n" title="${bm(v)}" ${cls===''?`style="color:${v<0?'var(--bad)':'var(--ink)'}"`:''}>${bmS(v)}</div><div class="l">${label}</div>${extra||''}</div>`; }
 function legend(items){ return `<div class="row small" style="gap:14px;margin:4px 0 6px">${items.map(([c,n])=>`<span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${c};margin-right:4px;vertical-align:-1px"></i>${n}</span>`).join('')}</div>`; }
 /* 甜甜圈圖：最多 6 塊，其餘併成「其他」；旁邊一定列出金額和百分比 */
-function donut(list){
-  const sum=list.reduce((a,x)=>a+x[1],0); if(!sum) return '<div class="empty">這個月沒有支出</div>';
-  let top=list.slice(0,6); const rest=list.slice(6).reduce((a,x)=>a+x[1],0); if(rest) top=top.concat([['其他（合併）',rest]]);
+/* 圓餅圖（中間空心）：只用在「佔比」；超過 6 塊合併成「其他」。每塊都有圖例列＋金額，不只靠顏色辨識 */
+const ACCT_COLORS=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#6250d6','#008300'];
+function acctColor(id){ const i=S.accounts.findIndex(a=>a.id===id); return i<0?'#9a9590':ACCT_COLORS[i%ACCT_COLORS.length]; }
+function pie(list,o){ o=o||{}; const col=o.color||catColor, name=o.name||(c=>c), sum=list.reduce((a,x)=>a+x[1],0); if(!sum) return `<div class="empty">${o.empty||'這個月沒有支出'}</div>`;
+  let top=list.slice(0,6); const rest=list.slice(6).reduce((a,x)=>a+x[1],0); if(rest) top=top.concat([['__other',rest]]);
+  const C=k=>k==='__other'?'#9a9590':col(k), N=k=>k==='__other'?'其他（合併）':name(k);
   const R=54, r=34, cx=70, cy=70; let a0=-Math.PI/2; const gap=top.length>1?0.025:0;
   const arcs=top.map(([c,v])=>{ const a1=a0+v/sum*Math.PI*2; const s0=a0+gap/2, s1=Math.max(s0+0.001,a1-gap/2), lg=(s1-s0)>Math.PI?1:0;
     const P=(rad,ang)=>[cx+rad*Math.cos(ang),cy+rad*Math.sin(ang)].map(n=>n.toFixed(2)).join(' ');
     const d=top.length===1?`M ${cx} ${cy-R} A ${R} ${R} 0 1 1 ${cx-0.01} ${cy-R} L ${cx-0.01} ${cy-r} A ${r} ${r} 0 1 0 ${cx} ${cy-r} Z`
       :`M ${P(R,s0)} A ${R} ${R} 0 ${lg} 1 ${P(R,s1)} L ${P(r,s1)} A ${r} ${r} 0 ${lg} 0 ${P(r,s0)} Z`;
-    a0=a1; return `<path d="${d}" fill="${catColor(c)}"><title>${esc(c)}：${money(v)}（${Math.round(v/sum*100)}%）</title></path>`; }).join('');
-  return `<div class="row" style="align-items:center;gap:14px;flex-wrap:nowrap"><svg viewBox="0 0 140 140" style="width:42%;max-width:170px;flex:none" role="img" aria-label="消費分類比例">${arcs}
-      <text x="70" y="66" text-anchor="middle" font-size="10" fill="var(--muted)">支出</text><text x="70" y="82" text-anchor="middle" font-size="12" font-weight="800" fill="var(--ink)">${bmS(sum)}</text></svg>
-    <div style="flex:1;min-width:0">${top.map(([c,v])=>`<div class="bs" style="font-size:13px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${catColor(c)};margin-right:5px"></i>${esc(c)}</span><span>${money(v)}・${Math.round(v/sum*100)}%</span></div>`).join('')}</div></div>`;
-}
+    a0=a1; const sel=o.sel&&o.sel===c; return `<path d="${d}" fill="${C(c)}" ${o.sel&&!sel?'opacity=".35"':''} ${o.click&&c!=='__other'?`style="cursor:pointer" onclick="${o.click(c)}"`:''}><title>${esc(N(c))}：${money(v)}（${Math.round(v/sum*100)}%）</title></path>`; }).join('');
+  return `<div class="pie"><svg viewBox="0 0 140 140" role="img" aria-label="${esc(o.label||'支出')}比例">${arcs}
+      <text x="70" y="66" text-anchor="middle" font-size="10" fill="var(--muted)">${esc(o.label||'支出')}</text><text x="70" y="82" text-anchor="middle" font-size="12" font-weight="800" fill="var(--ink)">${bmS(sum)}</text></svg>
+    <div class="pleg">${top.map(([c,v])=>`<div class="bs ${o.click&&c!=='__other'?'clickrow':''} ${o.sel===c?'on':''}" style="font-size:13px" ${o.click&&c!=='__other'?`onclick="${o.click(c)}" role="button" tabindex="0" onkeydown="if(event.key==='Enter')this.click()"`:''}><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${C(c)};margin-right:5px"></i>${esc(N(c))}</span><span>${money(v)}・${Math.round(v/sum*100)}%</span></div>`).join('')}</div></div>`; }
+function donut(list){ return pie(list); }
 /* 每日支出趨勢：單一系列折線，y 軸從 0 開始 */
 function dayTrend(ym,daily){
   const [y,m]=ym.split('-').map(Number), last=new Date(y,m,0).getDate(), lim=ym===today().slice(0,7)?+today().slice(8,10):last;
@@ -727,8 +736,6 @@ function monthBars(rows){
         ${r.o?`<rect x="${cx+1}" y="${H-ho}" width="${w}" height="${ho}" rx="2" fill="${C_OUT}"><title>${k+1}月支出 ${money(r.o)}</title></rect>`:''}
         <text x="${cx}" y="${H+13}" font-size="9" text-anchor="middle" fill="var(--muted)">${k+1}</text>`;}).join('')}</svg>`;
 }
-function catBars(list){ const mx=list.length?list[0][1]:1, sum=list.reduce((a,x)=>a+x[1],0);
-  return list.length?list.map(([c,a])=>`<div class="bar" style="cursor:default"><div><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${catColor(c)};margin-right:4px"></i>${esc(c)}</div><div class="b"><i style="width:${Math.round(a/mx*100)}%;background:${catColor(c)}"></i></div><div class="v">${money(a)}<div class="small muted" style="font-weight:400">${Math.round(a/sum*100)}%</div></div></div>`).join(''):'<div class="empty">沒有支出</div>'; }
 function renderMonthReport(){
   const ym=mg.month, [y,m]=ym.split('-'), t=monthTotals(ym), pt=monthTotals(prevYM(ym)), rs=live().filter(r=>r.date.startsWith(ym));
   const daily={}; rs.forEach(r=>{ const d=+r.date.slice(8,10); daily[d]=daily[d]||{i:0,o:0}; if(r.type==='income') daily[d].i+=r.amount; else if(isExp(r)) daily[d].o+=r.amount; });
@@ -763,7 +770,7 @@ function renderYearReport(){
     <div class="dayh" style="margin-top:10px"><span>💹 每月儲蓄率</span></div>
     <table><thead><tr><th>月</th><th style="text-align:right">收入</th><th style="text-align:right">支出</th><th style="text-align:right">結餘</th><th style="text-align:right">儲蓄率</th></tr></thead>
       <tbody>${rows.map((r,k)=>(r.i||r.o)?`<tr><td>${k+1}月</td><td style="text-align:right">${money(r.i)}</td><td style="text-align:right">${money(r.o)}</td><td style="text-align:right;color:${r.b<0?'var(--bad)':'var(--ink)'}">${bm(r.b)}</td><td style="text-align:right">${rateTxt(r.i,r.o)}</td></tr>`:'').join('')||'<tr><td colspan="5" class="muted">這一年沒有收支</td></tr>'}</tbody></table>
-    <div class="dayh" style="margin-top:12px"><span>🏷️ 各消費分類（全年）</span></div>${catBars(catTotals(rs))}
+    <div class="dayh" style="margin-top:12px"><span>🍩 各消費分類（全年）</span></div>${pie(catTotals(rs),{label:'全年支出',empty:'這一年沒有支出'})}
     <div class="dayh" style="margin-top:12px"><span>🔁 與 ${+y-1} 年比較</span></div>
     <table><thead><tr><th></th><th style="text-align:right">${y}</th><th style="text-align:right">${+y-1}</th><th style="text-align:right">差額</th></tr></thead>
       <tbody>${cmpRow('收入',T.i,P.i,true)}${cmpRow('支出',T.o,P.o,false)}${cmpRow('結餘',T.b,P.b,true)}</tbody></table>`;
@@ -811,13 +818,13 @@ function renderManage(){
     const rs=live().filter(r=>r.date.startsWith(mg.month)&&isExp(r)), tot={}; rs.forEach(r=>{const a=okAcct(r.acct);tot[a]=(tot[a]||0)+r.amount;});
     const list=Object.entries(tot).sort((a,b)=>b[1]-a[1]), mx=list.length?list[0][1]:1, sum=list.reduce((a,x)=>a+x[1],0);
     body=`<div class="row" style="margin-bottom:8px">${msel}<span class="muted small">本月支出 ${money(sum)}（點帳戶看明細）</span></div>
-      ${list.length?list.map(([a,n])=>`<div class="bar" onclick="mg.acct=mg.acct==='${a}'?'':'${a}';renderManage()"><div>${acctIcon(a)} ${esc(acctName(a))}</div><div class="b"><i style="width:${Math.round(n/mx*100)}%"></i></div><div class="v">${money(n)}</div></div>`).join(''):'<div class="empty">這個月沒有支出</div>'}
+      ${pie(list,{sel:mg.acct,color:acctColor,click:a=>`mg.acct=mg.acct==='${a}'?'':'${a}';renderManage()`,name:a=>`${acctIcon(a)} ${acctName(a)}`})}${list.length?'<div class="small muted" style="margin-top:6px">點一塊或一列，看那個帳戶的明細</div>':''}
       ${mg.acct?`<div class="dayh"><span>${acctIcon(mg.acct)} ${esc(acctName(mg.acct))} 明細</span></div>${sortRecs(rs.filter(r=>okAcct(r.acct)===mg.acct)).map(recRow).join('')}`:''}`;
   } else {
     const rs=live().filter(r=>r.date.startsWith(mg.month)&&isExp(r)), tot={}; rs.forEach(r=>tot[r.category]=(tot[r.category]||0)+r.amount);
     const list=Object.entries(tot).sort((a,b)=>b[1]-a[1]), mx=list.length?list[0][1]:1, sum=list.reduce((a,x)=>a+x[1],0);
     body=`<div class="row" style="margin-bottom:8px">${msel}<span class="muted small">本月支出 ${money(sum)}（點分類看明細）</span></div>
-      ${list.length?list.map(([c,a])=>`<div class="bar" onclick="mg.cat=mg.cat==='${c}'?'':'${c}';renderManage()"><div>${iconOf(c)} ${esc(c)}</div><div class="b"><i style="width:${Math.round(a/mx*100)}%"></i></div><div class="v">${money(a)}</div></div>`).join(''):'<div class="empty">這個月沒有支出</div>'}
+      ${pie(list,{sel:mg.cat,click:c=>`mg.cat=mg.cat==='${c}'?'':'${c}';renderManage()`,name:c=>`${iconOf(c)} ${c}`})}${list.length?'<div class="small muted" style="margin-top:6px">點一塊或一列，看那個分類的明細</div>':''}
       ${mg.cat?`<div class="dayh"><span>${iconOf(mg.cat)} ${esc(mg.cat)} 明細</span></div>${sortRecs(rs.filter(r=>r.category===mg.cat)).map(recRow).join('')}`:''}`;
   }
   $('#app').innerHTML=`<div class="card"><div class="row tabs" style="margin-bottom:12px">${vt('mrep','📊 月報表')}${vt('yrep','📈 年報表')}${vt('day','每日')}${vt('month','每月')}${vt('cat','依分類看支出')}${vt('acct','依帳戶看支出')}${vt('find','🔍 搜尋')}</div>${body}</div>`;
