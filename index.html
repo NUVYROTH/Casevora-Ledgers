@@ -260,6 +260,7 @@ body.glass .card,body.glass .kpi{backdrop-filter:blur(3px);-webkit-backdrop-filt
 .acc.compact .bal{font-size:15px}
 .acc.compact .ops{width:auto;flex:none}
 @media (max-width:600px){.acc.compact{flex-wrap:wrap}.acc.compact .ops{width:100%}}
+@media (max-width:600px){header .sub .note{max-width:60%;border-radius:14px;line-height:1.5}}
 </style>
 </head>
 <body>
@@ -270,39 +271,47 @@ body.glass .card,body.glass .kpi{backdrop-filter:blur(3px);-webkit-backdrop-filt
     <g fill="none" stroke="#fff" stroke-width="2" opacity=".7"><circle cx="300" cy="60" r="6"/><circle cx="330" cy="36" r="4"/><circle cx="420" cy="110" r="5"/><circle cx="540" cy="50" r="7"/><circle cx="575" cy="28" r="4"/></g>
     <g font-weight="800" text-anchor="middle"><circle cx="640" cy="140" r="14" fill="#ffe08a" stroke="#f2b84b" stroke-width="3"/><text x="640" y="146" font-size="15" fill="#d4931f">$</text>
       <circle cx="668" cy="156" r="10" fill="#ffe08a" stroke="#f2b84b" stroke-width="3"/><text x="668" y="160" font-size="11" fill="#d4931f">$</text></g>
-    <g transform="translate(548 116) scale(.72)"><g class="whale">
-      <g class="spout" fill="#bfeaf8" stroke="#5bbfe3" stroke-width="2">
-        <path d="M-14 -40 Q-22 -62 -40 -70 Q-26 -58 -20 -40Z"/><path d="M-6 -42 Q-4 -70 8 -82 Q2 -62 2 -42Z"/><path d="M2 -40 Q16 -60 34 -64 Q18 -54 8 -38Z"/>
-        <circle cx="-44" cy="-76" r="4"/><circle cx="12" cy="-90" r="3.5"/><circle cx="40" cy="-68" r="3"/></g>
-      <g font-weight="800" text-anchor="middle"><circle cx="-34" cy="-92" r="11" fill="#ffe08a" stroke="#f2b84b" stroke-width="2.5"/><text x="-34" y="-87" font-size="13" fill="#d4931f">$</text>
-        <circle cx="26" cy="-104" r="9" fill="#ffe08a" stroke="#f2b84b" stroke-width="2.5"/><text x="26" y="-100" font-size="11" fill="#d4931f">$</text></g>
-      <path d="M60 2 Q74 -6 86 -26 Q96 -10 92 4 Q104 6 112 22 Q94 22 80 16 Q72 30 60 30Z" fill="#3aa6d8" stroke="#16769b" stroke-width="3" stroke-linejoin="round"/>
-      <path d="M-62 12 Q-62 -40 -4 -42 Q52 -44 66 4 Q72 34 40 48 Q10 58 -24 54 Q-62 48 -62 12Z" fill="#4fb6e3" stroke="#16769b" stroke-width="3"/>
-      <path d="M-56 24 Q-30 50 26 46 Q4 56 -24 54 Q-52 48 -56 24Z" fill="#e8f8fe"/>
-      <path d="M-50 30 L28 42 M-46 38 L18 48" stroke="#bfe5f3" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <circle cx="-30" cy="0" r="6" fill="#1f3a4a"/><circle cx="-32" cy="-2" r="2" fill="#fff"/>
-      <ellipse cx="-42" cy="14" rx="7" ry="4.5" fill="#ff9db0" opacity=".75"/>
-      <path d="M-50 14 Q-46 20 -40 18" fill="none" stroke="#1f3a4a" stroke-width="2.5" stroke-linecap="round"/>
-      <path d="M4 30 Q14 46 30 40 Q18 30 4 30Z" fill="#3aa6d8" stroke="#16769b" stroke-width="2.5" stroke-linejoin="round"/>
+    <g transform="translate(548 116) scale(.72)"><g class="whale" data-v="2">
+      <g fill="#c9efff" stroke="#5cc3ea" stroke-width="2" stroke-linejoin="round">
+        <path d="M-10 -46 Q-20 -66 -40 -70 Q-24 -58 -18 -44Z"/><path d="M-4 -48 Q-4 -74 8 -86 Q4 -66 4 -48Z"/><path d="M6 -46 Q18 -64 36 -66 Q20 -56 12 -44Z"/>
+        <circle cx="-44" cy="-74" r="3.5"/><circle cx="14" cy="-94" r="3"/><circle cx="42" cy="-70" r="3"/></g>
+      <g font-weight="800" text-anchor="middle"><circle cx="-30" cy="-90" r="10.5" fill="#ffe08a" stroke="#f2b84b" stroke-width="2.5"/><text x="-30" y="-85.5" font-size="12" fill="#d4931f">$</text>
+        <circle cx="28" cy="-100" r="8.5" fill="#ffe08a" stroke="#f2b84b" stroke-width="2.5"/><text x="28" y="-96.5" font-size="10" fill="#d4931f">$</text></g>
+      <path d="M50 2 Q64 -6 68 -26 Q58 -34 50 -30 Q58 -44 72 -38 Q80 -52 94 -46 Q90 -32 78 -28 Q78 -6 60 10Z" fill="#5bbbe8" stroke="#1c7fae" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M-56 10 C-56 -34 -22 -48 4 -48 C40 -48 62 -24 62 8 C62 40 34 56 2 56 C-34 56 -56 40 -56 10Z" fill="#6ccaf0" stroke="#1c7fae" stroke-width="3"/>
+      <path d="M-50 26 C-34 48 34 50 56 28 C46 48 24 56 2 56 C-26 56 -44 46 -50 26Z" fill="#effbff"/>
+      <ellipse cx="-22" cy="-30" rx="15" ry="6" fill="#fff" opacity=".45" transform="rotate(-18 -22 -30)"/>
+      <circle cx="-22" cy="4" r="8" fill="#1f3a4a"/><circle cx="12" cy="4" r="8" fill="#1f3a4a"/>
+      <circle cx="-24.5" cy="0.5" r="3" fill="#fff"/><circle cx="9.5" cy="0.5" r="3" fill="#fff"/>
+      <circle cx="-19" cy="8" r="1.4" fill="#fff"/><circle cx="15" cy="8" r="1.4" fill="#fff"/>
+      <ellipse cx="-36" cy="18" rx="7.5" ry="4.5" fill="#ffa3b8" opacity=".8"/><ellipse cx="26" cy="18" rx="7.5" ry="4.5" fill="#ffa3b8" opacity=".8"/>
+      <path d="M-12 16 Q-8.5 21 -5 16 Q-1.5 21 2 16" fill="none" stroke="#1f3a4a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M-54 30 Q-66 40 -60 50 Q-50 44 -46 36Z" fill="#5bbbe8" stroke="#1c7fae" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M48 34 Q60 42 56 52 Q46 48 42 40Z" fill="#5bbbe8" stroke="#1c7fae" stroke-width="2.5" stroke-linejoin="round"/>
+      <g fill="#fff" opacity=".9"><path d="M-60 -40 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2Z"/><path d="M58 -64 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5Z"/></g>
     </g></g>
   </svg>
   <div class="t"><div class="tt"><h1>記帳幫手</h1><div class="sub"><span class="lead">像聊天一樣記帳</span><br><span class="note">🔒 本機儲存 · 僅在此裝置此瀏覽器有效 · 可匯出備份</span></div></div></div>
 </header>
 <aside id="side">
-  <div class="brand"><svg viewBox="-70 -118 190 180" aria-hidden="true"><g class="whale">
-      <g class="spout" fill="#bfeaf8" stroke="#5bbfe3" stroke-width="2">
-        <path d="M-14 -40 Q-22 -62 -40 -70 Q-26 -58 -20 -40Z"/><path d="M-6 -42 Q-4 -70 8 -82 Q2 -62 2 -42Z"/><path d="M2 -40 Q16 -60 34 -64 Q18 -54 8 -38Z"/>
-        <circle cx="-44" cy="-76" r="4"/><circle cx="12" cy="-90" r="3.5"/><circle cx="40" cy="-68" r="3"/></g>
-      <g font-weight="800" text-anchor="middle"><circle cx="-34" cy="-92" r="11" fill="#ffe08a" stroke="#f2b84b" stroke-width="2.5"/><text x="-34" y="-87" font-size="13" fill="#d4931f">$</text>
-        <circle cx="26" cy="-104" r="9" fill="#ffe08a" stroke="#f2b84b" stroke-width="2.5"/><text x="26" y="-100" font-size="11" fill="#d4931f">$</text></g>
-      <path d="M60 2 Q74 -6 86 -26 Q96 -10 92 4 Q104 6 112 22 Q94 22 80 16 Q72 30 60 30Z" fill="#3aa6d8" stroke="#16769b" stroke-width="3" stroke-linejoin="round"/>
-      <path d="M-62 12 Q-62 -40 -4 -42 Q52 -44 66 4 Q72 34 40 48 Q10 58 -24 54 Q-62 48 -62 12Z" fill="#4fb6e3" stroke="#16769b" stroke-width="3"/>
-      <path d="M-56 24 Q-30 50 26 46 Q4 56 -24 54 Q-52 48 -56 24Z" fill="#e8f8fe"/>
-      <path d="M-50 30 L28 42 M-46 38 L18 48" stroke="#bfe5f3" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <circle cx="-30" cy="0" r="6" fill="#1f3a4a"/><circle cx="-32" cy="-2" r="2" fill="#fff"/>
-      <ellipse cx="-42" cy="14" rx="7" ry="4.5" fill="#ff9db0" opacity=".75"/>
-      <path d="M-50 14 Q-46 20 -40 18" fill="none" stroke="#1f3a4a" stroke-width="2.5" stroke-linecap="round"/>
-      <path d="M4 30 Q14 46 30 40 Q18 30 4 30Z" fill="#3aa6d8" stroke="#16769b" stroke-width="2.5" stroke-linejoin="round"/>
+  <div class="brand"><svg viewBox="-70 -118 190 180" aria-hidden="true"><g class="whale" data-v="2">
+      <g fill="#c9efff" stroke="#5cc3ea" stroke-width="2" stroke-linejoin="round">
+        <path d="M-10 -46 Q-20 -66 -40 -70 Q-24 -58 -18 -44Z"/><path d="M-4 -48 Q-4 -74 8 -86 Q4 -66 4 -48Z"/><path d="M6 -46 Q18 -64 36 -66 Q20 -56 12 -44Z"/>
+        <circle cx="-44" cy="-74" r="3.5"/><circle cx="14" cy="-94" r="3"/><circle cx="42" cy="-70" r="3"/></g>
+      <g font-weight="800" text-anchor="middle"><circle cx="-30" cy="-90" r="10.5" fill="#ffe08a" stroke="#f2b84b" stroke-width="2.5"/><text x="-30" y="-85.5" font-size="12" fill="#d4931f">$</text>
+        <circle cx="28" cy="-100" r="8.5" fill="#ffe08a" stroke="#f2b84b" stroke-width="2.5"/><text x="28" y="-96.5" font-size="10" fill="#d4931f">$</text></g>
+      <path d="M50 2 Q64 -6 68 -26 Q58 -34 50 -30 Q58 -44 72 -38 Q80 -52 94 -46 Q90 -32 78 -28 Q78 -6 60 10Z" fill="#5bbbe8" stroke="#1c7fae" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M-56 10 C-56 -34 -22 -48 4 -48 C40 -48 62 -24 62 8 C62 40 34 56 2 56 C-34 56 -56 40 -56 10Z" fill="#6ccaf0" stroke="#1c7fae" stroke-width="3"/>
+      <path d="M-50 26 C-34 48 34 50 56 28 C46 48 24 56 2 56 C-26 56 -44 46 -50 26Z" fill="#effbff"/>
+      <ellipse cx="-22" cy="-30" rx="15" ry="6" fill="#fff" opacity=".45" transform="rotate(-18 -22 -30)"/>
+      <circle cx="-22" cy="4" r="8" fill="#1f3a4a"/><circle cx="12" cy="4" r="8" fill="#1f3a4a"/>
+      <circle cx="-24.5" cy="0.5" r="3" fill="#fff"/><circle cx="9.5" cy="0.5" r="3" fill="#fff"/>
+      <circle cx="-19" cy="8" r="1.4" fill="#fff"/><circle cx="15" cy="8" r="1.4" fill="#fff"/>
+      <ellipse cx="-36" cy="18" rx="7.5" ry="4.5" fill="#ffa3b8" opacity=".8"/><ellipse cx="26" cy="18" rx="7.5" ry="4.5" fill="#ffa3b8" opacity=".8"/>
+      <path d="M-12 16 Q-8.5 21 -5 16 Q-1.5 21 2 16" fill="none" stroke="#1f3a4a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M-54 30 Q-66 40 -60 50 Q-50 44 -46 36Z" fill="#5bbbe8" stroke="#1c7fae" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M48 34 Q60 42 56 52 Q46 48 42 40Z" fill="#5bbbe8" stroke="#1c7fae" stroke-width="2.5" stroke-linejoin="round"/>
+      <g fill="#fff" opacity=".9"><path d="M-60 -40 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2Z"/><path d="M58 -64 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5Z"/></g>
     </g></svg>
     <div><div class="bn">記帳幫手</div><div class="bs2">錢水源源不斷 💧</div></div></div>
   <div class="ws">工作台 WORKSPACE</div>
