@@ -1673,7 +1673,7 @@ const GUIDES={
   gStep(6,'薪水、節金到了按「記好」',gC(gR(`<b style="flex:1">薪水</b>${gIn('30,337')}${gB('記好',{pr:1,hl:1,n:1})}`)+`<div class="gx-s" style="color:var(--brand-d);font-weight:700">已預扣 11月請假 $1,663</div>`,'💰 收入到期'),
    `<p>發薪日會出現提醒。<b>金額已經幫你扣好上個月請假</b>（節金也會照加班頁的預估）。跟薪資條一樣就按「記好」${gN(1)}，不一樣先改數字。</p>`),
   gStep(7,'備份與匯入',gC(gR(`<b style="flex:1">💾 備份</b><span class="gx-s" style="color:var(--bad)">還沒備份過</span>`)+gR(gB('⬇️ 下載備份',{pr:1,hl:1,n:1}))),
-   `<p>資料只在這台電腦。在「💾 備份與匯入」卡按「下載備份」${gN(1)}，檔案放雲端硬碟或寄給自己。<b>超過 14 天沒備份會變紅字提醒。</b></p><p>同一張卡也有「📥 匯入 Excel」，跟設定頁的一樣。</p>`)]},
+   `<p>資料只在這台電腦。在「💾 備份與匯入」卡按「下載備份」${gN(1)}，檔案放雲端硬碟或寄給自己。<b>超過 14 天沒備份會變紅字提醒。</b></p><p>同一張卡的「📥 匯入」可以選 <b>Excel</b> 或<b>備份檔</b>。<b>換手機</b>：電腦下載備份 → 用 LINE「傳給自己」或雲端硬碟傳到手機 → 手機打開網站按「📥 匯入」選那個備份檔。</p>`)]},
  cal:{t:'行事曆使用說明',steps:()=>[
   gStep(1,'三種看法',gR(`<span class="seg" style="display:inline-flex"><button class="on" style="padding:3px 10px;font-size:11px">月檢視</button><button style="padding:3px 10px;font-size:11px">週檢視</button><button style="padding:3px 10px;font-size:11px">清單檢視</button></span>${gN(1)}`),
    `<p>上面切換${gN(1)}：<b>月檢視</b>像月曆、<b>週檢視</b>看一週每天的事、<b>清單檢視</b>照日期一條一條列出來，可以直接按「完成」「延後」。</p>`),
@@ -1761,7 +1761,7 @@ const GUIDES={
    `<p>對象清單：記帳時在最後加名字（例：還錢2000 A同事）會記到這個人。</p><p>常用詞：你改過分類，小帳會記住；記錯了在這裡刪掉。</p>`)]},
  settings:{t:'設定使用說明',steps:()=>[
   gStep(1,'匯入 Excel',gR(`${gB('下載範本',{n:1})}${gB('選擇 Excel 檔匯入',{pr:1,hl:1,n:2})}`)+gC(gR(`<b>📥 匯入預覽</b>`)+gR(`<span class="gx-s">將新增 74 項</span>${gB('確定匯入',{pr:1})}`)),
-   `<p>先「下載範本」${gN(1)}，照欄位把資料貼進去；<b>自己做的表直接匯入讀不懂</b>。</p><p>選檔案${gN(2)}後會先預覽，再選：</p><ul><li><b>加進去（不覆蓋）</b>：只加新的，重複的跳過。</li><li><b>清空後匯入（覆蓋）</b>：先自動下載備份，再把帳、帳戶、負債、加班等換成檔案內容；薪資條、常用語會保留。</li></ul>`),
+   `<p>先「下載範本」${gN(1)}，照欄位把資料貼進去；<b>自己做的表直接匯入讀不懂</b>。</p><p>選檔案${gN(2)}後會先預覽，再選：</p><ul><li><b>加進去（不覆蓋）</b>：只加新的，重複的跳過。</li><li><b>清空後匯入（覆蓋）</b>：把帳、帳戶、負債、加班等換成檔案內容；薪資條、常用語會保留。想保險可以勾「先下載備份」。</li></ul><p>選<b>備份檔（.json）</b>會整個換成備份的內容，換手機、換電腦用這個。</p><ul style="display:none"></ul>`),
   gStep(2,'每月固定收支',gC(gR(`<b style="flex:1">房租</b><span class="gx-s">每月 10 號</span><b>-$8,000</b>`)+gR(`${gB('修改')}${gB('刪除',{rd:1})}`),'📅 每月固定收支'),
    `<p>支出和還款會出現在「繳費狀態」；收入到了日期會在首頁提醒。「多久一次」可選每月、每 2 個月（例：水電）、每 4 個月（例：節金）；只有一次的，開始和結束設同一個月。</p>`),
   gStep(3,'下載備份、從備份還原',gR(`${gB('下載備份',{pr:1,hl:1,n:1})}${gB('從備份還原',{n:2})}`),
@@ -1820,8 +1820,8 @@ function backupCard(){ const lb=S.lastBackup, d=lb?daysBetween(lb,today()):null;
   return `<div class="card o8"><div class="row"><h2 style="margin:0">💾 備份與匯入</h2><span class="spacer"></span><span class="small ${d===null||d>14?'':'muted'}" style="${d===null||d>14?'color:var(--bad);font-weight:700':''}">${lb?`上次 ${fmtMD(lb)}（${d===0?'今天':d+' 天前'}）`:'還沒備份過'}</span></div>
     <div class="small muted" style="margin:6px 0 8px">資料只在這台電腦這個瀏覽器，請定期下載備份，放在這台電腦以外的地方。備份檔裡有薪資條，不要傳給別人。</div>
     <button class="primary" onclick="backup()" style="width:100%">⬇️ 下載備份</button>
-    <button onclick="$('#xlsFileHome').click()" style="width:100%;margin-top:8px">📥 匯入 Excel</button><input type="file" id="xlsFileHome" accept=".xlsx,.xls,.csv" hidden onchange="importExcel(this)">
-    <div class="small muted" style="margin-top:6px">要用範本格式（<a href="#" onclick="downloadTemplate();return false">下載範本</a>）。匯入前會先預覽，按「確定匯入」才會加進去。<b>請先下載備份再匯入。</b></div></div>`; }
+    <button onclick="$('#xlsFileHome').click()" style="width:100%;margin-top:8px">📥 匯入（Excel 或備份檔）</button><input type="file" id="xlsFileHome" accept=".xlsx,.xls,.csv,.json,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" hidden onchange="importExcel(this)">
+    <div class="small muted" style="margin-top:6px">可以選 <b>Excel</b>（要用<a href="#" onclick="downloadTemplate();return false">範本格式</a>，會先預覽）或<b>備份檔</b>（.json，會整個換成備份的內容，換手機用這個）。</div></div>`; }
 
 /* ---------- 首頁數字卡：點一下看明細 ---------- */
 function kpiShow(k){ const ym=today().slice(0,7), m=document.createElement('div'); m.className='modal'; let title='', body='', foot='';
@@ -2025,6 +2025,7 @@ function fullPlan(){ if(!IMPORT_SRC) return null; const sv=[S,R]; try{ S=cleanSt
 
 async function importExcel(inp){
   const f=inp.files[0]; inp.value=''; if(!f) return;
+  if(/\.json$/i.test(f.name)||/json/.test(f.type)){ restoreFile(f); return; }
   let X; try{ X=await loadXLSX(); }catch(e){ alert('需要網路才能讀 Excel，請連上網路再試一次。'); return; }
   let wb; try{ wb=X.read(await f.arrayBuffer(),{type:'array',cellDates:true}); }catch(e){ alert('讀不出這個檔案，請確認是 Excel（.xlsx）檔。'); return; }
   IMPORT_SRC={X,wb}; const plan=buildPlan(X,wb);
@@ -2037,7 +2038,8 @@ function showImportPreview(p){
     <div class="small muted" style="margin-bottom:6px">${n?`這個檔案有 <b>${n}</b> 項是新的。`:p.skip.length&&fn?'這個檔案的內容<b>都已經有了</b>，加進去不會多任何東西。想用檔案內容重來，請選「清空後匯入」。':p.skip.length?'沒有可以匯入的資料。':'沒有可以匯入的資料。<br>記帳幫手只看得懂<b>範本格式</b>：工作表要叫「帳戶」「負債」「固定收支」「加班」「月薪」「加給」「節金」「預算」「儲蓄目標」「記帳紀錄」，第一列是範本的標題。自己做的表請先按「下載範本」，把資料照欄位貼進去再匯入。'}</div>
     ${fn?`<div class="impmode"><div class="f" style="margin:6px 0 6px">要怎麼匯入？</div>
       <label class="opt"><input type="radio" name="ipMode" value="add" ${n?'checked':'disabled'}><div><b>加進去（不覆蓋）</b><div class="small muted">${n?`新增上面這 ${n} 項，重複的會自動跳過；原本的資料都保留。`:'這個檔案的內容都已經有了，不用再加。'}</div></div></label>
-      <label class="opt danger"><input type="radio" name="ipMode" value="replace" ${n?'':'checked'}><div><b>清空後匯入（覆蓋）</b><div class="small muted">會<b>先自動下載一份備份</b>，再清掉目前的記帳紀錄、帳戶、負債、固定收支、繳費狀態、加班請假、月薪、加給，換成這個檔案的 ${fn} 項。<br><b>薪資條、常用語、對象、分類圖示、背景圖會保留。</b></div></div></label></div>`:''}
+      <label class="opt danger"><input type="radio" name="ipMode" value="replace" ${n?'':'checked'}><div><b>清空後匯入（覆蓋）</b><div class="small muted">清掉目前的記帳紀錄、帳戶、負債、固定收支、繳費狀態、加班請假、月薪、加給，換成這個檔案的 ${fn} 項。<br><b>薪資條、常用語、對象、分類圖示、背景圖會保留。</b></div>
+        <label class="small" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="ipBk"> 清空前先下載一份備份（想保險再勾）</label></div></label></div>`:''}
     ${sec('👛 帳戶',p.accts,x=>`<span>${esc(x.name)}</span><span>${bm(x.init)}</span>`)}
     ${sec('💳 負債',p.debts,x=>`<span>${esc(x.name)}・${x.kind==='loan'?LOAN_SUB[x.sub].slice(2).trim():(x.init>=0?'我欠':'欠我')}</span><span>${x.init>=0?'還欠':'對方還欠'} ${money(Math.abs(x.init))} / 總額 ${money(x.orig)}</span>`)}
     ${p.budget!==null?`<div class="bs" style="font-size:13px"><span>🍙 生活費預算</span><span>每月 ${money(p.budget)}</span></div>`:''}
@@ -2057,13 +2059,13 @@ function showImportPreview(p){
   const done=(cnt,msg)=>{ PENDING_IMPORT=null; IMPORT_SRC=null; m.remove(); if(page==='home') renderHome(); else renderSettings(); flash(msg||`匯入完成 ✦ 新增 ${cnt} 項`); };
   if(ok) ok.onclick=async()=>{ const oR=JSON.stringify(R), oS=JSON.stringify(S);
     if(mode()!=='replace'){ applyPlan(p); if(!persist()){R=JSON.parse(oR);S=JSON.parse(oS);return;} done(n); return; }
-    if(!confirm(`確定要「清空後匯入」嗎？\n\n會先下載一份備份，然後清掉目前的記帳紀錄、帳戶、負債、固定收支、加班請假等資料，換成這個檔案的 ${fn} 項。`)) return;
-    if(!confirm('再確認一次：真的要清空嗎？\n清空後，只能用剛剛下載的備份檔救回來。')) return;
-    ok.disabled=true; ok.textContent='備份中…'; try{ await backup(); }catch(e){ ok.disabled=false; ok.textContent='清空並匯入'; alert('備份沒有成功，先不清空。'); return; }
+    const wantBk=!!(m.querySelector('#ipBk')&&m.querySelector('#ipBk').checked);
+    if(!confirm(`確定要「清空後匯入」嗎？\n\n${wantBk?'會先下載一份備份，然後':''}清掉目前的記帳紀錄、帳戶、負債、固定收支、加班請假等資料，換成這個檔案的 ${fn} 項。${wantBk?'':'\n\n（沒有勾「先下載備份」，清掉的資料救不回來）'}`)) return;
+    if(wantBk){ ok.disabled=true; ok.textContent='備份中…'; try{ await backup(); }catch(e){ ok.disabled=false; ok.textContent='清空並匯入'; alert('備份沒有成功，先不清空。'); return; } }
     const oldAtt=allPhIds().filter(id=>!Object.values(S.payslips).some(x=>x.ph.includes(id)));
     S=cleanState(); R=[]; const plan=buildPlan(IMPORT_SRC.X,IMPORT_SRC.wb); applyPlan(plan);
     if(!persist()){ R=JSON.parse(oR); S=JSON.parse(oS); ok.disabled=false; ok.textContent='清空並匯入'; return; }
-    phDel(oldAtt); done(planCount(plan),`已清空並匯入 ✦ ${planCount(plan)} 項（備份已下載）`); };
+    phDel(oldAtt); done(planCount(plan),`已清空並匯入 ✦ ${planCount(plan)} 項${wantBk?'（備份已下載）':''}`); };
 }
 
 /* ---------- 設定 ---------- */
@@ -2086,9 +2088,9 @@ function renderSettings(){
      <div class="muted small" style="margin-top:8px">支出和還款會出現在「繳費狀態」，按「完成」才會真的記帳，也可以「延後」到下個月；收入（例如薪水）到了日期會在首頁提醒你按「記好」。</div></div>
    <div class="card"><h2>📥 匯入 Excel</h2>
      <div class="small" style="margin-bottom:8px">1. 先下載範本，照範本的欄位把資料貼進去（不用的工作表可以留空）　2. 選檔案匯入，會先給你預覽，按「確定匯入」才會加進去</div>
-     <div class="row"><button onclick="downloadTemplate()">下載範本</button><button class="primary" onclick="$('#xlsFile').click()">選擇 Excel 檔匯入</button><input type="file" id="xlsFile" accept=".xlsx,.xls,.csv" hidden onchange="importExcel(this)"></div>
+     <div class="row"><button onclick="downloadTemplate()">下載範本</button><button class="primary" onclick="$('#xlsFile').click()">選擇檔案匯入（Excel 或備份檔）</button><input type="file" id="xlsFile" accept=".xlsx,.xls,.csv,.json,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" hidden onchange="importExcel(this)"></div>
      <div class="muted small" style="margin-top:8px">匯入是「加進去」，不會蓋掉原本的資料。讀檔需要網路（會從 cdnjs 載入 SheetJS 工具），但檔案只在這台裝置上讀，<b>不會上傳</b>。日期可以寫民國（115.11.10）或西元（2026/11/10）。</div></div>
-   <div class="card"><h2>📦 資料</h2><div class="row"><button onclick="go2('trash')">最近刪除（${trashN}）</button><button onclick="exportCSV()">匯出 CSV（Excel 可開）</button><button onclick="backup()">下載備份</button><button onclick="$('#restoreFile').click()">從備份還原</button><input type="file" id="restoreFile" accept=".json" hidden onchange="restore(this)"></div></div>
+   <div class="card"><h2>📦 資料</h2><div class="row"><button onclick="go2('trash')">最近刪除（${trashN}）</button><button onclick="exportCSV()">匯出 CSV（Excel 可開）</button><button onclick="backup()">下載備份</button><button onclick="$('#restoreFile').click()">從備份還原</button><input type="file" id="restoreFile" accept=".json,application/json" hidden onchange="restore(this)"></div></div>
    <div class="card"><details id="dataHelp"><summary>資料保存方式與限制（請務必閱讀）</summary><ul class="small">
      <li><b>圖片（薪資條、繳費截圖）</b>存在瀏覽器的大容量空間 IndexedDB，一樣<b>只在這台電腦、這個瀏覽器</b>，不會上傳。可放的數量依電腦剩餘空間而定，通常可放上千張。目前圖片約用了 <b id="phMB">…</b>。</li>
      <li>「下載備份」會把圖片一起放進備份檔，所以檔案會比較大。<b>薪資條是很私密的資料，備份檔不要傳給別人。</b></li>
@@ -2155,8 +2157,8 @@ async function backup(){ const photos={}; let miss=0; for(const id of allPhIds()
   S.lastBackup=today(); persist(); if(page==='home') renderHome();
   download(JSON.stringify({app:'casevoraXiaozhang',version:2,exportedAt:new Date().toISOString(),records:live(),settings:S,photos},null,1),`xiaozhang_backup_${today()}.json`,'application/json');
   if(miss) alert(`有 ${miss} 張圖片讀不到，沒有放進備份。`); }
-function restore(inp){
-  const f=inp.files[0]; inp.value=''; if(!f) return; const fr=new FileReader();
+function restore(inp){ const f=inp.files[0]; inp.value=''; if(f) restoreFile(f); }
+function restoreFile(f){ const fr=new FileReader();
   fr.onload=async()=>{ let d; try{ d=JSON.parse(fr.result); if(!d||d.app!=='casevoraXiaozhang'||!Array.isArray(d.records)) throw 0; }catch(e){ alert('無法讀取：這不是本工具的備份檔。'); return; }
     const bad=d.records.some(r=>!r||!/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')||!(Number(r.amount)>0)||!['income','expense','transfer','adjust','debt','save'].includes(r.type)||(r.type==='save'&&!/^[\w-]{1,40}$/.test(String(r.goal)))||(r.type==='debt'&&(!DEBT_OP[r.op]||!/^[\w-]{1,40}$/.test(String(r.debt))))); if(bad){ alert('無法還原：備份檔內有格式不正確的紀錄。'); return; }
     const photos={}; if(d.photos&&typeof d.photos==='object') Object.entries(d.photos).forEach(([id,u])=>{ if(/^[\w-]{1,60}$/.test(id)&&typeof u==='string'&&/^data:image\/(jpeg|png|webp|gif);base64,/.test(u)) photos[id]=u; });
