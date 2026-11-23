@@ -341,6 +341,37 @@ body.glass .card .muted,body.glass .kpi .s,body.glass .kpi .t{color:#2a4552}
 .macc summary{cursor:pointer;color:var(--brand-d);font-weight:700;margin-top:6px}
 .macc .mlist{margin-top:4px}
 @media (max-width:899px){.mtotal .big{font-size:26px}.moneyc .macc .mlist{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}}
+
+.rec.sel{background:var(--brand-soft);border-radius:10px}
+.rec .ck{flex:none;width:22px;height:22px;border:2px solid var(--brand);border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;color:#fff}
+.rec .ck.on{background:var(--brand)}
+button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.selbar{position:sticky;top:6px;z-index:5;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff7e0;border:2px solid #f2c94c;border-radius:12px;padding:8px 10px;margin:6px 0}
+.selbar button{padding:5px 12px;font-size:14px}
+.sheetwrap{overflow-x:auto}
+table.sheet{width:100%;border-collapse:separate;border-spacing:0;font-size:15px}
+table.sheet th{background:var(--brand-soft);color:var(--ink);font-weight:800;padding:8px 6px;text-align:left;border-bottom:2px solid var(--line);white-space:nowrap}
+table.sheet td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.sheet .c0{width:38px;text-align:center}.table.sheet .c1{white-space:nowrap}
+table.sheet td.c1,table.sheet td.c4{white-space:nowrap}table.sheet .c4{text-align:right;font-weight:800}table.sheet .c5{white-space:nowrap}
+tr.sr.done td{background:#e6f6ec}tr.sr.done .c2 b{color:#1f6b45}
+tr.sr.late td{background:#fdeceb}
+tr.sr.moved td{opacity:.6}
+tr.sr.liv td{background:#fff8e6}
+.cbx{width:26px;height:26px;border-radius:7px;border:2px solid var(--brand);background:#fff;padding:0;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;cursor:pointer}
+.cbx.on{background:var(--ok);border-color:var(--ok)}
+.cbx.dis{border-color:transparent;background:transparent;color:var(--muted);cursor:default}
+.sheetsum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.sheetsum>div{background:rgba(var(--card-rgb),.9);border:2px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column}
+.sheetsum span{font-size:13px;color:var(--muted);font-weight:700}.sheetsum b{font-size:16px}.sheetsum small{font-size:11px;color:var(--muted)}
+.crow{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.crow input{padding:6px 8px;font-size:14px}
+.crow .cv{min-width:78px;text-align:right;font-size:14px;white-space:nowrap}
+.crow button{padding:4px 8px;font-size:12px;flex:none}
+.cres{display:flex;justify-content:space-between;gap:10px;margin-top:8px;padding:8px 10px;border-radius:12px;background:var(--brand-soft);font-size:15px}
+.cres b{font-size:18px}
+.plan{border:2px solid var(--line);border-radius:12px;padding:8px 10px;margin-top:6px}
+@media (max-width:600px){.sheetsum{grid-template-columns:1fr 1fr}table.sheet{font-size:14px}table.sheet td,table.sheet th{padding:7px 4px}.crow .cv{min-width:64px}}
 </style>
 </head>
 <body>
@@ -429,7 +460,7 @@ function download(content,name,type){const a=document.createElement('a');a.href=
 
 /* ---------- 資料 ---------- */
 let R=loadR(), S=loadS();
-function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{},ot:{bases:[],days:[],paid:{},allow:[],bonusFrom:''},phrases:['吃飯','平日加班','休息加班'],lastBackup:'',budget:{living:0}};}
+function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{},ot:{bases:[],days:[],paid:{},allow:[],bonusFrom:''},phrases:['吃飯','平日加班','休息加班'],lastBackup:'',budget:{living:0},plans:[]};}
 function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stringify(DEF_ACCTS));
   s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0,dueDay:dayOk(a.dueDay),atype:ACCT_TYPES[a.atype]?a.atype:defType(a.id)})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0,dueDay:0});
   s.accounts.forEach(a=>{ if(a.name==='薪轉帳戶'){ a.name='薪資帳戶'; } else if(/領|轉|加值|\+值/.test(a.name)){ a.name=a.name.replace(/領|轉|加值|\+值/g,'')||'帳戶'; } });
@@ -452,6 +483,8 @@ function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stri
   if(!Array.isArray(s.phrases)||(s.phrases.length===1&&s.phrases[0]==='平日加班2H')) s.phrases=['吃飯','平日加班','休息加班']; s.phrases=[...new Set(s.phrases.map(x=>String(x??'').trim().slice(0,30)).filter(Boolean))].slice(0,40);
   s.lastBackup=/^\d{4}-\d{2}-\d{2}$/.test(String(s.lastBackup||''))?s.lastBackup:'';
   s.budget={living:isObj(s.budget)&&Number(s.budget.living)>0?Math.round(Number(s.budget.living)):0};
+  s.plans=(Array.isArray(s.plans)?s.plans:[]).filter(x=>x&&/^[\w-]{1,40}$/.test(String(x.id))&&/^\d{4}-\d{2}-\d{2}$/.test(String(x.start))).map(x=>({id:String(x.id),name:String(x.name||'我的計畫').slice(0,20),start:String(x.start),days:Math.max(1,Math.min(62,Math.round(Number(x.days)||7))),base:Math.round(Number(x.base)||0),
+    items:(Array.isArray(x.items)?x.items:[]).slice(0,20).map(i=>({n:String(i&&i.n||'').slice(0,20),e:String(i&&i.e||'').slice(0,40),v:Math.round(Number(i&&i.v)||0)}))})).slice(-10);
   const ps={}; if(isObj(s.payslips)) Object.entries(s.payslips).forEach(([k,v])=>{ if(!YMRE.test(k)||!isObj(v)) return; const l=phList(v.ph), note=String(v.note||'').slice(0,80); if(l.length||note) ps[k]={ph:l,note}; }); s.payslips=ps;
   if(!Array.isArray(s.goals)) s.goals=[];
   s.goals=s.goals.filter(g=>g&&/^[\w-]{1,40}$/.test(String(g.id))&&String(g.name||'').trim()).map(g=>({id:String(g.id),name:String(g.name).trim().slice(0,20),target:Number(g.target)>0?Number(g.target):0,
@@ -762,7 +795,8 @@ function recMeta(r){
 }
 function recRow(r){
   const m=recMeta(r);
-  return `<div class="rec" onclick="openEdit('${r.id}')"><div class="ic">${m.icon}</div><div class="mid"><div class="nm">${esc(m.name)}${r.who?`<span class="tag">${esc(r.who)}</span>`:''}</div>
+  const on=SEL.on, sel=on&&SEL.ids.has(r.id);
+  return `<div class="rec ${sel?'sel':''}" onclick="recClick('${r.id}')">${on?`<span class="ck ${sel?'on':''}" aria-hidden="true">${sel?'✓':''}</span>`:''}<div class="ic">${m.icon}</div><div class="mid"><div class="nm">${esc(m.name)}${r.who?`<span class="tag">${esc(r.who)}</span>`:''}</div>
     <div class="sb">${fmtMD(r.date)}・${m.sub}</div></div><div class="am ${m.cls}">${m.sign}${money(r.amount)}</div></div>`;
 }
 function monthTotals(ym){
@@ -796,12 +830,14 @@ function renderHome(){
     <div id="askBox" class="o4"></div>
     <div class="card o6 billmini"><div class="row" style="margin-bottom:4px"><h2 style="margin:0">🧾 待處理繳費（${open.length}）</h2><span class="spacer"></span><a href="#" onclick="go('bills');return false" style="color:var(--brand-d);font-weight:700">看全部 →</a></div>
       ${open.length?billHead()+open.slice(0,8).map(b=>billRowHTML(b,true)).join('')+(open.length>8?`<div class="muted small" style="margin-top:6px">還有 ${open.length-8} 筆，請到「繳費狀態」查看。</div>`:''):'<div class="empty">目前沒有要繳的 ✦</div>'}</div>
-    <div class="card o7"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">🧾 最近記帳紀錄</h2><span class="spacer"></span><button onclick="mg.view='find';go('manage')" style="padding:6px 12px">🔍 搜尋</button>
+    <div class="card o6"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">📋 本月收支表</h2><span class="spacer"></span><a href="#" onclick="CALV='sheet';CALM=today().slice(0,7);go('cal');return false" style="color:var(--brand-d);font-weight:700">放大看 →</a></div>${monthSheet(ym,true)}</div>
+    <div class="card o7"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">🧾 最近記帳紀錄</h2><span class="spacer"></span><button onclick="selToggle()" style="padding:6px 12px" class="${SEL.on?'on':''}">☑ ${SEL.on?'結束多選':'多選'}</button><button onclick="mg.view='find';go('manage')" style="padding:6px 12px">🔍 搜尋</button>
       <select style="width:auto" onchange="S.recentN=+this.value;persist();renderHome()">${[10,20,30].map(x=>`<option value="${x}" ${n===x?'selected':''}>${x} 筆</option>`).join('')}</select></div>
-      ${recent.length?recent.map(recRow).join(''):'<div class="empty">還沒有紀錄喔，在上面打一筆試試看 ✦</div>'}
+      ${SEL.on?selBar(recent.map(r=>r.id)):''}${recent.length?recent.map(recRow).join(''):'<div class="empty">還沒有紀錄喔，在上面打一筆試試看 ✦</div>'}
       ${live().length>n?'<div class="muted small" style="margin-top:6px">更早的紀錄請到「帳務管理」選日期或月份查看。</div>':''}</div>
    </div><div class="col">
     ${budgetCard()}
+    ${calcCard()}
     ${moneyCard()}
     <div class="card o8"><div class="row"><h2 style="margin:0">處理狀態</h2><span class="spacer"></span><span class="small muted">${ymLabel(ym)}</span></div>
       <div class="prog"><i style="width:${pct}%"></i></div><div class="small muted">本月繳費進度 ${doneM} / ${needM}（${pct}%）</div>
@@ -955,7 +991,8 @@ function renderManage(){
       ${pie(list,{sel:mg.cat,click:c=>`mg.cat=mg.cat==='${c}'?'':'${c}';renderManage()`,name:c=>`${iconOf(c)} ${c}`})}${list.length?'<div class="small muted" style="margin-top:6px">點一塊或一列，看那個分類的明細</div>':''}
       ${mg.cat?`<div class="dayh"><span>${iconOf(mg.cat)} ${esc(mg.cat)} 明細</span></div>${sortRecs(rs.filter(r=>r.category===mg.cat)).map(recRow).join('')}`:''}`;
   }
-  $('#app').innerHTML=`<div class="card"><div class="row tabs" style="margin-bottom:12px">${vt('mrep','📊 月報表')}${vt('yrep','📈 年報表')}${vt('day','每日')}${vt('month','每月')}${vt('cat','依分類看支出')}${vt('acct','依帳戶看支出')}${vt('find','🔍 搜尋')}</div>${body}</div>`;
+  $('#app').innerHTML=`<div class="card"><div class="row tabs" style="margin-bottom:12px">${vt('mrep','📊 月報表')}${vt('yrep','📈 年報表')}${vt('day','每日')}${vt('month','每月')}${vt('cat','依分類看支出')}${vt('acct','依帳戶看支出')}${vt('find','🔍 搜尋')}</div><div class="row" style="margin-bottom:8px"><span class="spacer"></span><button onclick="selToggle()" class="${SEL.on?'on':''}" style="padding:5px 12px">☑ ${SEL.on?'結束多選':'多選刪除'}</button></div>${SEL.on?selBar([]):''}${body}</div>`;
+  if(SEL.on){ const bar=$('#app .selbar'); if(bar) bar.outerHTML=selBar([...document.querySelectorAll('#app .rec')].map(e=>e.getAttribute('onclick').match(/'([^']+)'/)[1])); }
   if(v==='find'){ const q=$('#fq'); if(q&&!q.value) q.focus(); }
 }
 
@@ -1456,7 +1493,7 @@ async function delPhoto(ctx,key,id){ const o=JSON.stringify(S);
   if(ctx==='att'){ S.att[key]=(S.att[key]||[]).filter(x=>x!==id); if(!S.att[key].length) delete S.att[key]; }
   else { const p=S.payslips[key]; if(p){ p.ph=p.ph.filter(x=>x!==id); if(!p.ph.length&&!p.note) delete S.payslips[key]; } }
   if(!persist()){ S=JSON.parse(o); return; } await phDel([id]); rerender(); flash('已刪除圖片'); }
-function rerender(){ attRender(); if(page==='cal') renderCal(); else if(page==='opts') renderOpts(); else if(page==='bills') renderBills(); else if(page==='payslip') renderPayslip(); else if(page==='home') renderHome(); }
+function rerender(){ attRender(); if(page==='manage') renderManage(); else if(page==='cal') renderCal(); else if(page==='opts') renderOpts(); else if(page==='bills') renderBills(); else if(page==='payslip') renderPayslip(); else if(page==='home') renderHome(); }
 
 /* ---------- 繳費狀態 ---------- */
 const ST_TXT={done:'已繳',skip:'略過',late:'逾期',today:'今天到期',wait:'待繳',moved:'已延後'}, OPEN_ST=['late','today','wait'];
@@ -1702,23 +1739,33 @@ const gK=(t,v,c)=>`<span class="gx-k" style="border-left-color:${c}"><small>${t}
 const gStep=(n,t,mock,body)=>`<div class="mg-step"><div class="gx">${mock}</div><div class="mg-txt"><div class="mg-h"><span class="no">${n}</span>${t}</div>${body}</div></div>`;
 const GUIDES={
  home:{t:'記帳總覽使用說明',steps:()=>[
-  gStep(1,'第一次使用（只要做一次）',gR(`${gB('⬇️ 下載備份',{n:1})}`)+gR(`${gB('⚙️ 設定')}<span>→</span>${gB('選擇 Excel 檔匯入',{pr:1,hl:1,n:2})}`)+gR(`${gB('👛 帳戶')}<span>→</span>${gIn('薪轉帳戶 目前餘額',1)}${gN(3)}`),
-   `<ol style="margin:0 0 6px;padding-left:20px;font-size:14px"><li>先按「💾 備份與匯入」卡的「⬇️ 下載備份」${gN(1)}，萬一弄錯可以回來。</li><li>按同一張卡的「📥 匯入 Excel」，或到「設定」匯入${gN(2)}（要用範本格式）。</li><li>按「💰 一次填好全部餘額」，把每個帳戶<b>現在有多少錢</b>填上${gN(3)}。</li></ol><p>做完這三步，以後每天只要記帳就好。</p>`),
+  gStep(1,'第一次使用（只要做一次）',gC(gR(`<b style="flex:1">👛 我的錢</b>${gB('填／校正',{hl:1,n:1})}`))+gR(`${gB('📥 匯入（Excel 或備份檔）',{pr:1,n:2})}`),
+   `<ol style="margin:0 0 6px;padding-left:20px;font-size:14px"><li>在「👛 我的錢」按「填／校正」${gN(1)}，把身上、銀行<b>現在實際有多少錢</b>填上。</li><li>有整理好的 Excel 或備份檔，按「📥 匯入」${gN(2)}一次匯進來。</li></ol><p>做完以後，每天只要記帳就好。</p>`),
   gStep(2,'像聊天一樣記帳',gC(gR(`${gIn('午餐120 LINE Pay',1)}${gB('記',{pr:1,n:1})}`)+gR(`<span class="gx-s">付款方式</span>${gIn('💵 現金 ▾')}`)),
-   `<p>打一句話，按「記」${gN(1)}或 Enter 就好。</p><ul><li><b>花錢</b>：早餐65、午餐120 LINE Pay</li><li><b>收錢</b>：薪水50000 台新、加班費5111</li><li><b>加班／請假</b>：平日加班2H、休息加班8H（週六）、事假4H、病假1天 → 記到「⏱️ 加班」，不算花錢</li></ul><p class="small muted">沒說日期就記今天；沒說付款方式就算現金。</p>`),
-  gStep(3,'常用語一鍵記',gC(gR(`${gIn('平日加班2H')}${gB('⭐ 加入常用',{hl:1,n:1})}`)+gR(`<span class="gx-chip">吃飯 ×</span><span class="gx-chip">平日加班 ×</span><span class="gx-chip">休息加班 ×</span>${gN(2)}`)),
-   `<p>點常用語${gN(2)}會放進輸入框，<b>接著打金額或時數</b>（例：點「吃飯」再打 120；點「平日加班」再打 2），按「記」。</p><p>有數字的常用語（例：早餐65）點一下就直接記好。新增：打好字按「⭐ 加入常用」${gN(1)}；按 × 刪除；改字、排順序到「⭐ 常用選項」。</p>`),
-  gStep(4,'看懂上面四張卡',gR(`${gK('本月收入','$52,000','var(--ok)')}${gK('本月支出','$18,300','var(--bad)')}`)+gR(`${gK('還沒繳','$5,838','#e0a100')}${gK('淨資產','$12萬','var(--info)')}`),
-   `<ul><li><b>本月收入／支出</b>：這個月進來、出去多少。</li><li><b>還沒繳</b>：到期還沒按「完成」的錢。</li><li><b>淨資產</b>：所有帳戶的錢 − 還欠的錢。</li></ul><p><b>每張卡都可以點</b>，會列出是哪些項目；右邊「處理狀態」的已繳、逾期…也可以點，直接跳到那些項目。</p>`),
-  gStep(5,'到期的錢：完成或延後',gC(gR(`<b style="flex:1">房租</b>${gTag('逾期','late')}${gB('完成',{dk:1,hl:1,n:1})}${gB('延後',{rd:1,n:2})}`)),
-   `<p>繳好了按「完成」${gN(1)}；這個月繳不出來按「延後」${gN(2)}，會挪到下個月。</p>`),
-  gStep(6,'薪水、節金到了按「記好」',gC(gR(`<b style="flex:1">薪水</b>${gIn('30,337')}${gB('記好',{pr:1,hl:1,n:1})}`)+`<div class="gx-s" style="color:var(--brand-d);font-weight:700">已預扣 11月請假 $1,663</div>`,'💰 收入到期'),
-   `<p>發薪日會出現提醒。<b>金額已經幫你扣好上個月請假</b>（節金也會照加班頁的預估）。跟薪資條一樣就按「記好」${gN(1)}，不一樣先改數字。</p>`),
-  gStep(7,'備份與匯入',gC(gR(`<b style="flex:1">💾 備份</b><span class="gx-s" style="color:var(--bad)">還沒備份過</span>`)+gR(gB('⬇️ 下載備份',{pr:1,hl:1,n:1}))),
-   `<p>資料只在這台電腦。在「💾 備份與匯入」卡按「下載備份」${gN(1)}，檔案放雲端硬碟或寄給自己。<b>超過 14 天沒備份會變紅字提醒。</b></p><p>同一張卡的「📥 匯入」可以選 <b>Excel</b> 或<b>備份檔</b>。<b>換手機</b>：電腦下載備份 → 用 LINE「傳給自己」或雲端硬碟傳到手機 → 手機打開網站按「📥 匯入」選那個備份檔。</p>`)]},
+   `<p>打一句話，按「記」${gN(1)}或 Enter 就好。</p><ul><li><b>花錢</b>：早餐65、午餐120 LINE Pay</li><li><b>收錢</b>：薪水50000 薪資帳戶、加班費5111</li><li><b>領錢放身上</b>：薪資帳戶領1000（銀行轉到身上，不算花掉）</li><li><b>加班／請假</b>：平日加班2H、休息加班8H、事假4H → 記到「⏱️ 加班」</li></ul><p class="small muted">沒說日期就記今天；沒說付款方式就算現金。</p>`),
+  gStep(3,'常用語一鍵記',gC(gR(`${gIn('平日加班')}${gB('⭐ 加入常用',{hl:1,n:1})}`)+gR(`<span class="gx-chip">吃飯 ×</span><span class="gx-chip">平日加班 ×</span><span class="gx-chip">休息加班 ×</span>${gN(2)}`)),
+   `<p>點常用語${gN(2)}會放進輸入框，<b>接著打金額或時數</b>（點「吃飯」再打 120；點「平日加班」再打 2），按「記」。</p><p>常打的字先打好，按「⭐ 加入常用」${gN(1)}；按 × 刪除；改字、排順序到「⭐ 常用選項」。</p>`),
+  gStep(4,'🍙 本月生活費',gC(gR(`<span style="flex:1">已花費</span><b>$1,000 / $5,000</b>`)+gR(`<span style="flex:1">👛 身上現金</span><b>$1,000</b>`)+gR(`<b style="flex:1">✨ 本月還可以用</b><b style="color:#b45309">$1,000</b>`)+`<div class="gx-s" style="color:#8a5a00">預算還剩 $4,000，但身上只有 $1,000</div>`),
+   `<ul><li><b>已花費</b>：這個月吃飯、交通、生活用品等花了多少（房租、帳單、還款不算）。</li><li><b>本月還可以用</b>：預算還剩多少；<b>身上的錢比較少時，以身上的錢為準</b>。</li><li>需要用到完整預算，從帳戶領出來（打「薪資帳戶領3000」），「還可以用」就會變回預算的數字。</li></ul><p>按「改預算」可以改每個月的生活費。</p>`),
+  gStep(5,'👛 我的錢：總共有多少',gC(`<div class="gx-s">現在總共有（身上＋銀行＋電子支付）</div><div style="font-size:18px;font-weight:800">$23,050</div>`+gR(`<span class="gx-chip">💵 身上 $4,700</span><span class="gx-chip">🏦 銀行 $18,000</span>`)+gR(`<span class="gx-s">本月現金流：進 +$49,900・出 -$45,000</span>`)),
+   `<ul><li><b>大字</b>：身上、銀行、電子支付全部加起來；有信用卡欠款會另外寫。</li><li><b>本月現金流</b>：這個月進來多少（薪水、加班費）、出去多少（花費、還款），淨多少。</li><li>點「看每個帳戶」看每一個帳戶；跟實際不一樣就按「填／校正」。</li></ul>`),
+  gStep(6,'看懂上面四張卡',gR(`${gK('本月收入','$52,000','var(--ok)')}${gK('本月支出','$18,300','var(--bad)')}`)+gR(`${gK('還沒繳','$5,838','#e0a100')}${gK('淨資產','$12萬','var(--info)')}`),
+   `<ul><li><b>本月收入／支出</b>：這個月進來、花掉多少。</li><li><b>還沒繳</b>：到期還沒按「完成」的錢。</li><li><b>淨資產</b>：所有的錢 − 還欠的錢。</li></ul><p><b>每張卡都可以點</b>，會列出是哪些項目；「處理狀態」的已繳、逾期也可以點。</p>`),
+  gStep(7,'到期的錢：完成或延後',gC(gR(`<b style="flex:1">零卡</b>${gTag('逾期','late')}${gB('完成',{dk:1,hl:1,n:1})}${gB('延後',{rd:1,n:2})}`)),
+   `<p>繳好了按「完成」${gN(1)}；這個月繳不出來按「延後」${gN(2)}，會挪到下個月。全部的到「🧾 繳費狀態」或「📅 行事曆」看。</p>`),
+  gStep(8,'薪水、節金到了按「記好」',gC(gR(`<b style="flex:1">薪水</b>${gIn('48,237')}${gB('記好',{pr:1,hl:1,n:1})}`)+`<div class="gx-s" style="color:var(--brand-d);font-weight:700">已預扣 11月請假 $1,663</div>`,'💰 收入到期'),
+   `<p>發薪日會出現提醒，<b>金額已經扣好上個月請假</b>（節金照加班頁的預估）。跟薪資條一樣就按「記好」${gN(1)}，不一樣先改數字。</p>`),
+  gStep(9,'備份、匯入、換手機',gR(`${gB('⬇️ 下載備份',{pr:1,hl:1,n:1})}`)+gR(`${gB('📥 匯入（Excel 或備份檔）',{n:2})}`),
+   `<ul><li><b>下載備份</b>${gN(1)}：帳、設定、薪資條圖片存成一個檔，放雲端或寄給自己。超過 14 天沒備份會紅字提醒。</li><li><b>📥 匯入</b>${gN(2)}：可以選 Excel（照範本）或備份檔（.json）。</li><li><b>換手機</b>：電腦下載備份 → LINE「傳給自己」到手機並下載 → 手機打開網站按「📥 匯入」選那個檔。</li></ul><p class="small muted">電腦和手機的資料不會自動同步，建議固定在一台記帳。</p>`),
+  gStep(10,'📋 本月收支表：打勾就完成',gC(`<table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="background:#e6f6ec"><td><span class="gx-n" style="background:var(--ok)">✓</span></td><td>11/10</td><td><b>薪水</b></td><td style="text-align:right">+$49,900</td></tr><tr style="background:#fdeceb"><td><span class="gx-n">1</span></td><td>11/1</td><td><b>零卡</b></td><td style="text-align:right">-$2,875</td></tr></table>`),
+   `<p>這個月要收、要繳的全部列成一張表，像 Excel 一樣。</p><ul><li><b>按左邊的方框</b>${gN(1)}：繳了／收到了，會記一筆帳，整列變<b>綠色＋打勾</b>。</li><li>再按一次可以改回未完成。</li><li>紅色＝逾期；最下面有收入、要繳、生活費、預計結餘的合計。</li></ul><p>按「放大看 →」到行事曆看完整的表。</p>`),
+  gStep(11,'☑ 多選一次刪除',gC(gR(`${gB('☑ 多選',{hl:1,n:1})}`)+gR(`<span class="gx-n" style="background:var(--brand)">✓</span><b style="flex:1">午餐</b><b>-$120</b>`)+gR(`${gB('🗑 刪除選取的 2 筆',{rd:1,n:2})}`)),
+   `<p>「最近記帳紀錄」右上按「☑ 多選」${gN(1)}，點每一筆前面的方框打勾，再按「🗑 刪除選取的」${gN(2)}。</p><p>刪掉的會放在「最近刪除」，<b>30 天內可以救回來</b>。帳務管理頁也可以多選刪除。</p>`),
+  gStep(12,'🧮 試算，覺得可以就照計畫',gC(gR(`<span class="gx-s" style="flex:1">手上有</span>${gIn('2000')}`)+gR(`${gIn('飯錢')}${gIn('150*7')}<b>$1,050</b>`)+gR(`${gIn('油錢')}${gIn('200')}<b>$200</b>`)+gR(`<span class="gx-s" style="flex:1">會剩</span><b style="color:var(--ok)">$750</b>`)+gR(gB('✅ 照計畫執行',{pr:1,hl:1,n:1}))),
+   `<p>填手上有多少、每一項的算式（可以用 + − × ÷ 和括號，例如 150*7），馬上算出<b>會剩多少</b>。</p><p>覺得可以就按「✅ 照計畫執行」${gN(1)}，首頁會追蹤這幾天<b>實際花了多少</b>、還能花多少。試算本身不會記帳。</p>`)]},
  cal:{t:'行事曆使用說明',steps:()=>[
-  gStep(1,'三種看法',gR(`<span class="seg" style="display:inline-flex"><button class="on" style="padding:3px 10px;font-size:11px">月檢視</button><button style="padding:3px 10px;font-size:11px">週檢視</button><button style="padding:3px 10px;font-size:11px">清單檢視</button></span>${gN(1)}`),
-   `<p>上面切換${gN(1)}：<b>月檢視</b>像月曆、<b>週檢視</b>看一週每天的事、<b>清單檢視</b>照日期一條一條列出來，可以直接按「完成」「延後」。</p>`),
+  gStep(1,'四種看法',gR(`<span class="seg" style="display:inline-flex"><button class="on" style="padding:3px 10px;font-size:11px">月檢視</button><button style="padding:3px 10px;font-size:11px">週檢視</button><button style="padding:3px 10px;font-size:11px">清單檢視</button></span>${gN(1)}`),
+   `<p>上面切換${gN(1)}：<b>月檢視</b>像月曆、<b>週檢視</b>看一週每天的事、<b>清單檢視</b>照日期一條一條列出來、<b>📋 收支表</b>像 Excel 一張表，按方框打勾就是已繳／已收到（整列變綠）。</p>`),
   gStep(2,'顏色代表什麼',gR(`<span class="pill ev-wait">待繳</span><span class="pill ev-today">今天／延後</span><span class="pill ev-done">已繳</span>`)+gR(`<span class="pill ev-late">逾期</span><span class="pill ev-income">收入</span><span class="pill ev-goal">目標</span>`),
    `<ul><li><b>灰</b>：還沒到期　<b>黃</b>：今天到期或延後</li><li><b>綠</b>：已繳／已入帳　<b>紅</b>：逾期</li><li><b>藍</b>：薪水、節金等收入　<b>紫</b>：存錢目標的截止日</li></ul>`),
   gStep(3,'點一下就能處理',gC(gR(`<b style="flex:1">零卡</b><span class="pill ev-late">逾期</span>`)+gR(`${gB('完成',{dk:1,hl:1,n:1})}${gB('延後到下個月',{rd:1,n:2})}`)),
@@ -1743,8 +1790,8 @@ const GUIDES={
    `<p>先點一下要放的月份${gN(1)}，那一格會被框起來。</p>`),
   gStep(2,'Ctrl+V 貼上',gR(`<span class="gx-key">Ctrl</span>＋<span class="gx-key">V</span>`)+gC(gR(`<span class="gx-ph"></span><span class="gx-ph"></span>${gB('選擇圖片',{n:1})}`)),
    `<p>在 LINE 或別的地方截好圖，回到這頁按 <b>Ctrl+V</b>，就放進框起來的月份。</p><p>手機或要放檔案時，按「選擇圖片」${gN(1)}。一個月可以放好幾張。</p>`),
-  gStep(3,'寫備註、看大圖',gC(gR(`${gIn('加班 34 小時',1)}`)+gR(`<span class="gx-ph"></span>${gB('刪除這張',{rd:1})}`)),
-   `<p>每格下面可以寫備註（例：加班幾小時、哪裡有問題）。點圖片看大圖，也可以刪除。</p>`),
+  gStep(3,'備註寫加班費，自動對帳',gC(gR(`<b>11 月</b>${gIn('5111',1)}${gN(1)}`))+gC(gR(`<span class="gx-s">⏱️ 加班頁・10 月</span>`)+gR(`<span style="flex:1">薪資條上的加班費</span><b>$5,111</b>`)+gR(`<span style="flex:1">差額</span><b style="color:var(--ok)">+$2</b>`)),
+   `<p>在<b>發薪那個月</b>的備註${gN(1)}只寫數字（例：5111）或「加班費5111」，加班頁的<b>前一個月</b>就會自動帶入，算出差額（加班費是下個月才發）。</p><p>寫「加班 34 小時」這種時數不會被當成金額。點圖片可以看大圖或刪除。</p>`),
   gStep(4,'記得備份',gR(`${gB('⚙️ 設定')}<span>→</span>${gB('下載備份',{hl:1,n:1})}`),
    `<p>薪資條只存在<b>這台電腦、這個瀏覽器</b>。請定期到「設定 → 下載備份」${gN(1)}，圖片會一起放進備份檔。</p><p><b>備份檔裡有薪資條，不要傳給別人。</b></p>`)]},
  ot:{t:'加班與請假使用說明',steps:()=>[
@@ -1755,14 +1802,14 @@ const GUIDES={
   gStep(3,'程式自動算加班費',gC(gR(`<b>11/20（五）</b><span class="gx-s">平日</span><span class="gx-s" style="margin-left:auto">2h×4/3</span>`)+gR(`<b>11/21（六）</b><span class="gx-s">休息日</span><span class="gx-s" style="margin-left:auto">2h×4/3 + 6h×5/3</span>`)),
    `<ul><li><b>平日</b>：前 2 小時 × 4/3，第 3～4 小時 × 5/3（每天分開算）</li><li><b>休息日</b>：前 2 小時 × 4/3，第 3～8 小時 × 5/3</li><li><b>國定假日</b>：8 小時內多給 1 天薪水</li></ul><p class="small muted">時薪＝月薪 ÷ 30 ÷ 8，用這頁的「月薪紀錄」；轉正或調薪就新增一筆。</p>`),
   gStep(4,'月底對薪資條',gR(`${gK('我算的','$3,000','var(--info)')}${gK('薪資條上','$2,900','var(--ok)')}`)+gR(`${gK('差額','-$100','var(--bad)')}<span class="gx-s" style="color:var(--bad)">公司少給你 $100</span>`),
-   `<p>把薪資條上的加班費填進這頁的「對薪資條」，就會算出<b>差額＝公司給的 − 我算的</b>。</p><ul><li><b>負的</b>：公司少給你，可以拿去問人資</li><li><b>0</b>：沒算錯</li><li><b>正的</b>：公司多給</li></ul>`),
+   `<p><b>10 月加班 → 11 月薪資條</b>：在「📄 薪資條」11 月的備註寫加班費（例：5111），切到這頁的 10 月就會自動帶入；也可以直接在「對薪資條」填。</p><p><b>差額＝公司給的 − 我算的</b>：</p><ul><li><b>負的</b>：公司少給你，可以拿去問人資</li><li><b>0</b>：沒算錯</li><li><b>正的</b>：公司多給</li></ul>`),
   gStep(5,'請假會自動扣薪水',gC(gR(`<span>11/27 事假</span><b style="margin-left:auto">8 小時</b>`)+gR(`<span>這個月請假扣薪預估</span><b style="margin-left:auto;color:var(--bad)">-$1,663</b>`)),
    `<p>照政府規定算（時薪 × 請假時數）：</p><ul><li><b>事假、颱風假</b>：全扣</li><li><b>病假、生理假</b>：扣一半</li><li><b>公傷假</b>：不扣</li></ul><p>可以只請幾小時，例如打「事假2H」。這個月請的假，會從<b>下個月 10 號</b>的薪水扣；首頁薪水提醒的金額會自動扣好。</p><p>📎 病假記得交收據或醫生證明（宜休養），公傷假要附診斷證明。</p>`),
   gStep(6,'節金＋加給預估',gC(gR(`<span>畢業證書</span><b style="margin-left:auto">$8,000</b>`)+gR(`<span>節金</span><b style="margin-left:auto">$9,000</b>`)+gR(`<span>預估實拿</span><b style="margin-left:auto">$25,000</b>`),'🎁 節金＋加給預估'),
    `<p>每 4 個月一期（5/20、9/20、1/20 發）。在「設定加給」填每一項的金額和從哪個月起；<b>金額中途改了就再新增一筆</b>，會按月份比例算。</p><p>設定好「從哪次發放開始依請假扣」，那期起會照請假時數扣（生理假算一半）。</p>`)]},
  accounts:{t:'帳戶使用說明',steps:()=>[
   gStep(1,'先填每個帳戶現在有多少錢',gC(gR(`<span>🏦</span><b style="flex:1">薪轉帳戶</b><b>$12,000</b>`)+gR(`${gB('修改',{hl:1,n:1})}${gB('校正餘額')}${gB('異動紀錄')}`),'👛 我的帳戶'),
-   `<p>最快：按「💰 一次填好全部餘額」，每個帳戶填<b>現在實際有多少錢</b>就好。也可以按個別帳戶的「修改」${gN(1)}。之後記帳就會自動加減。</p><p class="small muted">名稱只寫暱稱（例：台新），不要寫帳號、卡號。</p>`),
+   `<p>最快：按「💰 一次填好全部餘額」（首頁「👛 我的錢」的「填／校正」也一樣），每個帳戶填<b>現在實際有多少錢</b>。也可以按個別帳戶的「修改」${gN(1)}。之後記帳就會自動加減。</p><p>從銀行領錢放身上，打「薪資帳戶領1000」，算轉帳、不算花掉。</p><p class="small muted">名稱只寫暱稱（例：台新），不要寫帳號、卡號。</p>`),
   gStep(2,'新增帳戶',gC(gR(`${gIn('名稱：台新')}${gIn('類型：銀行 ▾')}`)+gR(`${gIn('起始餘額 5000')}${gB('新增',{pr:1,hl:1,n:1})}`)),
    `<p>在「新增帳戶」填名稱、類型、起始餘額，按「新增」${gN(1)}。</p><p><b>信用卡</b>：起始餘額填負數（欠 8000 就填 -8000），再按「修改」填每月繳款日。</p>`),
   gStep(3,'跟銀行對不上：校正餘額',gC(gR(`<b style="flex:1">薪轉帳戶</b><span class="gx-s">算出來 $12,000</span>`)+gR(`${gIn('銀行實際 11,800',1)}${gB('校正餘額',{pr:1,n:1})}`)),
@@ -1780,7 +1827,7 @@ const GUIDES={
    `<p>不用先建立，直接在首頁打：「跟小明借錢1500」「還小明1000」「小明還800」。</p><p>跟朋友借還<b>不算收入或支出</b>，只會改帳戶餘額和這裡的金額。</p>`)]},
  savings:{t:'儲蓄使用說明',steps:()=>[
   gStep(1,'新增目標',gC(gR(`${gIn('名稱：旅遊基金')}${gIn('目標 30000')}`)+gR(`${gIn('期限 2027/6/30')}${gB('新增',{pr:1,hl:1,n:1})}`),'➕ 新增目標'),
-   `<p>按「➕ 新增目標」填名稱、目標金額、期限（可不填），按「新增」${gN(1)}。</p>`),
+   `<p>按「➕ 新增目標」填名稱、目標金額、期限（可不填），按「新增」${gN(1)}。名稱可以有數字，例如「存滿13000」。</p>`),
   gStep(2,'自己標記：存了就打一句',gC(gR(`${gIn('旅遊基金存5000',1)}${gB('記',{pr:1,n:1})}`)),
    `<p>在首頁打「旅遊基金存5000」${gN(1)}，進度就會增加。</p><p>這種方式<b>帳戶餘額不變、不算支出</b>，只是幫你記「這些錢是要存的」。</p>`),
   gStep(3,'綁定帳戶：有專門的存錢帳戶',gC(gR(`${gIn('台新轉儲蓄專戶5000',1)}${gB('記',{pr:1,n:1})}`)),
@@ -1795,20 +1842,22 @@ const GUIDES={
   gStep(3,'年報表',gC(gR(`<span style="flex:1">1月</span><span class="gx-s">收 $52,000・支 $40,100</span>`)+gR(`<span style="flex:1">2月</span><span class="gx-s">收 $52,000・支 $38,900</span>`)),
    `<p>一年 12 個月並排，看每月結餘和儲蓄率，也能跟去年比。</p>`),
   gStep(4,'搜尋與修改',gC(gR(`${gIn('🔍 午餐',1)}${gIn('全部類型 ▾')}`)+gR(`<span>🍙</span><b style="flex:1">午餐</b><b style="color:var(--bad)">-$120</b>`)),
-   `<p>打關鍵字（項目、分類、對象、帳戶都可以），也可以選類型和日期範圍。點結果就能修改或刪除。</p><p>要匯出給 Excel，到「設定 → 匯出 CSV」。</p>`)]},
+   `<p>打關鍵字（項目、分類、對象、帳戶都可以），也可以選類型和日期範圍。點結果就能修改或刪除。</p><p><b>一次刪很多筆</b>：右上按「☑ 多選刪除」，打勾後按「🗑 刪除選取的」，會放進「最近刪除」30 天內可救回。</p><p>要匯出給 Excel，到「設定 → 匯出 CSV」。</p>`)]},
  opts:{t:'常用選項使用說明',steps:()=>[
   gStep(1,'快速記帳常用語',gC(gR(`${gIn('平日加班2H')}${gB('↑')}${gB('↓')}${gB('儲存',{n:1})}${gB('刪除',{rd:1,n:2})}`)),
    `<p>直接改字按「儲存」${gN(1)}；↑↓ 調整在首頁出現的順序；不要的按「刪除」${gN(2)}。</p>`),
   gStep(2,'對象清單與常用詞',gC(gR(`<span class="gx-chip">A同事 ×</span><span class="gx-chip">2姊 ×</span>`),'👥 對象清單')+gC(gR(`<span>咖啡</span><span>→ 餐飲</span>${gB('刪除',{rd:1})}`),'🏷️ 常用詞'),
    `<p>對象清單：記帳時在最後加名字（例：還錢2000 A同事）會記到這個人。</p><p>常用詞：你改過分類，小帳會記住；記錯了在這裡刪掉。</p>`)]},
  settings:{t:'設定使用說明',steps:()=>[
-  gStep(1,'匯入 Excel',gR(`${gB('下載範本',{n:1})}${gB('選擇 Excel 檔匯入',{pr:1,hl:1,n:2})}`)+gC(gR(`<b>📥 匯入預覽</b>`)+gR(`<span class="gx-s">將新增 74 項</span>${gB('確定匯入',{pr:1})}`)),
+  gStep(1,'匯入（Excel 或備份檔）',gR(`${gB('下載範本',{n:1})}${gB('選擇檔案匯入',{pr:1,hl:1,n:2})}`)+gC(gR(`<b>📥 匯入預覽</b>`)+gR(`<span class="gx-s">將新增 74 項</span>${gB('確定匯入',{pr:1})}`)),
    `<p>先「下載範本」${gN(1)}，照欄位把資料貼進去；<b>自己做的表直接匯入讀不懂</b>。</p><p>選檔案${gN(2)}後會先預覽，再選：</p><ul><li><b>加進去（不覆蓋）</b>：只加新的，重複的跳過。</li><li><b>清空後匯入（覆蓋）</b>：把帳、帳戶、負債、加班等換成檔案內容；薪資條、常用語會保留。想保險可以勾「先下載備份」。</li></ul><p>選<b>備份檔（.json）</b>會整個換成備份的內容，換手機、換電腦用這個。</p><ul style="display:none"></ul>`),
   gStep(2,'每月固定收支',gC(gR(`<b style="flex:1">房租</b><span class="gx-s">每月 10 號</span><b>-$8,000</b>`)+gR(`${gB('修改')}${gB('刪除',{rd:1})}`),'📅 每月固定收支'),
    `<p>支出和還款會出現在「繳費狀態」；收入到了日期會在首頁提醒。「多久一次」可選每月、每 2 個月（例：水電）、每 4 個月（例：節金）；只有一次的，開始和結束設同一個月。</p>`),
   gStep(3,'下載備份、從備份還原',gR(`${gB('下載備份',{pr:1,hl:1,n:1})}${gB('從備份還原',{n:2})}`),
-   `<p>「下載備份」${gN(1)}會把帳、設定、圖片存成一個檔，請放到<b>這台電腦以外</b>的地方（雲端硬碟或寄給自己）。</p><p>換電腦或資料不見時，用「從備份還原」${gN(2)}，會<b>取代</b>目前的資料。</p>`),
-  gStep(4,'資料存在哪裡',gC(gR(`<span>🔒</span><b>本機儲存 · 僅在此裝置此瀏覽器有效</b>`)),
+   `<p>「下載備份」${gN(1)}會把帳、設定、圖片存成一個檔，請放到<b>這台電腦以外</b>的地方（雲端硬碟或寄給自己）。</p><p>換手機、換電腦或資料不見時，用「從備份還原」${gN(2)}或首頁的「📥 匯入」選備份檔，會<b>取代</b>目前的資料。</p>`),
+  gStep(4,'背景圖與透明度',gC(gR(`${gB('上傳圖片',{n:1})}${gIn('兩個都套用（滿版） ▾')}`)+gR(`<span class="gx-s" style="flex:1">背景淡化</span><span class="gx-s">20%</span>`)+gR(`<span class="gx-s" style="flex:1">卡片透明度</span><span class="gx-s">40%</span>`),'🖼️ 背景圖'),
+   `<p>按「上傳圖片」${gN(1)}換背景，可以選「滿版」（上面橫幅和整頁接成同一張）、「整頁背景」或「頂部橫幅」。</p><ul><li><b>背景淡化</b>：越低，背景越清楚。</li><li><b>卡片透明度</b>（最高 70%）：越高，越看得到背景。</li></ul><p>字看不清楚時，把「背景淡化」往右拉一點。</p>`),
+  gStep(5,'資料存在哪裡',gC(gR(`<span>🔒</span><b>本機儲存 · 僅在此裝置此瀏覽器有效</b>`)),
    `<p>資料只存在這台電腦、這個瀏覽器，不會上傳、不會同步。換瀏覽器、無痕視窗都看不到；清除瀏覽資料會讓資料消失。</p>`)]}
 };
 const GUIDE_KEY='casevoraXiaozhang_guide_';
@@ -1933,7 +1982,7 @@ let CALM=today().slice(0,7), CALV='month', CALD=today();
 const EV_TXT={done:'已繳',wait:'待繳',today:'今天到期',late:'逾期',moved:'已延後',skip:'略過',income:'收入',got:'已入帳',goal:'存錢目標'};
 function monthEvents(M){ const ev=[];
   billRows(M).forEach(b=>{ const r=b.st==='done'?billRec(b):null; ev.push({date:b.due,name:b.x.name,amt:r?r.amount:b.x.amount,st:b.st,k:b.k,type:'bill',to:b.to,from:b.from}); });
-  S.recurring.forEach(x=>{ if(x.kind!=='income'||!recurOn(x,M)) return; const k=x.id+'|'+M, d=S.recurDone[k], h=recurHint(x,M); ev.push({date:dueDate(M,x.day),name:x.name,amt:h?h.amt:x.amount,st:d==='done'?'got':d==='skip'?'skip':'income',type:'income',note:h?h.note:''}); });
+  S.recurring.forEach(x=>{ if(x.kind!=='income'||!recurOn(x,M)) return; const k=x.id+'|'+M, d=S.recurDone[k], h=recurHint(x,M); ev.push({date:dueDate(M,x.day),name:x.name,amt:h?h.amt:x.amount,st:d==='done'?'got':d==='skip'?'skip':'income',type:'income',note:h?h.note:'',k}); });
   const prev=ymAdd(M,-1), otp=otPayMonth(prev); if(otp>0){ const sx=S.recurring.find(y=>y.kind==='income'&&/薪水|薪資|月薪/.test(y.name)&&recurOn(y,M)); ev.push({date:dueDate(M,sx?sx.day:10),name:`加班費（${ymShort(prev)}）`,amt:otp,st:'income',type:'income',ot:1,note:`照加班頁 ${ymShort(prev)}的紀錄估算，實際以薪資條為準`}); }
   S.goals.forEach(g=>{ if(!g.done&&g.deadline&&g.deadline.startsWith(M)) ev.push({date:g.deadline,name:`${g.name} 截止`,amt:g.target,st:'goal',type:'goal'}); });
   return ev.sort((a,b)=>a.date.localeCompare(b.date)||(a.type==='income'?-1:1)); }
@@ -1952,6 +2001,7 @@ function renderCal(){ page='cal'; nav(); const M=CALM, ev=monthEvents(M), P=mont
     const evs={}; [...new Set(days.map(d=>d.slice(0,7)))].forEach(mm=>monthEvents(mm).forEach((e,i)=>{ (evs[e.date]=evs[e.date]||[]).push([e,i]); }));
     grid=`<div class="row" style="margin-bottom:8px"><button onclick="CALD=addDays(CALD,-7);CALM=CALD.slice(0,7);renderCal()">← 上週</button><b>${fmtMD(days[0])}～${fmtMD(days[6])}</b><button onclick="CALD=addDays(CALD,7);CALM=CALD.slice(0,7);renderCal()">下週 →</button></div>
       <div class="calw">${days.map(ds=>`<div class="wd ${ds===t?'now':''}"><div class="dn">${fmtMD(ds)}（${WK[new Date(ds+'T00:00').getDay()]}）</div>${(evs[ds]||[]).map(([e,i])=>evChip(e,i,true)).join('')||'<div class="small muted">—</div>'}</div>`).join('')}</div>`; }
+  else if(CALV==='sheet'){ grid=monthSheet(M,false); }
   else { grid=ev.length?ev.map((e,i)=>`<div class="lrow ${e.date===t?'now':''}"><div class="ld">${fmtMD(e.date)}<span class="small muted">（${WK[new Date(e.date+'T00:00').getDay()]}）</span></div><div class="ln"><b>${esc(e.name)}</b>${e.note?`<div class="small muted">${esc(e.note)}</div>`:''}${e.from?`<div class="small muted">${ymShort(e.from)}延後過來</div>`:''}</div>
       <span class="pill ev-${e.st}">${EV_TXT[e.st]}${e.st==='moved'?` → ${ymShort(e.to)}`:''}</span><b class="la" style="color:${e.type==='income'?'var(--ok)':e.type==='goal'?'var(--info)':'var(--ink)'}">${e.type==='income'?'+':e.type==='goal'?'':'-'}${money(e.amt)}</b>
       <div class="lx">${e.type==='bill'&&OPEN_ST.includes(e.st)?`<button class="dark" onclick="billDone('${esc(e.k)}')">完成</button><button class="danger" onclick="billMove('${esc(e.k)}')">延後</button>`:''}</div></div>`).join(''):'<div class="empty">這個月沒有排定的收支</div>'; }
@@ -1960,7 +2010,7 @@ function renderCal(){ page='cal'; nav(); const M=CALM, ev=monthEvents(M), P=mont
      ${kpi('要繳的錢',bmS(P.out),`${ev.filter(e=>e.type==='bill'&&OPEN_ST.includes(e.st)).length} 筆還沒繳`,'🧾','var(--bad)','var(--bad-soft)',money(P.out),'',"BM=CALM;BF='open';go('bills')")}
      ${kpi('生活費預算',bmS(P.liv),P.liv?'吃飯、交通等日常花費':'到首頁設定','🍙','#e0a100','#fff3d6',money(P.liv))}
      ${kpi('預計可以存',bmS(P.save),P.save<0?'<b style="color:var(--bad)">這個月會不夠用</b>':'收入 − 要繳 − 生活費','🐷',P.save<0?'var(--bad)':'var(--brand)',P.save<0?'var(--bad-soft)':'var(--brand-soft)',bm(P.save))}</div>
-   <div class="card"><div class="row" style="margin-bottom:10px"><div class="seg">${[['month','月檢視'],['week','週檢視'],['list','清單檢視']].map(([k,n])=>`<button class="${CALV===k?'on':''}" onclick="CALV='${k}';renderCal()">${n}</button>`).join('')}</div></div>
+   <div class="card"><div class="row" style="margin-bottom:10px"><div class="seg">${[['month','月檢視'],['week','週檢視'],['list','清單檢視'],['sheet','📋 收支表']].map(([k,n])=>`<button class="${CALV===k?'on':''}" onclick="CALV='${k}';renderCal()">${n}</button>`).join('')}</div></div>
      <div class="row" style="margin-bottom:10px"><button onclick="CALM=ymAdd(CALM,-1);CALD=CALM+'-01';renderCal()">← 上個月</button><h2 style="margin:0 6px">${ymLabel(M)}</h2><button onclick="CALM=ymAdd(CALM,1);CALD=CALM+'-01';renderCal()">下個月 →</button><button onclick="CALM=today().slice(0,7);CALD=today();renderCal()">回到今天</button><span class="spacer"></span>
        <span class="small legend"><i class="ev-wait"></i>待繳 <i class="ev-today"></i>今天／延後 <i class="ev-done"></i>已繳 <i class="ev-late"></i>逾期 <i class="ev-income"></i>收入 <i class="ev-goal"></i>目標</span></div>
      ${grid}</div>`; }
@@ -1972,6 +2022,83 @@ function evOpen(M,i){ const e=monthEvents(M)[i]; if(!e) return; const m=document
     ${e.st==='income'&&e.date>today()?'<div class="small muted" style="margin-top:6px">到了那天，首頁會出現提醒讓你按「記好」。</div>':''}
     <div class="row" style="margin-top:12px">${acts}<span class="spacer"></span><button onclick="this.closest('.modal').remove()">關閉</button></div></div>`;
   document.body.appendChild(m); m.onclick=ev=>{ if(ev.target===m) m.remove(); }; }
+
+/* ---------- 本月收支表（像 Excel 一張表，繳了／收到就打勾變綠） ---------- */
+function monthSheet(M,compact){ const ev=monthEvents(M).filter(e=>e.type!=='goal'), cur=today().slice(0,7);
+  const ok=e=>e.st==='done'||e.st==='got', isIn=e=>e.type==='income';
+  const sum=(f)=>ev.filter(f).reduce((a,e)=>a+e.amt,0);
+  const inP=sum(e=>isIn(e)&&e.st!=='skip'), inD=sum(e=>isIn(e)&&ok(e)), outP=sum(e=>!isIn(e)&&e.st!=='moved'&&e.st!=='skip'), outD=sum(e=>!isIn(e)&&ok(e));
+  const liv=S.budget.living, spent=livingSpent(M), net=inP-outP-liv;
+  const kindOf=e=>isIn(e)?'收入':/還|貸|分期/.test(e.name)||(e.k&&recById(e.k.split('|')[0])&&recById(e.k.split('|')[0]).kind==='debt')?'還款':'支出';
+  const row=(e,i)=>{ const done=ok(e), can=!e.ot&&(e.k)&&e.st!=='moved'&&e.st!=='skip';
+    return `<tr class="sr ${done?'done':''} ${e.st==='late'?'late':''} ${e.st==='moved'?'moved':''}"><td class="c0">${can?`<button class="cbx ${done?'on':''}" onclick="sheetTick('${M}',${i})" aria-label="${done?'改回未完成':'標記完成'}" title="${done?'按一下改回未完成':(isIn(e)?'收到了，按一下記好':'繳了，按一下記好')}">${done?'✓':''}</button>`:'<span class="cbx dis">–</span>'}</td>
+      <td class="c1">${fmtMD(e.date)}</td><td class="c2"><b>${esc(e.name)}</b>${e.from?`<div class="small muted">${ymShort(e.from)}延後過來</div>`:''}${e.st==='moved'?`<div class="small muted">延後到 ${ymShort(e.to)}</div>`:''}${e.ot?`<div class="small muted">照加班紀錄估算</div>`:''}</td>
+      ${compact?'':`<td class="c3">${kindOf(e)}</td>`}<td class="c4" style="color:${isIn(e)?'var(--ok)':'var(--ink)'}">${isIn(e)?'+':'-'}${money(e.amt)}</td><td class="c5"><span class="pill ev-${e.st}">${EV_TXT[e.st]}</span></td></tr>`; };
+  const rows=monthEvents(M).map((e,i)=>e.type==='goal'?'':row(e,i)).join('');
+  return `${ev.length?`<div class="sheetwrap"><table class="sheet"><thead><tr><th class="c0">✓</th><th class="c1">日期</th><th class="c2">項目</th>${compact?'':'<th class="c3">類型</th>'}<th class="c4">金額</th><th class="c5">狀態</th></tr></thead><tbody>${rows}
+      ${liv?`<tr class="sr liv"><td class="c0"><span class="cbx dis">🍙</span></td><td class="c1">整月</td><td class="c2"><b>生活費（預算）</b><div class="small muted">已花費 ${money(spent)}</div></td>${compact?'':'<td class="c3">預算</td>'}<td class="c4">-${money(liv)}</td><td class="c5"><span class="pill ${spent>liv?'late':'wait'}">${spent>liv?'超支':`剩 ${money(liv-spent)}`}</span></td></tr>`:''}</tbody></table></div>`:'<div class="empty">這個月沒有排定的收支</div>'}
+    <div class="sheetsum"><div><span>收入</span><b style="color:var(--ok)">${money(inD)} / ${money(inP)}</b><small>已收 / 預計</small></div><div><span>要繳</span><b>${money(outD)} / ${money(outP)}</b><small>已繳 / 預計</small></div><div><span>生活費</span><b>${money(spent)} / ${money(liv)}</b><small>已花 / 預算</small></div><div><span>預計結餘</span><b style="color:${net<0?'var(--bad)':'var(--ok)'}">${bm(net)}</b><small>收入 − 要繳 − 生活費</small></div></div>
+    ${M===cur?'<div class="small muted" style="margin-top:6px">打勾＝已繳／已收到，會記一筆帳；再按一次可以改回未完成。綠色底＝完成、紅色＝逾期。</div>':''}`; }
+function sheetTick(M,i){ const e=monthEvents(M)[i]; if(!e||!e.k) return; const done=e.st==='done'||e.st==='got';
+  if(done){ billUndo(e.k); return; } if(e.type==='income') incomeDone(e.k,e.amt); else billDone(e.k); }
+function incomeDone(k,amt){ const [id,ym]=String(k).split('|'), x=recById(id); if(!x) return; const due=dueDate(ym,x.day), m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="box"><h2 style="margin:0 0 4px;font-size:17px">💰 ${esc(x.name)} 收到了</h2><div class="small muted" style="margin-bottom:10px">${ymLabel(ym)}・預計 ${fmtFull(due)}</div>
+    <div class="grid" style="grid-template-columns:1fr 1fr"><div><label class="f">實際收到多少</label><input type="number" id="idAmt" inputmode="decimal" value="${amt||x.amount}"></div><div><label class="f">哪一天</label><input type="date" id="idDate" value="${due<=today()?due:today()}"></div></div>
+    <div style="margin-top:8px"><label class="f">存進哪個帳戶</label><select id="idAcct">${acctOpts(okAcct(x.acct))}</select></div>
+    <div class="row" style="margin-top:12px"><button class="primary" id="idOk">確定，記好這筆</button><button id="idNo">取消</button></div></div>`;
+  document.body.appendChild(m); m.querySelector('#idNo').onclick=()=>m.remove();
+  m.querySelector('#idOk').onclick=()=>{ const a=Math.round(Number($('#idAmt').value)*100)/100, date=$('#idDate').value; if(!(a>0)){ alert('金額要大於 0'); return; } if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ alert('請選日期'); return; }
+    const r=recurRecord(x,ym,date,a); r.acct=okAcct($('#idAcct').value); const oD=JSON.stringify(S.recurDone); R.push(r); S.recurDone[k]='done';
+    if(!persist()){ R.pop(); S.recurDone=JSON.parse(oD); return; } m.remove(); rerender(); flash(`已記好 ✦ ${x.name} +${money(a)}`); }; }
+/* ---------- 多選刪除 ---------- */
+const SEL={on:false,ids:new Set()};
+function selToggle(){ SEL.on=!SEL.on; SEL.ids.clear(); rerender(); }
+function recClick(id){ if(!SEL.on){ openEdit(id); return; } SEL.ids.has(id)?SEL.ids.delete(id):SEL.ids.add(id); rerender(); }
+function selBar(ids){ ids=ids||[]; const n=SEL.ids.size, all=ids.length&&ids.every(i=>SEL.ids.has(i));
+  return `<div class="selbar"><b>已選 ${n} 筆</b><span class="spacer"></span>${ids.length?`<button onclick='selAll(${JSON.stringify(ids)},${all?0:1})'>${all?'全不選':'全選'}</button>`:''}<button class="dangerfill" ${n?'':'disabled'} onclick="selDelete()">🗑 刪除選取的 ${n} 筆</button><button onclick="selToggle()">取消</button></div>`; }
+function selAll(ids,on){ ids.forEach(i=>on?SEL.ids.add(i):SEL.ids.delete(i)); rerender(); }
+function selDelete(){ const ids=[...SEL.ids].filter(id=>R.some(r=>r.id===id&&!r.deleted)); if(!ids.length) return;
+  if(!confirm(`確定要刪除這 ${ids.length} 筆嗎？\n會先放到「最近刪除」，30 天內可以救回來。`)) return;
+  const oR=JSON.stringify(R), oD=JSON.stringify(S.recurDone); ids.forEach(id=>{ const r=R.find(x=>x.id===id); if(!r) return; r.deleted=true; r.deletedAt=today(); if(r.recur&&r.recurMonth&&S.recurDone[r.recur+'|'+r.recurMonth]==='done') delete S.recurDone[r.recur+'|'+r.recurMonth]; });
+  if(!persist()){ R=JSON.parse(oR); S.recurDone=JSON.parse(oD); return; } SEL.ids.clear(); SEL.on=false; rerender(); flash(`已刪除 ${ids.length} 筆（在「最近刪除」可以救回）`); }
+/* ---------- 試算＋照計畫執行 ---------- */
+function calcEval(src){ const t=String(src||'').replace(/[×xX＊]/g,'*').replace(/[÷／]/g,'/').replace(/[＋]/g,'+').replace(/[－—]/g,'-').replace(/[（]/g,'(').replace(/[）]/g,')').replace(/[,，\s元$]/g,'');
+  if(!t) return null; if(!/^[\d.+\-*/()]+$/.test(t)) return NaN; let i=0;
+  const num=()=>{ const m=t.slice(i).match(/^\d+(\.\d+)?/); if(!m) throw 0; i+=m[0].length; return Number(m[0]); };
+  const fac=()=>{ if(t[i]==='-'){ i++; return -fac(); } if(t[i]==='('){ i++; const v=add(); if(t[i]!==')') throw 0; i++; return v; } return num(); };
+  const mul=()=>{ let v=fac(); while(t[i]==='*'||t[i]==='/'){ const o=t[i++], w=fac(); if(o==='/'&&w===0) throw 0; v=o==='*'?v*w:v/w; } return v; };
+  const add=()=>{ let v=mul(); while(t[i]==='+'||t[i]==='-'){ const o=t[i++], w=mul(); v=o==='+'?v+w:v-w; } return v; };
+  try{ const v=add(); if(i!==t.length) return NaN; return Math.round(v*100)/100; }catch(e){ return NaN; } }
+let CALC=null;
+function calcInit(){ if(CALC&&!CALC.baseEdited) CALC.base=String(Math.round(cashOnHand())); if(!CALC) CALC={base:String(Math.round(cashOnHand())),days:'7',name:'這週計畫',items:[{n:'飯錢',e:'150*7'},{n:'油錢',e:'200'}]}; return CALC; }
+function calcCard(){ const C=calcInit(), base=calcEval(C.base), vals=C.items.map(it=>calcEval(it.e)), bad=vals.some(v=>Number.isNaN(v))||Number.isNaN(base), tot=vals.reduce((a,v)=>a+(v||0),0), left=(base||0)-tot;
+  const plans=S.plans.slice().reverse().slice(0,3);
+  return `<div class="card o4 calc"><div class="row"><h2 style="margin:0">🧮 試算</h2><span class="spacer"></span><a href="#" class="small" onclick="CALC=null;rerender();return false">重來</a></div>
+    <div class="grid" style="grid-template-columns:1fr 90px;margin-top:6px"><div><label class="f">手上有多少 <span class="small muted" style="font-weight:400">（預設＝身上現金）</span></label><input type="text" inputmode="decimal" value="${esc(C.base)}" oninput="CALC.base=this.value;CALC.baseEdited=true;calcUpd()" placeholder="例：2000"></div><div><label class="f">幾天</label><input type="number" inputmode="numeric" value="${esc(C.days)}" oninput="CALC.days=this.value"></div></div>
+    <div style="margin-top:8px">${C.items.map((it,i)=>`<div class="crow"><input type="text" value="${esc(it.n)}" placeholder="項目" oninput="CALC.items[${i}].n=this.value" style="width:34%"><input type="text" value="${esc(it.e)}" placeholder="例：150*7" oninput="CALC.items[${i}].e=this.value;calcUpd()" style="flex:1"><b class="cv" id="cv${i}">${Number.isNaN(vals[i])?'算式看不懂':vals[i]===null?'':money(vals[i])}</b><button onclick="CALC.items.splice(${i},1);rerender()" aria-label="刪除這列">✕</button></div>`).join('')}
+      <button onclick="CALC.items.push({n:'',e:''});rerender()" style="margin-top:4px;padding:4px 12px;font-size:13px">＋ 加一列</button></div>
+    <div class="cres"><span>預計花 <b id="cTot">${money(tot)}</b></span><span>會剩 <b id="cLeft" style="color:${left<0?'var(--bad)':'var(--ok)'}">${bad?'—':bm(left)}</b></span></div>
+    <div id="cWarn" class="small" style="color:var(--bad)">${left<0&&!bad?'⚠️ 不夠用，差 '+money(-left):''}</div>
+    <div class="row" style="margin-top:8px;flex-wrap:nowrap"><input type="text" value="${esc(C.name)}" oninput="CALC.name=this.value" placeholder="計畫名稱" style="flex:1"><button class="primary" onclick="planSave()" style="flex:none">✅ 照計畫執行</button></div>
+    <div class="small muted" style="margin-top:4px">可以打 + − × ÷ 和括號，例如 150*7、(80+70)*5。只是試算，按「照計畫執行」才會存成計畫，不會記帳。</div>
+    ${plans.length?`<div class="dayh" style="margin-top:10px"><span>進行中的計畫</span></div>${plans.map(planRow).join('')}`:''}</div>`; }
+function calcUpd(){ const C=CALC; if(!C) return; const base=calcEval(C.base), vals=C.items.map(it=>calcEval(it.e)), bad=vals.some(v=>Number.isNaN(v))||Number.isNaN(base), tot=vals.reduce((a,v)=>a+(v||0),0), left=(base||0)-tot;
+  vals.forEach((v,i)=>{ const el=$('#cv'+i); if(el) el.textContent=Number.isNaN(v)?'算式看不懂':v===null?'':money(v); });
+  if($('#cTot')) $('#cTot').textContent=money(tot); const L=$('#cLeft'); if(L){ L.textContent=bad?'—':bm(left); L.style.color=left<0?'var(--bad)':'var(--ok)'; } const W=$('#cWarn'); if(W) W.textContent=left<0&&!bad?'⚠️ 不夠用，差 '+money(-left):''; }
+function planSave(){ const C=CALC, base=calcEval(C.base), items=C.items.map(it=>({n:String(it.n||'').trim().slice(0,20),e:String(it.e||'').trim().slice(0,40),v:calcEval(it.e)})).filter(it=>it.e);
+  if(Number.isNaN(base)||items.some(it=>Number.isNaN(it.v))){ alert('有算式看不懂，請檢查一下（只能用數字和 + − × ÷ 括號）'); return; } if(!items.length){ alert('至少要有一列'); return; }
+  const days=Math.max(1,Math.min(62,Math.round(Number(C.days)||7))), tot=items.reduce((a,it)=>a+it.v,0);
+  if(!confirm(`要照這個計畫執行嗎？\n\n${C.name||'我的計畫'}：${days} 天、預計花 ${money(tot)}，手上 ${money(base||0)}，會剩 ${bm((base||0)-tot)}。\n\n之後首頁會幫你追蹤這 ${days} 天實際花了多少。`)) return;
+  S.plans.push({id:newId(),name:String(C.name||'我的計畫').trim().slice(0,20)||'我的計畫',start:today(),days,base:Math.round(base||0),items:items.map(it=>({n:it.n,e:it.e,v:Math.round(it.v)}))});
+  if(!persist()){ S.plans.pop(); return; } CALC=null; rerender(); flash('計畫開始了 ✦ 首頁會幫你追蹤'); }
+function planRow(p){ const end=addDays(p.start,p.days-1), tot=p.items.reduce((a,i)=>a+i.v,0), spent=live().filter(r=>r.date>=p.start&&r.date<=end&&r.type==='expense'&&LIVING.includes(r.category)).reduce((a,r)=>a+r.amount,0);
+  const t=today(), passed=t<p.start?0:Math.min(p.days,daysBetween(p.start,t)+1), over=t>end, pct=tot?Math.min(100,Math.round(spent/tot*100)):0;
+  return `<div class="plan"><div class="row"><b>${esc(p.name)}</b><span class="small muted">${fmtMD(p.start)}～${fmtMD(end)}${over?'（已結束）':`・第 ${passed}/${p.days} 天`}</span><span class="spacer"></span><a href="#" class="small" style="color:var(--bad)" onclick="planDel('${p.id}');return false">刪除</a></div>
+    <div class="small muted">${p.items.map(i=>`${esc(i.n||'項目')} ${esc(i.e)}=${money(i.v)}`).join('、')}</div>
+    <div class="prog"><i style="width:${pct}%;background:${spent>tot?'var(--bad)':'var(--ok)'}"></i></div>
+    <div class="bs"><span>實際花了</span><b style="color:${spent>tot?'var(--bad)':'var(--ink)'}">${money(spent)} / ${money(tot)}</b></div>
+    <div class="small ${spent>tot?'':'muted'}" style="${spent>tot?'color:var(--bad);font-weight:700':''}">${spent>tot?`超出計畫 ${money(spent-tot)}`:`計畫內還可以花 ${money(tot-spent)}`}（算餐飲、交通等生活花費）</div></div>`; }
+function planDel(id){ const p=S.plans.find(x=>x.id===id); if(!p||!confirm(`確定刪除計畫「${p.name}」嗎？（不會刪掉任何記帳）`)) return; S.plans=S.plans.filter(x=>x.id!==id); persist(); rerender(); }
 
 /* ---------- 匯入 Excel ---------- */
 let XLSXP=null;
