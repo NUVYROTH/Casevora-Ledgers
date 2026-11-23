@@ -372,6 +372,10 @@ tr.sr.liv td{background:#fff8e6}
 .cres b{font-size:18px}
 .plan{border:2px solid var(--line);border-radius:12px;padding:8px 10px;margin-top:6px}
 @media (max-width:600px){.sheetsum{grid-template-columns:1fr 1fr}table.sheet{font-size:14px}table.sheet td,table.sheet th{padding:7px 4px}.crow .cv{min-width:64px}}
+
+.catb{border-top:1px dashed var(--line);margin-top:8px;padding-top:4px}
+.cbr{margin-bottom:6px}
+.pill.lv-ok{background:#e6f6ec;color:#1f6b45}.pill.lv-tip{background:#fff6cc;color:#8a6d00}.pill.lv-warn{background:#ffe8d4;color:#a0500a}.pill.lv-over{background:#fde5e3;color:#a1302a}
 </style>
 </head>
 <body>
@@ -460,7 +464,7 @@ function download(content,name,type){const a=document.createElement('a');a.href=
 
 /* ---------- 資料 ---------- */
 let R=loadR(), S=loadS();
-function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{},ot:{bases:[],days:[],paid:{},allow:[],bonusFrom:''},phrases:['吃飯','平日加班','休息加班'],lastBackup:'',budget:{living:0},plans:[]};}
+function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{},ot:{bases:[],days:[],paid:{},allow:[],bonusFrom:''},phrases:['吃飯','平日加班','休息加班'],lastBackup:'',budget:{living:0,cats:{}},plans:[]};}
 function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stringify(DEF_ACCTS));
   s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0,dueDay:dayOk(a.dueDay),atype:ACCT_TYPES[a.atype]?a.atype:defType(a.id)})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0,dueDay:0});
   s.accounts.forEach(a=>{ if(a.name==='薪轉帳戶'){ a.name='薪資帳戶'; } else if(/領|轉|加值|\+值/.test(a.name)){ a.name=a.name.replace(/領|轉|加值|\+值/g,'')||'帳戶'; } });
@@ -482,7 +486,8 @@ function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stri
   if(isObj(ot.paid)) Object.entries(ot.paid).forEach(([k,v])=>{ if(/^\d{4}-\d{2}$/.test(k)&&Number(v)>=0&&String(v)!=='') s.ot.paid[k]=Math.round(Number(v)); });
   if(!Array.isArray(s.phrases)||(s.phrases.length===1&&s.phrases[0]==='平日加班2H')) s.phrases=['吃飯','平日加班','休息加班']; s.phrases=[...new Set(s.phrases.map(x=>String(x??'').trim().slice(0,30)).filter(Boolean))].slice(0,40);
   s.lastBackup=/^\d{4}-\d{2}-\d{2}$/.test(String(s.lastBackup||''))?s.lastBackup:'';
-  s.budget={living:isObj(s.budget)&&Number(s.budget.living)>0?Math.round(Number(s.budget.living)):0};
+  { const ob=isObj(s.budget)?s.budget:{}, cats={}; if(isObj(ob.cats)) Object.entries(ob.cats).forEach(([c,v])=>{ if(EXP.includes(c)&&Number(v)>0) cats[c]=Math.round(Number(v)); });
+    s.budget={living:Number(ob.living)>0?Math.round(Number(ob.living)):0,cats}; }
   s.plans=(Array.isArray(s.plans)?s.plans:[]).filter(x=>x&&/^[\w-]{1,40}$/.test(String(x.id))&&/^\d{4}-\d{2}-\d{2}$/.test(String(x.start))).map(x=>({id:String(x.id),name:String(x.name||'我的計畫').slice(0,20),start:String(x.start),days:Math.max(1,Math.min(62,Math.round(Number(x.days)||7))),base:Math.round(Number(x.base)||0),
     items:(Array.isArray(x.items)?x.items:[]).slice(0,20).map(i=>({n:String(i&&i.n||'').slice(0,20),e:String(i&&i.e||'').slice(0,40),v:Math.round(Number(i&&i.v)||0)}))})).slice(-10);
   const ps={}; if(isObj(s.payslips)) Object.entries(s.payslips).forEach(([k,v])=>{ if(!YMRE.test(k)||!isObj(v)) return; const l=phList(v.ph), note=String(v.note||'').slice(0,80); if(l.length||note) ps[k]={ph:l,note}; }); s.payslips=ps;
@@ -661,8 +666,15 @@ function quickAdd(){
 }
 function commitAdd(rec,onFail,msg){
   R.push(rec); if(!persist()){R.pop();if(onFail)onFail();return;}
-  pending=null; if($('#qin')) $('#qin').value=''; hideAsk(); renderHome(); flash(msg);
+  pending=null; if($('#qin')) $('#qin').value=''; hideAsk(); renderHome(); flash(msg); catAlert(rec);
 }
+/* 分類預算：70% 提醒、90% 注意、100% 超支 */
+function catSpent(cat,ym){ return live().filter(r=>r.date.startsWith(ym)&&r.type==='expense'&&r.category===cat).reduce((a,r)=>a+r.amount,0); }
+function budgetLevel(sp,bud){ const pct=bud?sp/bud*100:0; return pct>=100?{k:'over',t:'超支',c:'var(--bad)'}:pct>=90?{k:'warn',t:'注意',c:'#d9730d'}:pct>=70?{k:'tip',t:'提醒',c:'#c99400'}:{k:'ok',t:'正常',c:'var(--ok)'}; }
+function catAlert(rec){ if(!rec||rec.type!=='expense') return; const bud=S.budget.cats[rec.category]; if(!bud) return; const ym=rec.date.slice(0,7), sp=catSpent(rec.category,ym), before=sp-rec.amount, L=budgetLevel(sp,bud), L0=budgetLevel(before,bud);
+  if(L.k==='ok'||L.k===L0.k&&L.k!=='over') return; const pct=Math.round(sp/bud*100);
+  const msg=L.k==='over'?`🔴 ${rec.category}本月已超支 ${money(sp-bud)}（${pct}%）`:L.k==='warn'?`🟠 注意：${rec.category}本月已用 ${pct}%，剩 ${money(bud-sp)}`:`🟡 提醒：${rec.category}本月已用 ${pct}%，剩 ${money(bud-sp)}`;
+  setTimeout(()=>flash(msg),2300); }
 function continueAdd(){
   const p=pending;
   if(!(p.amount>0)){ showAsk('amount',`「${esc(p.transfer?'這筆轉帳':(p.item||'這筆'))}」是多少錢呢？`); return; }
@@ -1758,7 +1770,7 @@ const GUIDES={
   gStep(3,'常用語一鍵記',gC(gR(`${gIn('平日加班')}${gB('⭐ 加入常用',{hl:1,n:1})}`)+gR(`<span class="gx-chip">吃飯 ×</span><span class="gx-chip">平日加班 ×</span><span class="gx-chip">休息加班 ×</span>${gN(2)}`)),
    `<p>點常用語${gN(2)}會放進輸入框，<b>接著打金額或時數</b>（點「吃飯」再打 120；點「平日加班」再打 2），按「記」。</p><p>常打的字先打好，按「⭐ 加入常用」${gN(1)}；按 × 刪除；改字、排順序到「⭐ 常用選項」。</p>`),
   gStep(4,'🍙 本月生活費',gC(gR(`<span style="flex:1">已花費</span><b>$1,000 / $5,000</b>`)+gR(`<span style="flex:1">👛 身上現金</span><b>$1,000</b>`)+gR(`<b style="flex:1">✨ 本月還可以用</b><b style="color:#b45309">$1,000</b>`)+`<div class="gx-s" style="color:#8a5a00">預算還剩 $4,000，但身上只有 $1,000</div>`),
-   `<ul><li><b>已花費</b>：這個月吃飯、交通、生活用品等花了多少（房租、帳單、還款不算）。</li><li><b>本月還可以用</b>：預算還剩多少；<b>身上的錢比較少時，以身上的錢為準</b>。</li><li>需要用到完整預算，從帳戶領出來（打「薪資帳戶領3000」），「還可以用」就會變回預算的數字。</li></ul><p>按「改預算」可以改每個月的生活費。</p>`),
+   `<ul><li><b>分類預算</b>：按「改預算」可以另外設餐飲、交通…的上限；用到 <b>70% 黃色提醒、90% 橘色注意、100% 紅色超支</b>，記帳當下也會跳提醒。</li><li><b>已花費</b>：這個月吃飯、交通、生活用品等花了多少（房租、帳單、還款不算）。</li><li><b>本月還可以用</b>：預算還剩多少；<b>身上的錢比較少時，以身上的錢為準</b>。</li><li>需要用到完整預算，從帳戶領出來（打「薪資帳戶領3000」），「還可以用」就會變回預算的數字。</li></ul><p>按「改預算」可以改每個月的生活費。</p>`),
   gStep(5,'👛 我的錢：總共有多少',gC(`<div class="gx-s">現在總共有（身上＋銀行＋電子支付）</div><div style="font-size:18px;font-weight:800">$23,050</div>`+gR(`<span class="gx-chip">💵 身上 $4,700</span><span class="gx-chip">🏦 銀行 $18,000</span>`)+gR(`<span class="gx-s">本月現金流：進 +$49,900・出 -$45,000</span>`)),
    `<ul><li><b>大字</b>：身上、銀行、電子支付全部加起來；有信用卡欠款會另外寫。</li><li><b>本月現金流</b>：這個月進來多少（薪水、加班費）、出去多少（花費、還款），淨多少。</li><li>點「看每個帳戶」看每一個帳戶；跟實際不一樣就按「填／校正」。</li></ul>`),
   gStep(6,'看懂上面四張卡',gR(`${gK('本月收入','$52,000','var(--ok)')}${gK('本月支出','$18,300','var(--bad)')}`)+gR(`${gK('還沒繳','$5,838','#e0a100')}${gK('淨資產','$12萬','var(--info)')}`),
@@ -1988,9 +2000,23 @@ function budgetCard(){ const B=S.budget.living, ym=today().slice(0,7), sp=living
           ${capped?`<div class="small" style="color:#8a5a00">預算還剩 ${money(left)}，但身上只有 ${money(c)}，先以身上的錢為準。</div>`:''}
           ${usable>0?`<div class="small muted">剩 ${daysLeft} 天，平均每天可以用 ${money(Math.floor(usable/daysLeft))}</div>`:''}
           ${capped?`<div class="notice small">💡 要用到完整預算，從帳戶領 <b>${money(Math.ceil((left-c)/100)*100)}</b> 出來（例：打「薪資帳戶領${Math.ceil((left-c)/100)*100}」），領出來後「還可以用」就會變回 ${money(left)}。</div>`:left>0?`<div class="small" style="color:var(--ok);font-weight:700">✓ 身上的錢夠用到月底</div>`:''}`}
+      ${catBudgetHTML(ym)}
       <div class="small muted" style="margin-top:4px">算的是餐飲、交通、生活用品、娛樂、醫療、其他；房租、帳單、還款不算。</div>`
      :'<div class="small muted" style="margin-top:6px">還沒設定。按「改預算」填每個月的生活費，就會幫你算還可以用多少。</div>'}</div>`; }
-function budgetEdit(){ const v=prompt('每個月的生活費預算（例：5000；填 0 表示不用）',S.budget.living||''); if(v===null) return; const n=Number(v); if(!(n>=0)){ alert('要填數字'); return; } S.budget.living=Math.round(n); persist(); rerender(); flash('預算已儲存 ✦'); }
+function catBudgetHTML(ym){ const cs=Object.entries(S.budget.cats); if(!cs.length) return '';
+  return `<div class="catb"><div class="small" style="font-weight:800;margin:6px 0 2px">分類預算</div>${cs.map(([c,bud])=>{ const sp=catSpent(c,ym), L=budgetLevel(sp,bud), pct=Math.round(sp/bud*100);
+    return `<div class="cbr"><div class="bs"><span>${iconOf(c)} ${esc(c)} <span class="pill lv-${L.k}">${L.t} ${pct}%</span></span><b>${money(sp)} / ${money(bud)}</b></div><div class="prog" style="margin:2px 0 0"><i style="width:${Math.min(100,pct)}%;background:${L.c}"></i></div>
+      <div class="small" style="color:${L.k==='ok'?'var(--muted)':L.c};font-weight:${L.k==='ok'?400:700}">${sp>bud?`超出 ${money(sp-bud)}`:`剩 ${money(bud-sp)}`}</div></div>`; }).join('')}</div>`; }
+function budgetEdit(){ const m=document.createElement('div'); m.className='modal'; const C=S.budget.cats;
+  m.innerHTML=`<div class="box" style="max-height:88vh;overflow:auto"><h2 style="margin:0 0 4px;font-size:18px">🍙 生活費預算</h2><div class="small muted" style="margin-bottom:10px">分類預算可以只填想管的（例：餐飲），空白＝不另外設。用到 70% 提醒、90% 注意、100% 超支。</div>
+    <div class="row" style="flex-wrap:nowrap;margin-bottom:10px"><label style="flex:1;font-weight:800" for="bgLiv">每月生活費（總額）</label><input type="number" id="bgLiv" inputmode="numeric" value="${S.budget.living||''}" style="width:130px"></div>
+    ${LIVING.map(c=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><label style="flex:1" for="bg_${c}">${iconOf(c)} ${c}</label><input type="number" id="bg_${c}" inputmode="numeric" value="${C[c]||''}" placeholder="不設" style="width:130px"></div>`).join('')}
+    <div class="small muted" id="bgSum"></div>
+    <div class="row" style="margin-top:12px"><button class="primary" id="bgOk">儲存</button><button id="bgNo">取消</button></div></div>`;
+  document.body.appendChild(m); const upd=()=>{ const t=LIVING.reduce((a,c)=>a+(Number($('#bg_'+c).value)||0),0), L=Number($('#bgLiv').value)||0; $('#bgSum').innerHTML=t?`分類加起來 ${money(t)}${L&&t>L?`，<b style="color:var(--bad)">比總額 ${money(L)} 多</b>`:''}`:''; };
+  m.querySelectorAll('input').forEach(i=>i.oninput=upd); upd(); m.querySelector('#bgNo').onclick=()=>m.remove();
+  m.querySelector('#bgOk').onclick=()=>{ const L=Number($('#bgLiv').value)||0; if(L<0){ alert('金額不能是負的'); return; } const cats={}; for(const c of LIVING){ const v=Number($('#bg_'+c).value); if(v>0) cats[c]=Math.round(v); }
+    const o=JSON.stringify(S.budget); S.budget={living:Math.round(L),cats}; if(!persist()){ S.budget=JSON.parse(o); return; } m.remove(); rerender(); flash('預算已儲存 ✦'); }; }
 /* ---------- 行事曆 ---------- */
 let CALM=today().slice(0,7), CALV='month', CALD=today();
 const EV_TXT={done:'已繳',wait:'待繳',today:'今天到期',late:'逾期',moved:'已延後',skip:'略過',income:'收入',got:'已入帳',goal:'存錢目標'};
@@ -2050,7 +2076,7 @@ function monthSheet(M,compact){ const ev=monthEvents(M).filter(e=>e.type!=='goal
       ${compact?'':`<td class="c3">${kindOf(e)}</td>`}<td class="c4" style="color:${isIn(e)?'var(--ok)':'var(--ink)'}">${isIn(e)?'+':'-'}${money(e.amt)}</td><td class="c5"><span class="pill ev-${e.st}">${EV_TXT[e.st]}</span></td></tr>`; };
   const rows=monthEvents(M).map((e,i)=>e.type==='goal'?'':row(e,i)).join('');
   return `${ev.length?`<div class="sheetwrap"><table class="sheet"><thead><tr><th class="c0">✓</th><th class="c1">日期</th><th class="c2">項目</th>${compact?'':'<th class="c3">類型</th>'}<th class="c4">金額</th><th class="c5">狀態</th></tr></thead><tbody>${rows}
-      ${liv?`<tr class="sr liv"><td class="c0"><span class="cbx dis">🍙</span></td><td class="c1">整月</td><td class="c2"><b>生活費（預算）</b><div class="small muted">已花費 ${money(spent)}</div></td>${compact?'':'<td class="c3">預算</td>'}<td class="c4">-${money(liv)}</td><td class="c5"><span class="pill ${spent>liv?'late':'wait'}">${spent>liv?'超支':`剩 ${money(liv-spent)}`}</span></td></tr>`:''}</tbody></table></div>`:'<div class="empty">這個月沒有排定的收支</div>'}
+      ${liv?`<tr class="sr liv"><td class="c0"><span class="cbx dis">🍙</span></td><td class="c1">整月</td><td class="c2"><b>生活費（預算）</b><div class="small muted">已花費 ${money(spent)}${Object.entries(S.budget.cats).map(([c,b])=>{ const sp=catSpent(c,M); return sp>=b*0.7?`・<span style="color:${budgetLevel(sp,b).c};font-weight:700">${c} ${Math.round(sp/b*100)}%</span>`:''; }).join('')}</div></td>${compact?'':'<td class="c3">預算</td>'}<td class="c4">-${money(liv)}</td><td class="c5"><span class="pill ${spent>liv?'late':'wait'}">${spent>liv?'超支':`剩 ${money(liv-spent)}`}</span></td></tr>`:''}</tbody></table></div>`:'<div class="empty">這個月沒有排定的收支</div>'}
     <div class="sheetsum"><div><span>收入</span><b style="color:var(--ok)">${money(inD)} / ${money(inP)}</b><small>已收 / 預計</small></div><div><span>要繳</span><b>${money(outD)} / ${money(outP)}</b><small>已繳 / 預計</small></div><div><span>生活費</span><b>${money(spent)} / ${money(liv)}</b><small>已花 / 預算</small></div><div><span>預計結餘</span><b style="color:${net<0?'var(--bad)':'var(--ok)'}">${bm(net)}</b><small>收入 − 要繳 − 生活費</small></div></div>
     ${M===cur?'<div class="small muted" style="margin-top:6px">打勾＝已繳／已收到，會記一筆帳；再按一次可以改回未完成。綠色底＝完成、紅色＝逾期。</div>':''}`; }
 function sheetTick(M,i){ const e=monthEvents(M)[i]; if(!e||!e.k) return; const done=e.st==='done'||e.st==='got';
@@ -2139,7 +2165,7 @@ const TPL={
   月薪:[['從哪天開始','月薪'],['115.9.1','30000'],['115.11.1','32000']],
   加給:[['名稱','多久','金額','從哪個月起'],['證書加給','每月','3000','115.9'],['節金','每4個月','8000','115.9'],['節金','每4個月','9000','116.1']],
   節金:[['從哪次發放開始依請假扣'],['116.5']],
-  預算:[['項目','每月金額'],['生活費','5000']],
+  預算:[['項目','每月金額'],['生活費','5000'],['餐飲','3000']],
   儲蓄目標:[['名稱','目標金額','期限'],['旅遊基金','30000','116.6.30']],
   記帳紀錄:[['日期','收入或支出','項目','金額','帳戶','分類（可不填）'],['115.11.1','支出','早餐','65','現金',''],['2026/11/2','收入','獎金','3000','測試銀行','']]
 };
@@ -2170,7 +2196,7 @@ function rowsOf(X,wb,name){ const ws=wb.Sheets[name]; if(!ws) return [];
   const head=a[0].map(h=>String(h).trim()); return a.slice(1).map((r,i)=>({n:i+2,get:k=>{const j=head.findIndex(h=>h.startsWith(k));return j<0?'':r[j];},empty:r.every(c=>String(c).trim()==='')})).filter(r=>!r.empty); }
 let PENDING_IMPORT=null, IMPORT_SRC=null;
 function buildPlan(X,wb){
-  const plan={accts:[],debts:[],recs:[],recur:[],ot:[],bases:[],allow:[],bonusFrom:null,budget:null,goals:[],skip:[]}, skip=(sh,n,why)=>plan.skip.push(`${sh} 第 ${n} 列：${why}`);
+  const plan={accts:[],debts:[],recs:[],recur:[],ot:[],bases:[],allow:[],bonusFrom:null,budget:null,bcats:{},goals:[],skip:[]}, skip=(sh,n,why)=>plan.skip.push(`${sh} 第 ${n} 列：${why}`);
   const newAcctNames=new Set(), newDebtNames=new Set();
   const TYPEMAP={現金:'cash',銀行:'bank',銀行帳戶:'bank',電子支付:'epay',信用卡:'card',其他:'other',其他帳戶:'other'};
   rowsOf(X,wb,'帳戶').forEach(r=>{ const name=fixAcctName(r.get('名稱')), bal=numOf(r.get('目前餘額'));
@@ -2202,7 +2228,7 @@ function buildPlan(X,wb){
     const same=S.recurring.some(y=>y.name===name.slice(0,20)&&y.kind===kind&&y.amount===Math.round(Math.abs(amt))&&y.day===day&&y.start===start&&y.end===end&&(y.every||1)===every);
     if(same) return skip('固定收支',r.n,`「${name}」${start.replace('-','/')} 起這筆已經有了（可能匯入過）`);
     plan.recur.push({id:newId(),name:name.slice(0,20),kind,amount:Math.round(Math.abs(amt)),day,start,end,acct:a||'cash',debt:d,every}); });
-  rowsOf(X,wb,'預算').forEach(r=>{ const n=String(r.get('項目')).trim(), v=numOf(r.get('每月金額')); if(/生活/.test(n)&&v>=0&&Math.round(v)!==S.budget.living) plan.budget=Math.round(v); });
+  rowsOf(X,wb,'預算').forEach(r=>{ const n=String(r.get('項目')).trim(), v=numOf(r.get('每月金額')); if(EXP.includes(n)&&v>=0){ if(S.budget.cats[n]!==Math.round(v)) plan.bcats[n]=Math.round(v); return; } if(/生活/.test(n)&&v>=0&&Math.round(v)!==S.budget.living) plan.budget=Math.round(v); });
   rowsOf(X,wb,'儲蓄目標').forEach(r=>{ const name=String(r.get('名稱')).trim().slice(0,20), tg=numOf(r.get('目標金額')), dS=String(r.get('期限')).trim(), dl=dS?parseDateAny(r.get('期限')):'';
     if(!name) return skip('儲蓄目標',r.n,'沒有名稱'); if(!(tg>0)) return skip('儲蓄目標',r.n,'目標金額要大於 0'); if(dS&&!dl) return skip('儲蓄目標',r.n,'期限看不懂');
     if(S.goals.some(g=>g.name===name)) return skip('儲蓄目標',r.n,`「${name}」已經有了`); plan.goals.push({id:newId(),name,target:Math.round(tg),mode:'manual',acct:'',deadline:dl,done:false,doneAt:''}); });
@@ -2231,8 +2257,8 @@ function buildPlan(X,wb){
     plan.recs.push({id:newId(),type,amount:Math.round(Math.abs(amt)),item:item.slice(0,40),category:cat,date,who:'',icon:'',acct:a||'cash',createdAt:new Date().toISOString(),imported:true}); });
   return plan;
 }
-function planCount(p){ return p.accts.length+p.debts.length+p.recur.length+p.recs.length+p.ot.length+p.bases.length+p.allow.length+(p.bonusFrom?1:0)+(p.budget!==null?1:0)+p.goals.length; }
-function applyPlan(p){ S.accounts.push(...p.accts); S.debts.push(...p.debts); S.recurring.push(...p.recur); R.push(...p.recs); S.ot.days.push(...p.ot); S.ot.bases.push(...p.bases); S.ot.allow.push(...p.allow); if(p.bonusFrom) S.ot.bonusFrom=p.bonusFrom; if(p.budget!==null) S.budget.living=p.budget; S.goals.push(...p.goals); S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(p.accts.length) S.acctInitDone=true; }
+function planCount(p){ return p.accts.length+p.debts.length+p.recur.length+p.recs.length+p.ot.length+p.bases.length+p.allow.length+(p.bonusFrom?1:0)+(p.budget!==null?1:0)+Object.keys(p.bcats||{}).length+p.goals.length; }
+function applyPlan(p){ S.accounts.push(...p.accts); S.debts.push(...p.debts); S.recurring.push(...p.recur); R.push(...p.recs); S.ot.days.push(...p.ot); S.ot.bases.push(...p.bases); S.ot.allow.push(...p.allow); if(p.bonusFrom) S.ot.bonusFrom=p.bonusFrom; if(p.budget!==null) S.budget.living=p.budget; Object.assign(S.budget.cats,p.bcats||{}); S.goals.push(...p.goals); S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(p.accts.length) S.acctInitDone=true; }
 function cleanState(){ return fixS(Object.assign(defaultS(),{phrases:S.phrases,rules:S.rules,people:S.people,catIcons:S.catIcons,bg:S.bg,recentN:S.recentN,payslips:S.payslips,lastBackup:S.lastBackup})); }
 function fullPlan(){ if(!IMPORT_SRC) return null; const sv=[S,R]; try{ S=cleanState(); R=[]; return buildPlan(IMPORT_SRC.X,IMPORT_SRC.wb); }finally{ S=sv[0]; R=sv[1]; } }
 
@@ -2255,7 +2281,7 @@ function showImportPreview(p){
         <label class="small" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="ipBk"> 清空前先下載一份備份（想保險再勾）</label></div></label></div>`:''}
     ${sec('👛 帳戶',p.accts,x=>`<span>${esc(x.name)}</span><span>${bm(x.init)}</span>`)}
     ${sec('💳 負債',p.debts,x=>`<span>${esc(x.name)}・${x.kind==='loan'?LOAN_SUB[x.sub].slice(2).trim():(x.init>=0?'我欠':'欠我')}</span><span>${x.init>=0?'還欠':'對方還欠'} ${money(Math.abs(x.init))} / 總額 ${money(x.orig)}</span>`)}
-    ${p.budget!==null?`<div class="bs" style="font-size:13px"><span>🍙 生活費預算</span><span>每月 ${money(p.budget)}</span></div>`:''}
+    ${p.budget!==null?`<div class="bs" style="font-size:13px"><span>🍙 生活費預算</span><span>每月 ${money(p.budget)}</span></div>`:''}${Object.entries(p.bcats||{}).map(([c,v])=>`<div class="bs" style="font-size:13px"><span>${iconOf(c)} ${c}預算</span><span>每月 ${money(v)}</span></div>`).join('')}
     ${sec('🎯 儲蓄目標',p.goals,x=>`<span>${esc(x.name)}${x.deadline?`・${fmtFull(x.deadline)} 前`:''}</span><span>${money(x.target)}</span>`)}
     ${sec('📅 固定收支',p.recur,x=>`<span>${esc(x.name)}・${x.end&&x.end===x.start?`只有 ${x.start.replace('-','/')}`:`${freqTxt(x)} ${x.day} 號・${x.start.replace('-','/')} 起`}</span><span>${x.kind==='income'?'+':'-'}${money(x.amount)}</span>`)}
     ${sec('🎁 加給',p.allow,x=>`<span>${esc(x.name)}・${x.per==='p'?'每 4 個月':'每月'}</span><span>${money(x.amt)}（${ymLabel(x.from)}起）</span>`)}
