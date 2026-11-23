@@ -427,6 +427,9 @@ table.ledger td.lc:hover{outline:2px solid var(--brand);outline-offset:-2px}
 table.ledger td.fill{background:var(--brand-soft);color:var(--brand-d)!important;font-weight:800;opacity:1;font-style:normal}
 table.ledger .lck{display:inline-block;margin-right:4px;font-size:12px;background:var(--brand);color:#fff;border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center}
 .fillchip{background:var(--brand-soft);color:var(--brand-d);font-weight:800;border-radius:6px;padding:0 6px}
+
+.lrow{cursor:pointer}.lrow:hover{background:var(--tint)}
+.lrow.lfill{background:var(--brand-soft)}.lrow.lfill .ln b{color:var(--brand-d)}
 </style>
 </head>
 <body>
@@ -1733,7 +1736,7 @@ let OTM=today().slice(0,7);
 function renderOT(){ page='ot'; nav(); const M=OTM, cur=today().slice(0,7), days=S.ot.days.filter(d=>d.date.startsWith(M)).sort((a,b)=>a.date.localeCompare(b.date));
   const ots=days.filter(d=>!isLeave(d.kind)), lvs=days.filter(d=>isLeave(d.kind)), calc=new Map(ots.map(d=>[d.id,otCalc(d)]));
   const sumAppr=ots.reduce((a,d)=>a+calc.get(d.id).H,0), sumReq=ots.reduce((a,d)=>a+d.hrs,0), cut=sumReq-sumAppr, cap=ots.reduce((a,d)=>a+calc.get(d.id).cap,0);
-  const pay=Math.round(ots.reduce((a,d)=>a+calc.get(d.id).pay,0)), noteYM=ymAdd(M,1), noteAmt=payslipOT(noteYM), own=S.ot.paid[M], paid=own!==undefined?own:(noteAmt??undefined), fromNote=own===undefined&&noteAmt!==null, diff=paid===undefined?null:paid-pay, noBase=ots.some(d=>!otBase(d.date));
+  const pay=Math.round(ots.reduce((a,d)=>a+calc.get(d.id).pay,0)), slipF=otSlipFor(M), noteYM=slipF?slipF.ym:M, noteAmt=slipF?slipF.v:null, own=S.ot.paid[M], paid=own!==undefined?own:(noteAmt??undefined), fromNote=own===undefined&&noteAmt!==null, diff=paid===undefined?null:paid-pay, noBase=ots.some(d=>!otBase(d.date));
   const byKind=k=>ots.filter(d=>d.kind===k).reduce((a,d)=>a+calc.get(d.id).H,0);
   const lvSum={}; lvs.forEach(d=>lvSum[d.kind]=(lvSum[d.kind]||0)+d.hrs); const yr=M.slice(0,4), lvYear={}; S.ot.days.filter(d=>isLeave(d.kind)&&d.date.startsWith(yr)).forEach(d=>lvYear[d.kind]=(lvYear[d.kind]||0)+d.hrs);
   const ps=[M,ymAdd(M,1)].map(ym=>({ym,l:(S.payslips[ym]||{ph:[]}).ph}));
@@ -1798,6 +1801,8 @@ function otEdit(id){ const d=S.ot.days.find(x=>x.id===id); if(!d) return; const 
   m.querySelector('#oeDel').onclick=()=>{ if(!confirm(`確定刪除 ${fmtMD(d.date)} 的${OT_KIND[d.kind]}紀錄嗎？`)) return; const o=JSON.stringify(S.ot); S.ot.days=S.ot.days.filter(x=>x.id!==id); if(!persist()){ S.ot=JSON.parse(o); return; } m.remove(); renderOT(); flash('已刪除'); };
   m.querySelector('#oeOk').onclick=()=>{ const f=otRead('oe'); if(!f) return; const o=JSON.stringify(S.ot); Object.assign(d,f); if(!persist()){ S.ot=JSON.parse(o); return; } m.remove(); renderOT(); flash('已儲存 ✦'); }; }
 function payslipOT(ym){ const n=String((S.payslips[ym]||{}).note||'').replace(/，/g,','); const m=n.match(/^\s*\$?\s*(\d[\d,]*)\s*元?\s*$/)||n.match(/加班費\s*[:：]?\s*\$?\s*(\d[\d,]*)(?!\s*(小時|h|H|hr))/); if(!m) return null; const v=Number(m[1].replace(/,/g,'')); return v>0?v:null; }
+/* 加班費寫在哪張薪資條：優先「加班那個月」的薪資條，沒有再看下個月（發薪月）的 */
+function otSlipFor(otM){ const a=payslipOT(otM); if(a!==null) return {v:a,ym:otM}; const b=payslipOT(ymAdd(otM,1)); return b!==null?{v:b,ym:ymAdd(otM,1)}:null; }
 function otSavePaid(){ const v=$('#otPaid').value.trim(), o=JSON.stringify(S.ot); if(v===''){ delete S.ot.paid[OTM]; } else { const n=Number(v); if(!(n>=0)){ alert('金額要是數字'); return; } S.ot.paid[OTM]=Math.round(n); } if(!persist()){ S.ot=JSON.parse(o); return; } renderOT(); flash('已儲存'); }
 function otAddBase(){ const from=$('#obFrom').value, amt=Number($('#obAmt').value); if(!/^\d{4}-\d{2}-\d{2}$/.test(from)){ alert('請選從哪天開始'); return; } if(!(amt>0)){ alert('月薪要大於 0'); return; }
   const o=JSON.stringify(S.ot); S.ot.bases=S.ot.bases.filter(b=>b.from!==from); S.ot.bases.push({from,amt:Math.round(amt)}); S.ot.bases.sort((a,b)=>a.from.localeCompare(b.from)); if(!persist()){ S.ot=JSON.parse(o); return; } syncSalary(Math.round(amt)); renderOT(); flash('已新增月薪 ✦'); }
@@ -1922,7 +1927,7 @@ const GUIDES={
   gStep(2,'Ctrl+V 貼上',gR(`<span class="gx-key">Ctrl</span>＋<span class="gx-key">V</span>`)+gC(gR(`<span class="gx-ph"></span><span class="gx-ph"></span>${gB('選擇圖片',{n:1})}`)),
    `<p>在 LINE 或別的地方截好圖，回到這頁按 <b>Ctrl+V</b>，就放進框起來的月份。</p><p>手機或要放檔案時，按「選擇圖片」${gN(1)}。一個月可以放好幾張。</p>`),
   gStep(3,'備註寫加班費，自動對帳',gC(gR(`<b>11 月</b>${gIn('5111',1)}${gN(1)}`))+gC(gR(`<span class="gx-s">⏱️ 加班頁・10 月</span>`)+gR(`<span style="flex:1">薪資條上的加班費</span><b>$5,111</b>`)+gR(`<span style="flex:1">差額</span><b style="color:var(--ok)">+$2</b>`)),
-   `<p>在<b>發薪那個月</b>的備註${gN(1)}只寫數字（例：5111）或「加班費5111」，加班頁的<b>前一個月</b>就會自動帶入，算出差額（加班費是下個月才發）。</p><p>寫「加班 34 小時」這種時數不會被當成金額。點圖片可以看大圖或刪除。</p>`),
+   `<p>在<b>那張薪資條月份</b>的備註${gN(1)}只寫數字（例：10 月薪資條寫 5111）或「加班費5111」，加班頁的 10 月就會自動帶入、算出差額；行事曆和月結表 11 月（發薪那個月）的加班費也會改成 5111。</p><p>寫「加班 34 小時」這種時數不會被當成金額。點圖片可以看大圖或刪除。</p>`),
   gStep(4,'記得備份',gR(`${gB('⚙️ 設定')}<span>→</span>${gB('下載備份',{hl:1,n:1})}`),
    `<p>薪資條只存在<b>這台電腦、這個瀏覽器</b>。請定期到「設定 → 下載備份」${gN(1)}，圖片會一起放進備份檔。</p><p><b>備份檔裡有薪資條，不要傳給別人。</b></p>`)]},
  ot:{t:'加班與請假使用說明',steps:()=>[
@@ -2132,7 +2137,7 @@ const EV_TXT={done:'已繳',wait:'待繳',today:'今天到期',late:'逾期',mov
 function monthEvents(M){ const ev=[];
   billRows(M).forEach(b=>{ const r=b.st==='done'?billRec(b):null; ev.push({date:b.due,name:b.x.name,amt:r?r.amount:b.x.amount,st:b.st,k:b.k,type:'bill',to:b.to,from:b.from}); });
   S.recurring.forEach(x=>{ if(x.kind!=='income'||!recurOn(x,M)) return; const k=x.id+'|'+M, d=S.recurDone[k], h=recurHint(x,M), ov=S.recurAmt[k]; ev.push({date:dueDate(M,x.day),name:x.name,amt:ov!==undefined?ov:h?h.amt:x.amount,st:d==='done'?'got':d==='skip'?'skip':'income',type:'income',note:h?h.note:'',k}); });
-  const prev=ymAdd(M,-1), otp=S.otEst[M]!==undefined?S.otEst[M]:otPayMonth(prev); if(otp>0){ const sx=S.recurring.find(y=>y.kind==='income'&&/薪水|薪資|月薪/.test(y.name)&&recurOn(y,M)); ev.push({date:dueDate(M,sx?sx.day:10),name:`加班費（${ymShort(prev)}）`,amt:otp,st:'income',type:'income',ot:1,note:`照加班頁 ${ymShort(prev)}的紀錄估算，實際以薪資條為準`}); }
+  const prev=ymAdd(M,-1), slp=otSlipFor(prev), otp=S.otEst[M]!==undefined?S.otEst[M]:slp?slp.v:otPayMonth(prev); if(otp>0){ const sx=S.recurring.find(y=>y.kind==='income'&&/薪水|薪資|月薪/.test(y.name)&&recurOn(y,M)); ev.push({date:dueDate(M,sx?sx.day:10),name:`加班費（${ymShort(prev)}）`,amt:otp,st:'income',type:'income',ot:1,note:S.otEst[M]!==undefined?'你改過的金額':slp?`照 ${ymShort(slp.ym)}薪資條備註（${money(slp.v)}）`:`照加班頁 ${ymShort(prev)}的紀錄估算，實際以薪資條為準`}); }
   S.goals.forEach(g=>{ if(!g.done&&g.deadline&&g.deadline.startsWith(M)) ev.push({date:g.deadline,name:`${g.name} 截止`,amt:g.target,st:'goal',type:'goal'}); });
   return ev.sort((a,b)=>a.date.localeCompare(b.date)||(a.type==='income'?-1:1)); }
 function otPayMonth(ym){ return Math.round(S.ot.days.filter(d=>d.date.startsWith(ym)&&!isLeave(d.kind)).reduce((a,d)=>a+otCalc(d).pay,0)); }
@@ -2152,8 +2157,8 @@ function renderCal(){ page='cal'; nav(); const M=CALM, ev=monthEvents(M), P=mont
       <div class="calw">${days.map(ds=>`<div class="wd ${ds===t?'now':''}"><div class="dn">${fmtMD(ds)}（${WK[new Date(ds+'T00:00').getDay()]}）</div>${(evs[ds]||[]).map(([e,i])=>evChip(e,i,true)).join('')||'<div class="small muted">—</div>'}</div>`).join('')}</div>`; }
   else if(CALV==='sheet'){ grid=monthSheet(M,false); }
   else if(CALV==='ledger'){ grid=ledgerTable(M,LEDN); }
-  else { grid=ev.length?ev.map((e,i)=>`<div class="lrow ${e.date===t?'now':''}"><div class="ld">${fmtMD(e.date)}<span class="small muted">（${WK[new Date(e.date+'T00:00').getDay()]}）</span></div><div class="ln"><b>${esc(e.name)}</b>${e.note?`<div class="small muted">${esc(e.note)}</div>`:''}${e.from?`<div class="small muted">${ymShort(e.from)}延後過來</div>`:''}</div>
-      <span class="pill ev-${e.st}">${EV_TXT[e.st]}${e.st==='moved'?` → ${ymShort(e.to)}`:''}</span><b class="la" style="color:${e.type==='income'?'var(--ok)':e.type==='goal'?'var(--info)':'var(--ink)'}">${e.type==='income'?'+':e.type==='goal'?'':'-'}${money(e.amt)}</b>
+  else { grid=ev.length?ev.map((e,i)=>`<div class="lrow ${e.date===t?'now':''} ${e.st==='done'||e.st==='got'?'lfill':''}" onclick="if(!event.target.closest('button'))evEdit('${M}',${i})" title="點一下修改"><div class="ld">${fmtMD(e.date)}<span class="small muted">（${WK[new Date(e.date+'T00:00').getDay()]}）</span></div><div class="ln"><b>${esc(e.name)}</b>${e.note?`<div class="small muted">${esc(e.note)}</div>`:''}${e.from?`<div class="small muted">${ymShort(e.from)}延後過來</div>`:''}</div>
+      <span class="pill ev-${e.st}">${EV_TXT[e.st]}${e.st==='moved'?` → ${ymShort(e.to)}`:''}</span><b class="la" style="color:${e.type==='income'?'var(--ok)':e.type==='goal'?'var(--info)':'var(--ink)'}">${e.type==='income'?'+':e.type==='goal'?'':'-'}${money(e.amt)} <span class="small" style="color:var(--brand-d)">✎</span></b>
       <div class="lx">${e.type==='bill'&&OPEN_ST.includes(e.st)?`<button class="dark" onclick="billDone('${esc(e.k)}')">完成</button><button class="danger" onclick="billMove('${esc(e.k)}')">延後</button>`:''}</div></div>`).join(''):'<div class="empty">這個月沒有排定的收支</div>'; }
   $('#app').innerHTML=`<div class="kpis">
      ${kpi('預計收入',bmS(P.inc),'薪水、節金、上個月加班費','💰','var(--ok)','var(--ok-soft)',money(P.inc))}
@@ -2271,7 +2276,7 @@ function ledgerMonth(M){ const cur=today().slice(0,7), rows={}, st={}, meta={}, 
     else add('out',/^cc-/.test(e.k||'')?'信用卡繳款':e.name,-e.amt,e.st==='done',/^cc-/.test(e.k||'')?{t:'card',k:e.k}:{t:'rec',k:e.k}); });
   const recs=live().filter(r=>r.date.startsWith(M)&&!r.recur);
   const otAct=recs.filter(r=>r.type==='income'&&isOT(r)).reduce((a,r)=>a+r.amount,0), otEst=S.otEst[M]!==undefined?S.otEst[M]:otPayMonth(ymAdd(M,-1));
-  const otSlip=payslipOT(M); if(otAct) add('in','加班費',otAct,true,{t:'list',f:'otin'}); else if(otSlip) add('in','加班費',otSlip,true,{t:'ot'}); else if((otEst||S.otEst[M]!==undefined)&&M>=cur) add('in','加班費',otEst,false,{t:'ot'});
+  const otSlipO=otSlipFor(ymAdd(M,-1)), otSlip=otSlipO?otSlipO.v:null; if(otAct) add('in','加班費',otAct,true,{t:'list',f:'otin'}); else if(S.otEst[M]!==undefined) add('in','加班費',S.otEst[M],false,{t:'ot'}); else if(otSlip) add('in','加班費',otSlip,true,{t:'ot'}); else if((otEst||S.otEst[M]!==undefined)&&M>=cur) add('in','加班費',otEst,false,{t:'ot'});
   const oInc=recs.filter(r=>r.type==='income'&&!isOT(r)).reduce((a,r)=>a+r.amount,0); if(oInc) add('in','其他收入',oInc,true,{t:'list',f:'in'});
   const liv=livingSpent(M), bud=livBudget(M), livV=M<cur?liv:Math.max(liv,bud); if(livV||S.livMonth[M]!==undefined) add('out','生活費',-livV,M<cur,{t:'liv'});
   const oOut=recs.filter(r=>(r.type==='expense'&&!LIVING.includes(r.category))||(r.type==='debt'&&r.exp)).reduce((a,r)=>a+r.amount,0); if(oOut) add('out','其他支出',-oOut,true,{t:'list',f:'out'});
@@ -2304,6 +2309,9 @@ function ledgerTable(start,n){ const cur=today().slice(0,7), months=[...Array(n)
 
 /* ---------- 月結表：點一下修改、點兩下切換已繳 ---------- */
 let LEDC=[], LEDT=null;
+function evEdit(M,i){ const e=monthEvents(M)[i]; if(!e) return; let meta;
+  if(e.type==='goal'){ go('savings'); return; } if(e.ot) meta={t:'ot'}; else if(/^cc-/.test(e.k||'')) meta={t:'card',k:e.k}; else if(e.k) meta={t:'rec',k:e.k}; else return;
+  const idx=LEDC.push({M,key:(e.type==='income'?'in':'out')+'|'+e.name,meta:[meta]})-1; ledEdit(idx); }
 function ledClick(i){ clearTimeout(LEDT); LEDT=setTimeout(()=>ledEdit(i),260); }
 function ledDbl(i){ clearTimeout(LEDT); const c=LEDC[i]; if(!c||!c.meta||c.meta.length!==1||c.meta[0].t!=='rec'){ ledEdit(i); return; } ledToggle(c.meta[0].k,c.M); }
 function ledToggle(k,M){ const [id,ym]=String(k).split('|'), x=recById(id); if(!x) return; const done=S.recurDone[k]==='done';
@@ -2321,7 +2329,8 @@ function ledEdit(i){ const c=LEDC[i]; if(!c||!c.meta) return; const M=c.M, [sec,
       <label class="f">新的金額</label><input type="number" id="leA" inputmode="decimal" value="${recAmt(x,ym)}">
       <div class="impmode" style="margin-top:10px"><label class="opt"><input type="radio" name="leM" value="one" checked><div><b>① 只改這個月</b><div class="small muted">例如這個月水電比較貴，其他月份不變。</div></div></label>
         <label class="opt"><input type="radio" name="leM" value="all"><div><b>② 這個月起之後都改</b><div class="small muted">例如房租漲價，${ymLabel(ym)}之後每次都用新金額。</div></div></label></div>`,
-      `<button class="primary" id="leOk">儲存</button><button class="dark" id="leDone">✓ ${inc?'已收到':'已繳'}</button>${S.recurAmt[k]!==undefined?'<button id="leRs">恢復原本金額</button>':''}`);
+      `<button class="primary" id="leOk">儲存</button><button class="dark" id="leDone">✓ ${inc?'已收到':'已繳'}</button>${S.recurMove[k]?'<button id="leUm">取消延後</button>':''}${S.recurAmt[k]!==undefined?'<button id="leRs">恢復原本金額</button>':''}`);
+    const um=m.querySelector('#leUm'); if(um) um.onclick=()=>{ m.remove(); billUnmove(k); };
     m.querySelector('#leDone').onclick=()=>{ m.remove(); ledToggle(k,ym); };
     const rs=m.querySelector('#leRs'); if(rs) rs.onclick=()=>{ delete S.recurAmt[k]; persist(); m.remove(); rerender(); flash('已恢復原本金額'); };
     m.querySelector('#leOk').onclick=()=>{ const v=Math.round(Number($('#leA').value)*100)/100; if(!(v>0)){ alert('金額要大於 0'); return; } const mode=m.querySelector('input[name=leM]:checked').value, o=JSON.stringify(S);
@@ -2333,7 +2342,7 @@ function ledEdit(i){ const c=LEDC[i]; if(!c||!c.meta) return; const M=c.M, [sec,
       `<button class="primary" id="leOk">儲存</button>${S.livMonth[M]!==undefined?'<button id="leRs">恢復平常的</button>':''}`);
     const rs=m.querySelector('#leRs'); if(rs) rs.onclick=()=>{ delete S.livMonth[M]; persist(); m.remove(); rerender(); flash('已恢復'); };
     m.querySelector('#leOk').onclick=()=>{ const v=Number($('#leA').value); if(!(v>=0)){ alert('要填數字'); return; } if(Math.round(v)===S.budget.living) delete S.livMonth[M]; else S.livMonth[M]=Math.round(v); persist(); m.remove(); rerender(); flash(`${ymShort(M)}生活費改成 ${money(v)} ✦`); }; return; }
-  if(mm[0].t==='ot'){ const est=otPayMonth(ymAdd(M,-1)), v0=S.otEst[M]!==undefined?S.otEst[M]:(payslipOT(M)||est), m=ledModal(`加班費・${ymLabel(M)}`,`<div class="small muted" style="margin-bottom:8px">照 ${ymShort(ymAdd(M,-1))}加班紀錄估算是 ${money(est)}。可以改成你預計拿到的金額，只影響這個月。${payslipOT(M)?`<br>薪資條備註寫的是 ${money(payslipOT(M))}。`:''}</div><label class="f">預計拿到</label><input type="number" id="leA" inputmode="numeric" value="${v0}">`,
+  if(mm[0].t==='ot'){ const est=otPayMonth(ymAdd(M,-1)), v0=S.otEst[M]!==undefined?S.otEst[M]:((otSlipFor(ymAdd(M,-1))||{}).v||est), m=ledModal(`加班費・${ymLabel(M)}`,`<div class="small muted" style="margin-bottom:8px">照 ${ymShort(ymAdd(M,-1))}加班紀錄估算是 ${money(est)}。可以改成你預計拿到的金額，只影響這個月。${otSlipFor(ymAdd(M,-1))?`<br>${ymShort(otSlipFor(ymAdd(M,-1)).ym)}薪資條備註寫的是 ${money(otSlipFor(ymAdd(M,-1)).v)}。`:''}</div><label class="f">預計拿到</label><input type="number" id="leA" inputmode="numeric" value="${v0}">`,
       `<button class="primary" id="leOk">儲存</button>${S.otEst[M]!==undefined?'<button id="leRs">恢復估算</button>':''}`);
     const rs=m.querySelector('#leRs'); if(rs) rs.onclick=()=>{ delete S.otEst[M]; persist(); m.remove(); rerender(); flash('已恢復估算'); };
     m.querySelector('#leOk').onclick=()=>{ const v=Number($('#leA').value); if(!(v>=0)){ alert('要填數字'); return; } S.otEst[M]=Math.round(v); persist(); m.remove(); rerender(); flash(`${ymShort(M)}加班費改成 ${money(v)} ✦`); }; return; }
