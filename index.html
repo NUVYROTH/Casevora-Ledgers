@@ -613,8 +613,11 @@ function parseInput(raw){
   /* 帳戶與轉帳：先把帳戶名稱找出來、從文字中拿掉，避免影響金額與項目判斷 */
   const hitsAll=findAccts(t), tk=t.match(/領|轉|加值|\+值/);
   let transfer=null, acct='';
+  /* 繳卡費：刷卡時已經算過支出，繳卡費只是從帳戶搬錢去還卡（轉帳） */
+  const cardHit=hitsAll.find(h=>isCard(acctById(h.id)));
+  if(cardHit&&!tk&&/繳|付|還|卡費|^費|費\s*\d|帳單/.test(cutSpans(t,hitsAll))){ const src=hitsAll.find(h=>h.id!==cardHit.id&&!isCard(acctById(h.id))); transfer={from:src?src.id:'',to:cardHit.id,card:1}; t=cutSpans(t,hitsAll).replace(/繳|付|還|卡費|帳單|費/g,' '); }
   const bare=!hitsAll.filter(h=>h.id!=='cash').length && /(領|加值|\+值)\s*\d/.test(t);
-  if(tk && (hitsAll.length||bare) && !/薪|獎金|紅包|利息|退款|收入/.test(cutSpans(t,hitsAll)) && !/轉帳?給/.test(t)){
+  if(!transfer && tk && (hitsAll.length||bare) && !/薪|獎金|紅包|利息|退款|收入/.test(cutSpans(t,hitsAll)) && !/轉帳?給/.test(t)){
     const k=tk.index, kw=tk[0], bef=hitsAll.filter(h=>h.idx<k), aft=hitsAll.filter(h=>h.idx>k), nc=hitsAll.filter(h=>h.id!=='cash');
     let from='', to='';
     if(kw==='領'){ if(nc.length){ from=(bef.find(h=>h.id!=='cash')||nc[0]).id; const o=aft.find(h=>h.id!==from); to=o?o.id:'cash'; } else if(bare){ from=''; to='cash'; } }
@@ -644,7 +647,7 @@ function parseInput(raw){
   let item=t.replace(/\s+/g,' ').trim().replace(/^買/,'').trim();
   if(!who){ const m=item.match(/^([還借])\s*(\S+)$/); if(m){ const c=S.people.filter(x=>x.startsWith(m[2])); if(c.length===1){ who=c[0]; item=m[1]; } } }
   if(who&&(item==='還'||item==='借')) item=item+'錢';
-  if(transfer) return {date,amount,item:item.replace(/^(現金|錢)$/,''),who:'',acct:'',transfer};
+  if(transfer) return {date,amount,item:item.replace(/^(現金|錢)$/,'')||(transfer.card?'繳卡費':''),who:'',acct:'',transfer};
   return {date,amount,item,who,acct,transfer:null,debt,goal};
 }
 const WHO_KW=['還錢','借','欠','轉帳','請客','代墊','分攤'];
@@ -667,7 +670,7 @@ function continueAdd(){
     const t=p.transfer;
     if(!t.from||!t.to){ showAskTransfer(); return; }
     if(t.from===t.to){ alert('轉出和轉入是同一個帳戶，請再選一次。'); t.to=''; showAskTransfer(); return; }
-    const rec={id:newId(),type:'transfer',amount:p.amount,item:p.item||'',category:'轉帳',date:p.date,who:'',icon:'',from:t.from,to:t.to,createdAt:new Date().toISOString()};
+    const rec={id:newId(),type:'transfer',amount:p.amount,item:p.item||(t.card?'繳卡費':''),category:'轉帳',date:p.date,who:'',icon:'',from:t.from,to:t.to,createdAt:new Date().toISOString()};
     commitAdd(rec,null,`已記好 ✦ ${fmtMD(rec.date)} 轉帳 ${acctName(t.from)} → ${acctName(t.to)} ${money(rec.amount)}`); return;
   }
   if(p.goal){
@@ -1261,8 +1264,8 @@ function renderDebts(){
     ${done.length?`<details style="margin-top:8px"><summary class="small">已還清（${done.length}）</summary>${done.map(d=>pRow(d,0)).join('')}</details>`:''}
     <div class="muted small" style="margin-top:8px">不用先建立。直接在首頁打：「跟小明借錢1500」「小明借錢2000」「還小明1000」「小明還800」。跟朋友借還<b>不算收入或支出</b>，只會改帳戶餘額和這裡的金額。</div></div>
    <div class="card"><h2>💳 信用卡</h2>
-    ${cards.length?cards.map(a=>{const n=nextDue(a.dueDay);return `<div class="acc"><div class="ic">${a.icon||'💳'}</div><div class="mid"><div style="font-weight:700">${esc(a.name)}</div><div class="small muted">每月 ${a.dueDay} 號繳款・下次 ${fmtMD(n.date)}</div></div><div class="bal" style="color:${b[a.id]<0?'var(--bad)':'var(--ink)'}">${b[a.id]<0?'欠 '+money(-b[a.id]):'$0'}</div></div>`;}).join('')
-      :'<div class="muted small">信用卡請到「帳戶」新增（起始餘額填負數，例如欠 8000 就填 -8000），再按「修改」填上繳款日。繳卡費打「台新轉中信信用卡8300」，算轉帳、不算支出。</div>'}</div>`;
+    ${cards.length?cards.map(a=>{const n=nextDue(a.dueDay);return `<div class="acc"><div class="ic">${a.icon||'💳'}</div><div class="mid"><div style="font-weight:700">${esc(a.name)}</div><div class="small muted">每月 ${a.dueDay} 號繳款・下次 ${fmtMD(n.date)}</div></div><div class="bal" style="color:${b[a.id]<0?'var(--bad)':'var(--ink)'}">${b[a.id]<0?'欠 '+money(-b[a.id]):'$0'}</div><div class="ops"><button class="primary" onclick="cardPay('${a.id}')">💳 繳卡費</button></div></div>`;}).join('')
+      :'<div class="muted small">信用卡請到「帳戶」新增（起始餘額填負數，例如欠 8000 就填 -8000），再按「修改」填上繳款日。繳卡費打「繳中信卡8300」或按卡片旁的「繳卡費」，算轉帳、不算支出（刷卡時已經算過了）。</div>'}</div>`;
 }
 const LOAN_SUB={loan:'🏦 貸款',inst:'📱 分期付款',other:'🗂️ 其他債務'};
 function subOpts(sel){return Object.entries(LOAN_SUB).map(([k,n])=>`<option value="${k}" ${k===sel?'selected':''}>${n}</option>`).join('');}
@@ -1506,19 +1509,28 @@ function billRows(M){ const out=[];
     out.push(mv&&mv!==M?{x,k,orig:M,show:M,due,st:'moved',to:mv}:{x,k,orig:M,show:M,due,st:billStatus(k,due)}); });
   Object.entries(S.recurMove).forEach(([k,to])=>{ if(to!==M) return; const [id,orig]=k.split('|'); if(orig===M) return; const x=recById(id); if(!x||x.kind==='income') return;
     const due=dueDate(M,x.day); out.push({x,k,orig,show:M,due,st:billStatus(k,due),from:orig}); });
+  cardRows(M).forEach(r=>out.push(r));
   return out.sort((a,b)=>a.due.localeCompare(b.due)||a.x.name.localeCompare(b.x.name)); }
+/* 信用卡繳款提醒：本月起，欠款大於 0 或這個月已經繳過 */
+function cardPaidIn(id,M){ return live().filter(r=>r.type==='transfer'&&r.to===id&&r.date.startsWith(M)).reduce((a,r)=>a+r.amount,0); }
+function cardRows(M){ const cur=today().slice(0,7), b=balances(), out=[];
+  S.accounts.filter(a=>isCard(a)&&a.dueDay).forEach(a=>{ const owed=Math.max(0,-(b[a.id]||0)), paid=cardPaidIn(a.id,M), due=dueDate(M,a.dueDay), k='cc-'+a.id+'|'+M;
+    const x={id:'cc-'+a.id,name:`${a.name} 卡費`,kind:'card',amount:paid||owed,day:a.dueDay,start:M,end:'',every:1,acct:a.id,card:a.id};
+    if(paid>0) out.push({x,k,orig:M,show:M,due,st:'done',paid});
+    else if(M>=cur&&owed>0&&(M===cur||M===ymAdd(cur,1))) out.push({x,k,orig:M,show:M,due,st:due<today()?'late':due===today()?'today':'wait'}); });
+  return out; }
 function billOpen(){ const cur=today().slice(0,7); let first=cur; S.recurring.forEach(x=>{ if(x.kind!=='income'&&x.start<first) first=x.start; });
   const out=[]; let ym=first, g=0; while(ym<=cur&&g++<240){ billRows(ym).forEach(b=>{ if(OPEN_ST.includes(b.st)) out.push(b); }); ym=ymAdd(ym,1); }
   return out.sort((a,b)=>a.due.localeCompare(b.due)); }
 function billByKey(k){ const [id,orig]=String(k).split('|'), x=recById(id); if(!x||!orig) return null; const show=S.recurMove[k]||orig; return {x,k,orig,show,due:dueDate(show,x.day)}; }
-function billRec(b){ return R.find(r=>!r.deleted&&r.recur===b.x.id&&r.recurMonth===b.orig); }
+function billRec(b){ if(b.x.kind==='card') return {amount:b.paid||b.x.amount}; return R.find(r=>!r.deleted&&r.recur===b.x.id&&r.recurMonth===b.orig); }
 function billRowHTML(b,compact){ const x=b.x, kq=esc(b.k), freq=freqTxt(x), dn=x.kind==='debt'&&debtById(x.debt)?debtById(x.debt).name:'';
-  const sub=[x.kind==='debt'?'還款':'支出',freq,b.from?`${ymShort(b.from)}延後過來`:'',compact&&b.show!==today().slice(0,7)?ymLabel(b.show):'',dn&&dn!==x.name?dn:''].filter(Boolean).join('・');
+  const sub=[x.kind==='card'?'繳卡費・轉帳不算支出':x.kind==='debt'?'還款':'支出',x.kind==='card'?'':freq,b.from?`${ymShort(b.from)}延後過來`:'',compact&&b.show!==today().slice(0,7)?ymLabel(b.show):'',dn&&dn!==x.name?dn:''].filter(Boolean).join('・');
   const rec=b.st==='done'?billRec(b):null, amt=rec?rec.amount:x.amount;
   const pill=b.st==='moved'?`<span class="pill moved">已延後 → ${ymShort(b.to)}${S.recurDone[b.k]==='done'?'（已繳）':''}</span>`:`<span class="pill ${b.st}">${ST_TXT[b.st]}</span>`;
   const att=S.att[b.k]||[];
-  const attH=att.map(id=>phImg(id,'thumb',`viewImg('${esc(id)}','att','${kq}')`)).join('')+`<button class="attbtn" onclick="billAttach('${kq}')" title="貼上或選擇繳費截圖">${att.length?'＋':'＋ 截圖'}</button>`;
-  const acts=b.st==='done'||b.st==='skip'?`<button onclick="billUndo('${kq}')">改回未繳</button>`:b.st==='moved'?(S.recurDone[b.k]==='done'?'':`<button onclick="billUnmove('${kq}')">取消延後</button>`)
+  const attH=x.kind==='card'?'':att.map(id=>phImg(id,'thumb',`viewImg('${esc(id)}','att','${kq}')`)).join('')+`<button class="attbtn" onclick="billAttach('${kq}')" title="貼上或選擇繳費截圖">${att.length?'＋':'＋ 截圖'}</button>`;
+  const acts=x.kind==='card'?(b.st==='done'?'':`<button class="dark" onclick="cardPay('${x.card}')">完成</button>`):b.st==='done'||b.st==='skip'?`<button onclick="billUndo('${kq}')">改回未繳</button>`:b.st==='moved'?(S.recurDone[b.k]==='done'?'':`<button onclick="billUnmove('${kq}')">取消延後</button>`)
     :`<button class="dark" onclick="billDone('${kq}')">完成</button><button class="danger" onclick="billMove('${kq}')">延後</button>`;
   return `<div class="brow"><div class="cn"><b>${esc(x.name)}</b><div class="sb">${sub}</div></div><div class="ca">${money(amt)}</div><div class="cs">${pill}</div><div class="cd">${fmtMD(b.due)}</div><div class="cf">${attH}</div><div class="cx">${acts}</div></div>`; }
 let BM=today().slice(0,7), BF='open';
@@ -1824,7 +1836,9 @@ const GUIDES={
   gStep(3,'新增、修改、看明細',gR(`${gB('明細',{n:1})}${gB('修改',{n:2})}${gB('刪除',{rd:1})}`)+gR(gB('➕ 新增貸款／分期',{hl:1,n:3})),
    `<p>「明細」${gN(1)}看每一次還款；「修改」${gN(2)}改金額、繳款日、到期日；「➕ 新增」${gN(3)}加新的貸款或分期。</p>`),
   gStep(4,'跟朋友借還',gC(gR(`<span>📤</span><span style="flex:1">欠俊佑</span><b>$400,000</b>`),'👥 跟朋友借還')+gC(gR(`${gIn('還俊佑5000',1)}${gB('記',{pr:1})}`)),
-   `<p>不用先建立，直接在首頁打：「跟小明借錢1500」「還小明1000」「小明還800」。</p><p>跟朋友借還<b>不算收入或支出</b>，只會改帳戶餘額和這裡的金額。</p>`)]},
+   `<p>不用先建立，直接在首頁打：「跟小明借錢1500」「還小明1000」「小明還800」。</p><p>跟朋友借還<b>不算收入或支出</b>，只會改帳戶餘額和這裡的金額。</p>`),
+  gStep(5,'💳 信用卡：刷卡算支出，繳卡費不算',gC(gR(`${gIn('晚餐3000 中信卡',1)}<span class="gx-s">→ 支出</span>`)+gR(`${gIn('繳中信卡3000',1)}<span class="gx-s">→ 轉帳</span>`))+gR(gB('💳 繳卡費',{pr:1,hl:1,n:1})),
+   `<ul><li><b>刷卡</b>：打「晚餐3000 中信卡」，記成支出，卡片欠款增加。</li><li><b>繳卡費</b>：打「繳中信卡3000」或「台新繳中信卡3000」，或按卡片旁的「💳 繳卡費」${gN(1)}。記成<b>轉帳</b>：銀行減少、卡片欠款減少，<b>本月支出不會再加一次</b>。</li><li>信用卡有設繳款日的話，繳費狀態和收支表會出現「卡費」，打勾就是繳卡費。</li></ul><p class="small muted">信用卡在「帳戶」新增時類型選「信用卡」，欠款填負數。</p>`)]},
  savings:{t:'儲蓄使用說明',steps:()=>[
   gStep(1,'新增目標',gC(gR(`${gIn('名稱：旅遊基金')}${gIn('目標 30000')}`)+gR(`${gIn('期限 2027/6/30')}${gB('新增',{pr:1,hl:1,n:1})}`),'➕ 新增目標'),
    `<p>按「➕ 新增目標」填名稱、目標金額、期限（可不填），按「新增」${gN(1)}。名稱可以有數字，例如「存滿13000」。</p>`),
@@ -2029,7 +2043,7 @@ function monthSheet(M,compact){ const ev=monthEvents(M).filter(e=>e.type!=='goal
   const sum=(f)=>ev.filter(f).reduce((a,e)=>a+e.amt,0);
   const inP=sum(e=>isIn(e)&&e.st!=='skip'), inD=sum(e=>isIn(e)&&ok(e)), outP=sum(e=>!isIn(e)&&e.st!=='moved'&&e.st!=='skip'), outD=sum(e=>!isIn(e)&&ok(e));
   const liv=S.budget.living, spent=livingSpent(M), net=inP-outP-liv;
-  const kindOf=e=>isIn(e)?'收入':/還|貸|分期/.test(e.name)||(e.k&&recById(e.k.split('|')[0])&&recById(e.k.split('|')[0]).kind==='debt')?'還款':'支出';
+  const kindOf=e=>isIn(e)?'收入':/^cc-/.test(e.k||'')?'繳卡費':/還|貸|分期/.test(e.name)||(e.k&&recById(e.k.split('|')[0])&&recById(e.k.split('|')[0]).kind==='debt')?'還款':'支出';
   const row=(e,i)=>{ const done=ok(e), can=!e.ot&&(e.k)&&e.st!=='moved'&&e.st!=='skip';
     return `<tr class="sr ${done?'done':''} ${e.st==='late'?'late':''} ${e.st==='moved'?'moved':''}"><td class="c0">${can?`<button class="cbx ${done?'on':''}" onclick="sheetTick('${M}',${i})" aria-label="${done?'改回未完成':'標記完成'}" title="${done?'按一下改回未完成':(isIn(e)?'收到了，按一下記好':'繳了，按一下記好')}">${done?'✓':''}</button>`:'<span class="cbx dis">–</span>'}</td>
       <td class="c1">${fmtMD(e.date)}</td><td class="c2"><b>${esc(e.name)}</b>${e.from?`<div class="small muted">${ymShort(e.from)}延後過來</div>`:''}${e.st==='moved'?`<div class="small muted">延後到 ${ymShort(e.to)}</div>`:''}${e.ot?`<div class="small muted">照加班紀錄估算</div>`:''}</td>
@@ -2040,6 +2054,7 @@ function monthSheet(M,compact){ const ev=monthEvents(M).filter(e=>e.type!=='goal
     <div class="sheetsum"><div><span>收入</span><b style="color:var(--ok)">${money(inD)} / ${money(inP)}</b><small>已收 / 預計</small></div><div><span>要繳</span><b>${money(outD)} / ${money(outP)}</b><small>已繳 / 預計</small></div><div><span>生活費</span><b>${money(spent)} / ${money(liv)}</b><small>已花 / 預算</small></div><div><span>預計結餘</span><b style="color:${net<0?'var(--bad)':'var(--ok)'}">${bm(net)}</b><small>收入 − 要繳 − 生活費</small></div></div>
     ${M===cur?'<div class="small muted" style="margin-top:6px">打勾＝已繳／已收到，會記一筆帳；再按一次可以改回未完成。綠色底＝完成、紅色＝逾期。</div>':''}`; }
 function sheetTick(M,i){ const e=monthEvents(M)[i]; if(!e||!e.k) return; const done=e.st==='done'||e.st==='got';
+  if(/^cc-/.test(e.k)){ if(done){ alert('繳卡費是一筆轉帳。要改回未繳，請到「最近記帳紀錄」刪掉那筆「繳卡費」。'); return; } cardPay(e.k.slice(3).split('|')[0]); return; }
   if(done){ billUndo(e.k); return; } if(e.type==='income') incomeDone(e.k,e.amt); else billDone(e.k); }
 function incomeDone(k,amt){ const [id,ym]=String(k).split('|'), x=recById(id); if(!x) return; const due=dueDate(ym,x.day), m=document.createElement('div'); m.className='modal';
   m.innerHTML=`<div class="box"><h2 style="margin:0 0 4px;font-size:17px">💰 ${esc(x.name)} 收到了</h2><div class="small muted" style="margin-bottom:10px">${ymLabel(ym)}・預計 ${fmtFull(due)}</div>
@@ -2050,6 +2065,17 @@ function incomeDone(k,amt){ const [id,ym]=String(k).split('|'), x=recById(id); i
   m.querySelector('#idOk').onclick=()=>{ const a=Math.round(Number($('#idAmt').value)*100)/100, date=$('#idDate').value; if(!(a>0)){ alert('金額要大於 0'); return; } if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ alert('請選日期'); return; }
     const r=recurRecord(x,ym,date,a); r.acct=okAcct($('#idAcct').value); const oD=JSON.stringify(S.recurDone); R.push(r); S.recurDone[k]='done';
     if(!persist()){ R.pop(); S.recurDone=JSON.parse(oD); return; } m.remove(); rerender(); flash(`已記好 ✦ ${x.name} +${money(a)}`); }; }
+/* ---------- 繳卡費（轉帳，不算支出） ---------- */
+function cardPay(id){ const a=acctById(id); if(!a) return; const b=balances(), owed=Math.max(0,-(b[id]||0)), srcs=S.accounts.filter(x=>!isCard(x)&&x.id!==id), def=(srcs.find(x=>x.atype==='bank')||srcs[0]||{}).id, m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="box"><h2 style="margin:0 0 4px;font-size:17px">💳 繳 ${esc(a.name)} 卡費</h2><div class="small muted" style="margin-bottom:10px">現在欠 ${money(owed)}。刷卡時已經算過支出，這筆只是<b>從帳戶搬錢去還卡</b>，不會再算一次支出。</div>
+    <div class="grid" style="grid-template-columns:1fr 1fr"><div><label class="f">繳多少</label><input type="number" id="cpAmt" inputmode="decimal" value="${owed||''}"></div><div><label class="f">哪一天</label><input type="date" id="cpDate" value="${today()}"></div></div>
+    <div style="margin-top:8px"><label class="f">從哪個帳戶繳</label><select id="cpFrom">${srcs.map(x=>`<option value="${x.id}" ${x.id===def?'selected':''}>${x.icon||'💳'} ${esc(x.name)}（${bm(b[x.id]||0)}）</option>`).join('')}</select></div>
+    <div class="row" style="margin-top:12px"><button class="primary" id="cpOk">確定繳款</button><button id="cpNo">取消</button></div></div>`;
+  document.body.appendChild(m); m.querySelector('#cpNo').onclick=()=>m.remove();
+  m.querySelector('#cpOk').onclick=()=>{ const amt=Math.round(Number($('#cpAmt').value)*100)/100, date=$('#cpDate').value, from=$('#cpFrom').value;
+    if(!(amt>0)){ alert('金額要大於 0'); return; } if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ alert('請選日期'); return; } if(!acctById(from)){ alert('請選從哪個帳戶繳'); return; }
+    R.push({id:newId(),type:'transfer',amount:amt,item:'繳卡費',category:'轉帳',date,who:'',icon:'💳',from,to:id,createdAt:new Date().toISOString()});
+    if(!persist()){ R.pop(); return; } m.remove(); rerender(); if(page==='debts') renderDebts(); flash(`已繳 ${a.name} ${money(amt)} ✦ 轉帳，不算支出`); }; }
 /* ---------- 多選刪除 ---------- */
 const SEL={on:false,ids:new Set()};
 function selToggle(){ SEL.on=!SEL.on; SEL.ids.clear(); rerender(); }
@@ -2137,6 +2163,7 @@ function parseYM(v){
   if(!m) return ''; let y=+m[1]; const mo=+m[2]; if(y<1911) y+=1911; return mo>=1&&mo<=12?`${y}-${p2(mo)}`:'';
 }
 function fixAcctName(n){ const s=String(n??'').trim(); if(!s) return ''; if(s==='薪轉帳戶') return '薪資帳戶'; return /領|轉|加值|\+值/.test(s)?(s.replace(/領|轉|加值|\+值/g,'')||'帳戶'):s; }
+function isCard(a){ return !!a&&(a.atype==='card'); }
 function findAcctByName(n){ n=String(n??'').trim().toLowerCase(); return n?S.accounts.find(a=>a.name.toLowerCase()===n):null; }
 function rowsOf(X,wb,name){ const ws=wb.Sheets[name]; if(!ws) return [];
   const a=X.utils.sheet_to_json(ws,{header:1,defval:'',raw:true}); if(!a.length) return [];
