@@ -735,7 +735,10 @@ function quickAdd(){
   const ps=$('#paySel'); p.sel=ps?ps.value:'cash'; p.selTouched=!!(ps&&ps.dataset.t==='1');
   pending=p; continueAdd();
 }
+function dupOf(rec){ const nm=x=>String(x.item||x.debtName||x.goalName||'').trim(); return live().find(r=>r.date===rec.date&&r.type===rec.type&&Math.abs(r.amount-rec.amount)<0.005&&nm(r)===nm(rec)&&(r.type!=='transfer'||(r.from===rec.from&&r.to===rec.to))); }
 function commitAdd(rec,onFail,msg){
+  const d=dupOf(rec); if(d){ const nm=rec.item||rec.debtName||rec.goalName||'這筆';
+    if(!confirm(`${rec.date===today()?'今天':fmtMD(rec.date)}已經記過「${nm} ${money(rec.amount)}」了。\n\n確定要再記一筆嗎？\n（真的又買了一次就按「確定」；不小心按兩次就按「取消」）`)){ pending=null; hideAsk(); if($('#qin')) $('#qin').value=''; if(onFail) onFail(); flash('沒有重複記 ✦'); return; } }
   R.push(rec); if(!persist()){R.pop();if(onFail)onFail();return;}
   pending=null; if($('#qin')) $('#qin').value=''; hideAsk(); renderHome(); flash(msg); catAlert(rec);
 }
@@ -1837,7 +1840,7 @@ const GUIDES={
   gStep(1,'第一次使用（只要做一次）',gC(gR(`<b style="flex:1">👛 我的錢</b>${gB('填／校正',{hl:1,n:1})}`))+gR(`${gB('📥 匯入（Excel 或備份檔）',{pr:1,n:2})}`),
    `<ol style="margin:0 0 6px;padding-left:20px;font-size:14px"><li>在「👛 我的錢」按「填／校正」${gN(1)}，把身上、銀行<b>現在實際有多少錢</b>填上。</li><li>有整理好的 Excel 或備份檔，按「📥 匯入」${gN(2)}一次匯進來。</li></ol><p>做完以後，每天只要記帳就好。</p>`),
   gStep(2,'像聊天一樣記帳',gC(gR(`${gIn('午餐120 LINE Pay',1)}${gB('記',{pr:1,n:1})}`)+gR(`<span class="gx-s">付款方式</span>${gIn('💵 現金 ▾')}`)),
-   `<p>打一句話，按「記」${gN(1)}或 Enter 就好。</p><ul><li><b>花錢</b>：早餐65、午餐120 LINE Pay</li><li><b>收錢</b>：薪水50000 薪資帳戶、加班費5111</li><li><b>領錢放身上</b>：薪資帳戶領1000（銀行轉到身上，不算花掉）</li><li><b>加班／請假</b>：平日加班2H、休息加班8H、事假4H → 記到「⏱️ 加班」</li></ul><p class="small muted">沒說日期就記今天；沒說付款方式就算現金。</p>`),
+   `<p>打一句話，按「記」${gN(1)}或 Enter 就好。</p><ul><li><b>花錢</b>：早餐65、午餐120 LINE Pay</li><li><b>防重複</b>：同一天記了項目和金額都一樣的，會先問你是不是重複；真的又吃一次可以按確定，或改個名字（例：晚餐120）。</li><li><b>收錢</b>：薪水50000 薪資帳戶、加班費5111</li><li><b>領錢放身上</b>：薪資帳戶領1000（銀行轉到身上，不算花掉）</li><li><b>加班／請假</b>：平日加班2H、休息加班8H、事假4H → 記到「⏱️ 加班」</li></ul><p class="small muted">沒說日期就記今天；沒說付款方式就算現金。</p>`),
   gStep(3,'常用語一鍵記',gC(gR(`${gIn('平日加班')}${gB('⭐ 加入常用',{hl:1,n:1})}`)+gR(`<span class="gx-chip">吃飯 ×</span><span class="gx-chip">平日加班 ×</span><span class="gx-chip">休息加班 ×</span>${gN(2)}`)),
    `<p>點常用語${gN(2)}會放進輸入框，<b>接著打金額或時數</b>（點「吃飯」再打 120；點「平日加班」再打 2），按「記」。</p><p>常打的字先打好，按「⭐ 加入常用」${gN(1)}；按 × 刪除；改字、排順序到「⭐ 常用選項」。</p>`),
   gStep(4,'🍙 本月生活費',gC(gR(`<span style="flex:1">已花費</span><b>$1,000 / $5,000</b>`)+gR(`<span style="flex:1">👛 身上現金</span><b>$1,000</b>`)+gR(`<b style="flex:1">✨ 本月還可以用</b><b style="color:#b45309">$1,000</b>`)+`<div class="gx-s" style="color:#8a5a00">預算還剩 $4,000，但身上只有 $1,000</div>`),
