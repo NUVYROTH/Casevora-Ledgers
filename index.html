@@ -1909,7 +1909,7 @@ const GUIDES={
   gStep(4,'這個月能存多少',gR(`${gK('預計收入','$49,900','var(--ok)')}${gK('要繳的錢','$45,000','var(--bad)')}`)+gR(`${gK('生活費','$5,000','#e0a100')}${gK('可以存','-$100','var(--bad)')}`),
    `<p>最上面四張卡會算：<b>預計收入 − 要繳的錢 − 生活費 = 這個月預計可以存</b>，跟📒月結表的「餘額」是同一個數字（已經記的加班費、其他收入和支出也算進去）。</p><p>變成<b>紅色負數</b>代表這個月會不夠用，可以早點想辦法（延後、少花一點）。換月份就能看之後每個月。</p>`),
   gStep(5,'📒 月結表：像 Excel 一樣看每個月',gC(`<table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="background:var(--brand-soft)"><td><b>項目</b></td><td style="text-align:right"><b>115.12</b></td><td style="text-align:right"><b>116.1</b></td></tr><tr><td>薪水</td><td style="text-align:right;color:var(--ok)">49,900</td><td style="text-align:right;color:var(--ok)">49,900</td></tr><tr><td>房租</td><td style="text-align:right;color:var(--bad)">-3,900</td><td style="text-align:right;color:var(--bad)">-3,900</td></tr><tr style="border-top:2px solid var(--ink)"><td><b>餘額</b></td><td style="text-align:right"><b>5,500</b></td><td style="text-align:right"><b>6,777</b></td></tr><tr style="background:#fff8d6"><td><b>存款</b></td><td style="text-align:right"><b>22,471</b></td><td style="text-align:right"><b>29,248</b></td></tr><tr><td>　💵 現金</td><td style="text-align:right">4,400</td><td></td></tr><tr><td>　🏦 銀行</td><td style="text-align:right">18,000</td><td></td></tr></table>`)+gR(gB('📒 月結表',{pr:1,hl:1,n:1})),
-   `<p>切到「📒 月結表」${gN(1)}（首頁收支表右上角也有連結）。左邊是項目，<b>每個月一欄</b>，可以選看 3、6、12 個月；手機往右滑看其他月份。</p><ul><li><b>餘額</b>：這個月收入 − 支出。</li><li><b>⬇️ 匯出 Excel</b>：把畫面上這幾個月的月結表（含總計）存成 Excel 檔（檔名 xiaozhang_monthly_月份.xlsx），數字可以在 Excel 裡直接加總、列印。<b>顏色跟畫面一樣</b>：已繳的有底色、收入綠色、支出紅色、預計是灰色斜體、總計和存款有黃底，主色跟著你選的色調（需要網路）。</li><li><b>總計</b>（最右邊一欄）：畫面上這幾個月加起來，例如 6 個月總共繳多少房租、總共存下多少；存款那格是最後一個月的期末金額。</li><li><b>存款</b>：這個月結束時大概有多少錢（過去＝月底實際、本月＝現在＋還沒發生的、之後＝預估）。</li><li><b>現金／銀行</b>：存款分成身上和銀行各多少（過去和本月）。</li><li><b>點一下格子</b>可以改數字，<b>空的「—」格子也可以點</b>，直接填那個月的金額（例：下個月水電已經知道多少）；固定項目可選「只改這個月」或「這個月起之後都改」；生活費、加班費只改那個月。</li><li><b>點兩下</b>切換已繳／未繳，已繳的格子會<b>填滿顏色</b>（跟著你選的色調）。</li><li><b>全部聯動</b>：在這裡改的金額，繳費狀態、清單、收支表、首頁提醒都會一起變；行事曆上方的「預計可以存」、收支表的「預計結餘」和這裡的「餘額」是同一個數字。</li><li>淡色斜體＝預計。</li></ul>`)]},
+   `<p>切到「📒 月結表」${gN(1)}（首頁收支表右上角也有連結）。左邊是項目，<b>每個月一欄</b>，可以選看 3、6、12 個月；手機往右滑看其他月份。</p><ul><li><b>餘額</b>：這個月收入 − 支出。</li><li><b>⬇️ 匯出 Excel</b>：把畫面上這幾個月的月結表（含總計）存成 Excel 檔（檔名 xiaozhang_monthly_月份.xlsx），數字可以在 Excel 裡直接加總、列印。<b>顏色跟畫面一樣</b>：已繳的有底色、收入綠色、支出紅色、預計是灰色斜體、總計和存款有黃底，主色跟著你選的色調（需要網路）。</li><li><b>總計</b>（最右邊一欄）：畫面上這幾個月加起來，例如 6 個月總共繳多少房租、總共存下多少；存款那格是最後一個月的期末金額。</li><li><b>存款</b>：這個月結束時大概有多少錢（過去＝月底實際、本月＝現在＋還沒發生的、之後＝預估）。</li><li><b>現金／銀行</b>：存款分成身上和銀行各多少（過去和本月）。</li><li><b>點一下格子</b>可以改數字，<b>空的「—」格子也可以點</b>，直接填那個月的金額（例：下個月水電已經知道多少）；固定項目可選「只改這個月」或「這個月起之後都改」；生活費、加班費只改那個月。</li><li><b>打錯、多打一格</b>：點那一格 →「🗑 刪除」，選「只刪這一格」或「從這個月起整列都刪掉」。</li><li><b>＋ 新增一列</b>（表格下面）：加新的分期、固定支出或收入，可以選只有一個月或每月、每幾個月。</li><li><b>點兩下</b>切換已繳／未繳，已繳的格子會<b>填滿顏色</b>（跟著你選的色調）。</li><li><b>全部聯動</b>：在這裡改的金額，繳費狀態、清單、收支表、首頁提醒都會一起變；行事曆上方的「預計可以存」、收支表的「預計結餘」和這裡的「餘額」是同一個數字。</li><li>淡色斜體＝預計。</li></ul>`)]},
  bills:{t:'繳費狀態使用說明',steps:()=>[
   gStep(1,'選月份、選分頁',gR(`${gB('◀')}<b>2026年11月</b>${gB('▶')}`)+gR(`${gN(1)}${gB('未繳（2）',{dk:1})}${gB('逾期（1）')}${gB('已繳（8）')}${gB('已延後')}${gB('全部')}`),
    `<p>用 ◀ ▶ 換月份。分頁${gN(1)}可以只看未繳、逾期、已繳、已延後。</p><p>狀態：${gTag('待繳')} 還沒到期、${gTag('今天到期','today')}、${gTag('逾期','late')} 過了期限還沒按完成、${gTag('已繳','done')}、${gTag('已延後 → 12月','moved')}。</p>`),
@@ -2306,6 +2306,7 @@ function ledgerTable(start,n){ const cur=today().slice(0,7), months=[...Array(n)
       ${sum('餘額',(M,i)=>`<td class="${data[i].net<0?'neg':'pos'} big">${bm(Math.round(data[i].net))}</td>`,'lnet',(()=>{ const t=data.reduce((a,d)=>a+d.net,0); return `<td class="ltot big ${t<0?'neg':'pos'}">${bm(Math.round(t))}</td>`; })())}
       ${sum('存款',(M,i)=>`<td class="${save[i].v<0?'neg':''} big ${save[i].act?'dn':'pl'}" title="${save[i].act?'月底實際':save[i].now?'現在實際＋本月還沒發生的':'預估'}">${bm(Math.round(save[i].v))}</td>`,'lsave',`<td class="ltot big" title="最後一個月的存款">${bm(Math.round(save[save.length-1].v))}<br><small>期末</small></td>`)}
       ${sum('　💵 現金',g('cash'),'lsub')}${sum('　🏦 銀行',g('bank'),'lsub')}${save.some(x=>x.g&&Math.abs(x.g.epay)>0.5)?sum('　📱 電子支付',g('epay'),'lsub'):''}</table></div>
+    <div class="row" style="margin-top:8px"><button onclick="ledAddRow('${start}')">＋ 新增一列</button><span class="small muted">例如新的分期、新的固定支出或收入</span></div>
     <div class="small muted" style="margin-top:8px">
       <b>點一下格子可以改數字</b>；<b>點兩下</b>切換已繳／未繳（已收到／未收到）。<span class="fillchip">✓ 填滿顏色</span>＝已繳或已收到，<span style="color:var(--muted);font-style:italic">淡色斜體＝預計</span>。餘額＝這個月收入 − 支出。<br>
       <b>存款</b>：過去的月份＝月底實際有多少（全部帳戶）；本月＝現在實際有多少，加減這個月還沒發生的；之後的月份＝前一個月存款＋這個月餘額。<br>
@@ -2364,6 +2365,35 @@ async function ledExport(){ const t=document.querySelector('table.ledger'); if(!
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncol-1}},{s:{r:1,c:0},e:{r:1,c:ncol-1}}];
   const wb=X.utils.book_new(); X.utils.book_append_sheet(wb,ws,'月結表'); wb.Workbook={Views:[{RTL:false}]};
   const buf=X.write(wb,{bookType:'xlsx',type:'array'}); download(buf,`xiaozhang_monthly_${months[0].replace(/（.*）/,'')}-${months[months.length-1].replace(/（.*）/,'')}.xlsx`,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); flash('已匯出月結表（有顏色）✦'); }
+/* 月結表：刪除格子／整列、新增一列 */
+function recKeysClean(id,from){ ['recurDone','recurMove','att','recurAmt'].forEach(f=>Object.keys(S[f]).forEach(k=>{ const [i,m]=k.split('|'); if(i===id&&(!from||m>=from)) delete S[f][k]; })); }
+function ledDelete(k){ const [id,ym]=String(k).split('|'), x=recById(id); if(!x) return; const done=S.recurDone[k]==='done', single=x.start===ym&&x.end===ym;
+  const m=ledModal(`🗑 刪除「${esc(x.name)}」`,`<div class="small muted" style="margin-bottom:8px">${done?`${ymLabel(ym)}這筆已經${x.kind==='income'?'收到':'繳了'}，刪除後那筆記帳會放到「最近刪除」（30 天內可救回）。`:''}</div>
+    <div class="impmode"><label class="opt"><input type="radio" name="ldM" value="one" checked><div><b>只刪 ${ymLabel(ym)} 這一格</b><div class="small muted">例如不小心多打了一格；其他月份不變。</div></div></label>
+      ${single?'':`<label class="opt danger"><input type="radio" name="ldM" value="all"><div><b>從 ${ymLabel(ym)} 起整列都刪掉</b><div class="small muted">之後的月份都不再出現（例如已經不用繳了）；之前的月份保留。</div></div></label>`}</div>`,
+    `<button class="dangerfill" id="ldOk">確定刪除</button>`);
+  m.querySelector('#ldOk').onclick=()=>{ const mode=(m.querySelector('input[name=ldM]:checked')||{}).value||'one', oR=JSON.stringify(R), oS=JSON.stringify(S);
+    const softDel=from=>R.forEach(r=>{ if(!r.deleted&&r.recur===id&&(from?r.recurMonth>=from:r.recurMonth===ym)){ r.deleted=true; r.deletedAt=today(); } });
+    if(mode==='one'){ softDel(null); if(single){ S.recurring=S.recurring.filter(y=>y.id!==id); recKeysClean(id); } else { delete S.recurAmt[k]; delete S.recurMove[k]; S.recurDone[k]='skip'; } }
+    else { softDel(ym); if(x.start>=ym){ S.recurring=S.recurring.filter(y=>y.id!==id); recKeysClean(id); } else { x.end=ymAdd(ym,-1); recKeysClean(id,ym); } }
+    if(!persist()){ R=JSON.parse(oR); S=JSON.parse(oS); return; } m.remove(); rerender(); flash(mode==='one'?`已刪除 ${ymShort(ym)}的${x.name}`:`${x.name} 從 ${ymShort(ym)} 起已刪除`); }; }
+function ledAddRow(start){ const m=ledModal('＋ 新增一列',`<div class="grid" style="grid-template-columns:1fr 1fr">
+    <div style="grid-column:1/-1"><label class="f">名稱</label><input type="text" id="arN" maxlength="20" placeholder="例：手機分期、保險"></div>
+    <div><label class="f">收入還是支出</label><select id="arK"><option value="expense">💸 支出</option><option value="income">💰 收入</option></select></div>
+    <div><label class="f">金額</label><input type="number" id="arA" inputmode="decimal" placeholder="例：1200"></div>
+    <div><label class="f">從哪個月</label><input type="month" id="arS" value="${start||today().slice(0,7)}"></div>
+    <div><label class="f">每月幾號</label><input type="number" id="arD" inputmode="numeric" value="10"></div>
+    <div><label class="f">多久一次</label><select id="arE"><option value="0">只有這個月</option><option value="1" selected>每月</option><option value="2">每 2 個月</option><option value="3">每 3 個月</option><option value="4">每 4 個月</option><option value="6">每半年</option><option value="12">每年</option></select></div>
+    <div><label class="f">到哪個月（選填）</label><input type="month" id="arT"></div></div>
+    <div style="margin-top:8px"><label class="f">帳戶</label><select id="arC">${acctOpts((S.accounts.find(a=>a.atype==='bank')||{id:'cash'}).id)}</select></div>
+    <div class="small muted" style="margin-top:6px">會加到「設定 → 每月固定收支」，月結表、繳費狀態、行事曆都會出現。要還的分期如果想讓負債一起減少，請到「負債」新增那筆負債，再在固定收支選「還負債」。</div>`,
+    `<button class="primary" id="arOk">新增</button>`);
+  setTimeout(()=>{ const n=$('#arN'); if(n) n.focus(); },50);
+  m.querySelector('#arOk').onclick=()=>{ const name=$('#arN').value.trim().slice(0,20), kind=$('#arK').value, amt=Math.round(Number($('#arA').value)*100)/100, st=$('#arS').value, day=dayOk($('#arD').value), ev=Number($('#arE').value), to=$('#arT').value;
+    if(!name){ alert('請填名稱'); return; } if(!(amt>0)){ alert('金額要大於 0'); return; } if(!/^\d{4}-\d{2}$/.test(st)){ alert('請選從哪個月'); return; } if(!day){ alert('「每月幾號」要是 1～31'); return; } if(to&&to<st){ alert('結束月份不能早於開始'); return; }
+    const o=JSON.stringify(S.recurring); S.recurring.push({id:newId(),name,kind,amount:amt,day,start:st,end:ev===0?st:(to||''),acct:$('#arC').value,debt:'',every:ev===0?1:ev});
+    if(!persist()){ S.recurring=JSON.parse(o); return; } m.remove(); rerender(); flash(`已新增「${name}」✦`); }; }
+
 function ledClick(i){ clearTimeout(LEDT); LEDT=setTimeout(()=>ledEdit(i),260); }
 function ledDbl(i){ clearTimeout(LEDT); const c=LEDC[i]; if(!c||!c.meta||c.meta.length!==1||c.meta[0].t!=='rec'){ ledEdit(i); return; } ledToggle(c.meta[0].k,c.M); }
 function ledToggle(k,M){ const [id,ym]=String(k).split('|'), x=recById(id); if(!x) return; const done=S.recurDone[k]==='done';
@@ -2374,15 +2404,17 @@ function ledModal(title,body,foot){ const m=document.createElement('div'); m.cla
 function ledEdit(i){ const c=LEDC[i]; if(!c||!c.meta) return; const M=c.M, [sec,name]=c.key.split('|'), mm=c.meta;
   if(mm.length===1&&mm[0].t==='rec'){ const k=mm[0].k, [id,ym]=k.split('|'), x=recById(id); if(!x) return; const done=S.recurDone[k]==='done', inc=x.kind==='income';
     if(done){ const r=R.find(r=>!r.deleted&&r.recur===id&&r.recurMonth===ym); const m=ledModal(`${esc(x.name)}・${ymLabel(ym)}`,`<div class="small muted" style="margin-bottom:8px">${inc?'已經收到':'已經繳了'}，改的是那一筆記帳的金額。</div><label class="f">${inc?'實際收到':'實際繳了'}</label><input type="number" id="leA" inputmode="decimal" value="${r?r.amount:recAmt(x,ym)}">`,
-        `<button class="primary" id="leOk">儲存</button><button class="danger" id="leUn">改回${inc?'未收到':'未繳'}</button>`);
+        `<button class="primary" id="leOk">儲存</button><button class="danger" id="leUn">改回${inc?'未收到':'未繳'}</button><button class="danger" id="leDel">🗑 刪除</button>`);
+      m.querySelector('#leDel').onclick=()=>{ m.remove(); ledDelete(k); };
       m.querySelector('#leUn').onclick=()=>{ m.remove(); billUndo(k); };
       m.querySelector('#leOk').onclick=()=>{ const v=Math.round(Number($('#leA').value)*100)/100; if(!(v>0)){ alert('金額要大於 0'); return; } if(r){ const o=r.amount; r.amount=v; if(!persist()){ r.amount=o; return; } } m.remove(); rerender(); flash('已修改 ✦'); }; return; }
     const m=ledModal(`${esc(x.name)}・${ymLabel(ym)}`,`<div class="small muted" style="margin-bottom:8px">原本 ${money(x.amount)}${S.recurAmt[k]!==undefined?`，這個月已改成 ${money(S.recurAmt[k])}`:''}</div>
       <label class="f">新的金額</label><input type="number" id="leA" inputmode="decimal" value="${recAmt(x,ym)}">
       <div class="impmode" style="margin-top:10px"><label class="opt"><input type="radio" name="leM" value="one" checked><div><b>① 只改這個月</b><div class="small muted">例如這個月水電比較貴，其他月份不變。</div></div></label>
         <label class="opt"><input type="radio" name="leM" value="all"><div><b>② 這個月起之後都改</b><div class="small muted">例如房租漲價，${ymLabel(ym)}之後每次都用新金額。</div></div></label></div>`,
-      `<button class="primary" id="leOk">儲存</button><button class="dark" id="leDone">✓ ${inc?'已收到':'已繳'}</button>${S.recurMove[k]?'<button id="leUm">取消延後</button>':''}${S.recurAmt[k]!==undefined?'<button id="leRs">恢復原本金額</button>':''}`);
+      `<button class="danger" id="leDel">🗑 刪除</button><button class="primary" id="leOk">儲存</button><button class="dark" id="leDone">✓ ${inc?'已收到':'已繳'}</button>${S.recurMove[k]?'<button id="leUm">取消延後</button>':''}${S.recurAmt[k]!==undefined?'<button id="leRs">恢復原本金額</button>':''}`);
     const um=m.querySelector('#leUm'); if(um) um.onclick=()=>{ m.remove(); billUnmove(k); };
+    m.querySelector('#leDel').onclick=()=>{ m.remove(); ledDelete(k); };
     m.querySelector('#leDone').onclick=()=>{ m.remove(); ledToggle(k,ym); };
     const rs=m.querySelector('#leRs'); if(rs) rs.onclick=()=>{ delete S.recurAmt[k]; persist(); m.remove(); rerender(); flash('已恢復原本金額'); };
     m.querySelector('#leOk').onclick=()=>{ const v=Math.round(Number($('#leA').value)*100)/100; if(!(v>0)){ alert('金額要大於 0'); return; } const mode=m.querySelector('input[name=leM]:checked').value, o=JSON.stringify(S);
