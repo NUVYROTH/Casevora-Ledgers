@@ -1905,9 +1905,9 @@ const GUIDES={
   gStep(3,'點一下就能處理',gC(gR(`<b style="flex:1">零卡</b><span class="pill ev-late">逾期</span>`)+gR(`${gB('完成',{dk:1,hl:1,n:1})}${gB('延後到下個月',{rd:1,n:2})}`)),
    `<p>點月曆上的任何一筆，會跳出詳細資料。要繳的可以直接按「完成」${gN(1)}或「延後」${gN(2)}；點日期數字會切到那一週。</p><p>在<b>清單檢視</b>和<b>月結表</b>點一下可以改金額，按錯延後可以「取消延後」。</p>`),
   gStep(4,'這個月能存多少',gR(`${gK('預計收入','$49,900','var(--ok)')}${gK('要繳的錢','$45,000','var(--bad)')}`)+gR(`${gK('生活費','$5,000','#e0a100')}${gK('可以存','-$100','var(--bad)')}`),
-   `<p>最上面四張卡會算：<b>預計收入 − 要繳的錢 − 生活費預算 = 這個月預計可以存</b>。</p><p>變成<b>紅色負數</b>代表這個月會不夠用，可以早點想辦法（延後、少花一點）。換月份就能看之後每個月。</p>`),
+   `<p>最上面四張卡會算：<b>預計收入 − 要繳的錢 − 生活費 = 這個月預計可以存</b>，跟📒月結表的「餘額」是同一個數字（已經記的加班費、其他收入和支出也算進去）。</p><p>變成<b>紅色負數</b>代表這個月會不夠用，可以早點想辦法（延後、少花一點）。換月份就能看之後每個月。</p>`),
   gStep(5,'📒 月結表：像 Excel 一樣看每個月',gC(`<table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="background:var(--brand-soft)"><td><b>項目</b></td><td style="text-align:right"><b>115.12</b></td><td style="text-align:right"><b>116.1</b></td></tr><tr><td>薪水</td><td style="text-align:right;color:var(--ok)">49,900</td><td style="text-align:right;color:var(--ok)">49,900</td></tr><tr><td>房租</td><td style="text-align:right;color:var(--bad)">-3,900</td><td style="text-align:right;color:var(--bad)">-3,900</td></tr><tr style="border-top:2px solid var(--ink)"><td><b>餘額</b></td><td style="text-align:right"><b>5,500</b></td><td style="text-align:right"><b>6,777</b></td></tr><tr style="background:#fff8d6"><td><b>存款</b></td><td style="text-align:right"><b>22,471</b></td><td style="text-align:right"><b>29,248</b></td></tr><tr><td>　💵 現金</td><td style="text-align:right">4,400</td><td></td></tr><tr><td>　🏦 銀行</td><td style="text-align:right">18,000</td><td></td></tr></table>`)+gR(gB('📒 月結表',{pr:1,hl:1,n:1})),
-   `<p>切到「📒 月結表」${gN(1)}（首頁收支表右上角也有連結）。左邊是項目，<b>每個月一欄</b>，可以選看 3、6、12 個月；手機往右滑看其他月份。</p><ul><li><b>餘額</b>：這個月收入 − 支出。</li><li><b>存款</b>：這個月結束時大概有多少錢（過去＝月底實際、本月＝現在＋還沒發生的、之後＝預估）。</li><li><b>現金／銀行</b>：存款分成身上和銀行各多少（過去和本月）。</li><li><b>點一下格子</b>可以改數字，<b>空的「—」格子也可以點</b>，直接填那個月的金額（例：下個月水電已經知道多少）；固定項目可選「只改這個月」或「這個月起之後都改」；生活費、加班費只改那個月。</li><li><b>點兩下</b>切換已繳／未繳，已繳的格子會<b>填滿顏色</b>（跟著你選的色調）。</li><li>淡色斜體＝預計。</li></ul>`)]},
+   `<p>切到「📒 月結表」${gN(1)}（首頁收支表右上角也有連結）。左邊是項目，<b>每個月一欄</b>，可以選看 3、6、12 個月；手機往右滑看其他月份。</p><ul><li><b>餘額</b>：這個月收入 − 支出。</li><li><b>存款</b>：這個月結束時大概有多少錢（過去＝月底實際、本月＝現在＋還沒發生的、之後＝預估）。</li><li><b>現金／銀行</b>：存款分成身上和銀行各多少（過去和本月）。</li><li><b>點一下格子</b>可以改數字，<b>空的「—」格子也可以點</b>，直接填那個月的金額（例：下個月水電已經知道多少）；固定項目可選「只改這個月」或「這個月起之後都改」；生活費、加班費只改那個月。</li><li><b>點兩下</b>切換已繳／未繳，已繳的格子會<b>填滿顏色</b>（跟著你選的色調）。</li><li><b>全部聯動</b>：在這裡改的金額，繳費狀態、清單、收支表、首頁提醒都會一起變；行事曆上方的「預計可以存」、收支表的「預計結餘」和這裡的「餘額」是同一個數字。</li><li>淡色斜體＝預計。</li></ul>`)]},
  bills:{t:'繳費狀態使用說明',steps:()=>[
   gStep(1,'選月份、選分頁',gR(`${gB('◀')}<b>2026年11月</b>${gB('▶')}`)+gR(`${gN(1)}${gB('未繳（2）',{dk:1})}${gB('逾期（1）')}${gB('已繳（8）')}${gB('已延後')}${gB('全部')}`),
    `<p>用 ◀ ▶ 換月份。分頁${gN(1)}可以只看未繳、逾期、已繳、已延後。</p><p>狀態：${gTag('待繳')} 還沒到期、${gTag('今天到期','today')}、${gTag('逾期','late')} 過了期限還沒按完成、${gTag('已繳','done')}、${gTag('已延後 → 12月','moved')}。</p>`),
@@ -2137,12 +2137,12 @@ const EV_TXT={done:'已繳',wait:'待繳',today:'今天到期',late:'逾期',mov
 function monthEvents(M){ const ev=[];
   billRows(M).forEach(b=>{ const r=b.st==='done'?billRec(b):null; ev.push({date:b.due,name:b.x.name,amt:r?r.amount:b.x.amount,st:b.st,k:b.k,type:'bill',to:b.to,from:b.from}); });
   S.recurring.forEach(x=>{ if(x.kind!=='income'||!recurOn(x,M)) return; const k=x.id+'|'+M, d=S.recurDone[k], h=recurHint(x,M), ov=S.recurAmt[k]; ev.push({date:dueDate(M,x.day),name:x.name,amt:ov!==undefined?ov:h?h.amt:x.amount,st:d==='done'?'got':d==='skip'?'skip':'income',type:'income',note:h?h.note:'',k}); });
-  const prev=ymAdd(M,-1), slp=otSlipFor(prev), otp=S.otEst[M]!==undefined?S.otEst[M]:slp?slp.v:otPayMonth(prev); if(otp>0){ const sx=S.recurring.find(y=>y.kind==='income'&&/薪水|薪資|月薪/.test(y.name)&&recurOn(y,M)); ev.push({date:dueDate(M,sx?sx.day:10),name:`加班費（${ymShort(prev)}）`,amt:otp,st:'income',type:'income',ot:1,note:S.otEst[M]!==undefined?'你改過的金額':slp?`照 ${ymShort(slp.ym)}薪資條備註（${money(slp.v)}）`:`照加班頁 ${ymShort(prev)}的紀錄估算，實際以薪資條為準`}); }
+  const prev=ymAdd(M,-1), slp=otSlipFor(prev), otAct=live().filter(r=>r.date.startsWith(M)&&!r.recur&&r.type==='income'&&/加班/.test(r.item||'')).reduce((a,r)=>a+r.amount,0), otp=otAct||(S.otEst[M]!==undefined?S.otEst[M]:slp?slp.v:otPayMonth(prev)); if(otp>0){ const sx=S.recurring.find(y=>y.kind==='income'&&/薪水|薪資|月薪/.test(y.name)&&recurOn(y,M)); ev.push({date:dueDate(M,sx?sx.day:10),name:`加班費（${ymShort(prev)}）`,amt:otp,st:otAct?'got':'income',type:'income',ot:1,note:otAct?'已經記帳（實際入帳）':S.otEst[M]!==undefined?'你改過的金額':slp?`照 ${ymShort(slp.ym)}薪資條備註（${money(slp.v)}）`:`照加班頁 ${ymShort(prev)}的紀錄估算，實際以薪資條為準`}); }
   S.goals.forEach(g=>{ if(!g.done&&g.deadline&&g.deadline.startsWith(M)) ev.push({date:g.deadline,name:`${g.name} 截止`,amt:g.target,st:'goal',type:'goal'}); });
   return ev.sort((a,b)=>a.date.localeCompare(b.date)||(a.type==='income'?-1:1)); }
 function otPayMonth(ym){ return Math.round(S.ot.days.filter(d=>d.date.startsWith(ym)&&!isLeave(d.kind)).reduce((a,d)=>a+otCalc(d).pay,0)); }
-function monthPlan(M){ const ev=monthEvents(M), inc=ev.filter(e=>e.type==='income'&&e.st!=='skip').reduce((a,e)=>a+e.amt,0), out=ev.filter(e=>e.type==='bill'&&e.st!=='moved'&&e.st!=='skip').reduce((a,e)=>a+e.amt,0), liv=livBudget(M);
-  return {inc,out,liv,save:inc-out-liv}; }
+function monthPlan(M){ /* 跟月結表同一套算法，數字才會一致 */ const L=ledgerMonth(M); let inc=0,out=0; Object.entries(L.rows).forEach(([k,v])=>{ if(k==='out|生活費') return; if(k.startsWith('in|')) inc+=v; else out+=-v; });
+  const liv=-(L.rows['out|生活費']||0); return {inc,out,liv,save:L.net}; }
 function evChip(e,i,full){ return `<button class="ev ev-${e.st}" onclick="evOpen('${e.date.slice(0,7)}',${i})" title="${esc(e.name)} ${money(e.amt)}・${EV_TXT[e.st]}">${e.type==='income'?'＋':e.type==='goal'?'🎯':''}${esc(e.name)}${full?` <b>${money(e.amt)}</b>`:''}</button>`; }
 function renderCal(){ page='cal'; nav(); const M=CALM, ev=monthEvents(M), P=monthPlan(M), t=today();
   const byDay={}; ev.forEach((e,i)=>{ (byDay[e.date]=byDay[e.date]||[]).push([e,i]); });
@@ -2183,7 +2183,7 @@ function monthSheet(M,compact){ const ev=monthEvents(M).filter(e=>e.type!=='goal
   const ok=e=>e.st==='done'||e.st==='got', isIn=e=>e.type==='income';
   const sum=(f)=>ev.filter(f).reduce((a,e)=>a+e.amt,0);
   const inP=sum(e=>isIn(e)&&e.st!=='skip'), inD=sum(e=>isIn(e)&&ok(e)), outP=sum(e=>!isIn(e)&&e.st!=='moved'&&e.st!=='skip'), outD=sum(e=>!isIn(e)&&ok(e));
-  const liv=livBudget(M), spent=livingSpent(M), net=inP-outP-liv;
+  const PL=monthPlan(M), liv=PL.liv, spent=livingSpent(M), net=PL.save;
   const kindOf=e=>isIn(e)?'收入':/^cc-/.test(e.k||'')?'繳卡費':/還|貸|分期/.test(e.name)||(e.k&&recById(e.k.split('|')[0])&&recById(e.k.split('|')[0]).kind==='debt')?'還款':'支出';
   const row=(e,i)=>{ const done=ok(e), can=!e.ot&&(e.k)&&e.st!=='moved'&&e.st!=='skip';
     return `<tr class="sr ${done?'done':''} ${e.st==='late'?'late':''} ${e.st==='moved'?'moved':''}"><td class="c0">${can?`<button class="cbx ${done?'on':''}" onclick="sheetTick('${M}',${i})" aria-label="${done?'改回未完成':'標記完成'}" title="${done?'按一下改回未完成':(isIn(e)?'收到了，按一下記好':'繳了，按一下記好')}">${done?'✓':''}</button>`:'<span class="cbx dis">–</span>'}</td>
@@ -2192,7 +2192,7 @@ function monthSheet(M,compact){ const ev=monthEvents(M).filter(e=>e.type!=='goal
   const rows=monthEvents(M).map((e,i)=>e.type==='goal'?'':row(e,i)).join('');
   return `${ev.length?`<div class="sheetwrap"><table class="sheet"><thead><tr><th class="c0">✓</th><th class="c1">日期</th><th class="c2">項目</th>${compact?'':'<th class="c3">類型</th>'}<th class="c4">金額</th><th class="c5">狀態</th></tr></thead><tbody>${rows}
       ${liv?`<tr class="sr liv"><td class="c0"><span class="cbx dis">🍙</span></td><td class="c1">整月</td><td class="c2"><b>生活費（預算）</b><div class="small muted">已花費 ${money(spent)}${Object.entries(S.budget.cats).map(([c,b])=>{ const sp=catSpent(c,M); return sp>=b*0.7?`・<span style="color:${budgetLevel(sp,b).c};font-weight:700">${c} ${Math.round(sp/b*100)}%</span>`:''; }).join('')}</div></td>${compact?'':'<td class="c3">預算</td>'}<td class="c4">-${money(liv)}</td><td class="c5"><span class="pill ${spent>liv?'late':'wait'}">${spent>liv?'超支':`剩 ${money(liv-spent)}`}</span></td></tr>`:''}</tbody></table></div>`:'<div class="empty">這個月沒有排定的收支</div>'}
-    <div class="sheetsum"><div><span>收入</span><b style="color:var(--ok)">${money(inD)} / ${money(inP)}</b><small>已收 / 預計</small></div><div><span>要繳</span><b>${money(outD)} / ${money(outP)}</b><small>已繳 / 預計</small></div><div><span>生活費</span><b>${money(spent)} / ${money(liv)}</b><small>已花 / 預算</small></div><div><span>預計結餘</span><b style="color:${net<0?'var(--bad)':'var(--ok)'}">${bm(net)}</b><small>收入 − 要繳 − 生活費</small></div></div>
+    <div class="sheetsum"><div><span>收入</span><b style="color:var(--ok)">${money(inD)} / ${money(PL.inc)}</b><small>已收 / 預計</small></div><div><span>要繳</span><b>${money(outD)} / ${money(PL.out)}</b><small>已繳 / 預計</small></div><div><span>生活費</span><b>${money(spent)} / ${money(liv)}</b><small>已花 / 預算</small></div><div><span>預計結餘</span><b style="color:${net<0?'var(--bad)':'var(--ok)'}">${bm(net)}</b><small>跟月結表一樣</small></div></div>
     ${M===cur?'<div class="small muted" style="margin-top:6px">打勾＝已繳／已收到，會記一筆帳；再按一次可以改回未完成。綠色底＝完成、紅色＝逾期。</div>':''}`; }
 function sheetTick(M,i){ const e=monthEvents(M)[i]; if(!e||!e.k) return; const done=e.st==='done'||e.st==='got';
   if(/^cc-/.test(e.k)){ if(done){ alert('繳卡費是一筆轉帳。要改回未繳，請到「最近記帳紀錄」刪掉那筆「繳卡費」。'); return; } cardPay(e.k.slice(3).split('|')[0]); return; }
@@ -2275,8 +2275,8 @@ function ledgerMonth(M){ const cur=today().slice(0,7), rows={}, st={}, meta={}, 
     if(e.type==='income'){ if(e.ot){ return; } add('in',e.name,e.amt,e.st==='got',{t:'rec',k:e.k,inc:1}); }
     else add('out',/^cc-/.test(e.k||'')?'信用卡繳款':e.name,-e.amt,e.st==='done',/^cc-/.test(e.k||'')?{t:'card',k:e.k}:{t:'rec',k:e.k}); });
   const recs=live().filter(r=>r.date.startsWith(M)&&!r.recur);
-  const otAct=recs.filter(r=>r.type==='income'&&isOT(r)).reduce((a,r)=>a+r.amount,0), otEst=S.otEst[M]!==undefined?S.otEst[M]:otPayMonth(ymAdd(M,-1));
-  const otSlipO=otSlipFor(ymAdd(M,-1)), otSlip=otSlipO?otSlipO.v:null; if(otAct) add('in','加班費',otAct,true,{t:'list',f:'otin'}); else if(S.otEst[M]!==undefined) add('in','加班費',S.otEst[M],false,{t:'ot'}); else if(otSlip) add('in','加班費',otSlip,true,{t:'ot'}); else if((otEst||S.otEst[M]!==undefined)&&M>=cur) add('in','加班費',otEst,false,{t:'ot'});
+  monthEvents(M).filter(e=>e.ot).forEach(e=>add('in','加班費',e.amt,e.st==='got',e.st==='got'?{t:'list',f:'otin'}:{t:'ot'}));
+  if(S.otEst[M]!==undefined&&!monthEvents(M).some(e=>e.ot)) add('in','加班費',S.otEst[M],false,{t:'ot'});
   const oInc=recs.filter(r=>r.type==='income'&&!isOT(r)).reduce((a,r)=>a+r.amount,0); if(oInc) add('in','其他收入',oInc,true,{t:'list',f:'in'});
   const liv=livingSpent(M), bud=livBudget(M), livV=M<cur?liv:Math.max(liv,bud); if(livV||S.livMonth[M]!==undefined) add('out','生活費',-livV,M<cur,{t:'liv'});
   const oOut=recs.filter(r=>(r.type==='expense'&&!LIVING.includes(r.category))||(r.type==='debt'&&r.exp)).reduce((a,r)=>a+r.amount,0); if(oOut) add('out','其他支出',-oOut,true,{t:'list',f:'out'});
