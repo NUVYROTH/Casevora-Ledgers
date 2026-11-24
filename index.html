@@ -1907,7 +1907,7 @@ const GUIDES={
   gStep(4,'這個月能存多少',gR(`${gK('預計收入','$49,900','var(--ok)')}${gK('要繳的錢','$45,000','var(--bad)')}`)+gR(`${gK('生活費','$5,000','#e0a100')}${gK('可以存','-$100','var(--bad)')}`),
    `<p>最上面四張卡會算：<b>預計收入 − 要繳的錢 − 生活費預算 = 這個月預計可以存</b>。</p><p>變成<b>紅色負數</b>代表這個月會不夠用，可以早點想辦法（延後、少花一點）。換月份就能看之後每個月。</p>`),
   gStep(5,'📒 月結表：像 Excel 一樣看每個月',gC(`<table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="background:var(--brand-soft)"><td><b>項目</b></td><td style="text-align:right"><b>115.12</b></td><td style="text-align:right"><b>116.1</b></td></tr><tr><td>薪水</td><td style="text-align:right;color:var(--ok)">49,900</td><td style="text-align:right;color:var(--ok)">49,900</td></tr><tr><td>房租</td><td style="text-align:right;color:var(--bad)">-3,900</td><td style="text-align:right;color:var(--bad)">-3,900</td></tr><tr style="border-top:2px solid var(--ink)"><td><b>餘額</b></td><td style="text-align:right"><b>5,500</b></td><td style="text-align:right"><b>6,777</b></td></tr><tr style="background:#fff8d6"><td><b>存款</b></td><td style="text-align:right"><b>22,471</b></td><td style="text-align:right"><b>29,248</b></td></tr><tr><td>　💵 現金</td><td style="text-align:right">4,400</td><td></td></tr><tr><td>　🏦 銀行</td><td style="text-align:right">18,000</td><td></td></tr></table>`)+gR(gB('📒 月結表',{pr:1,hl:1,n:1})),
-   `<p>切到「📒 月結表」${gN(1)}（首頁收支表右上角也有連結）。左邊是項目，<b>每個月一欄</b>，可以選看 3、6、12 個月；手機往右滑看其他月份。</p><ul><li><b>餘額</b>：這個月收入 − 支出。</li><li><b>存款</b>：這個月結束時大概有多少錢（過去＝月底實際、本月＝現在＋還沒發生的、之後＝預估）。</li><li><b>現金／銀行</b>：存款分成身上和銀行各多少（過去和本月）。</li><li><b>點一下格子</b>可以改數字：固定項目可選「只改這個月」或「這個月起之後都改」；生活費、加班費只改那個月。</li><li><b>點兩下</b>切換已繳／未繳，已繳的格子會<b>填滿顏色</b>（跟著你選的色調）。</li><li>淡色斜體＝預計。</li></ul>`)]},
+   `<p>切到「📒 月結表」${gN(1)}（首頁收支表右上角也有連結）。左邊是項目，<b>每個月一欄</b>，可以選看 3、6、12 個月；手機往右滑看其他月份。</p><ul><li><b>餘額</b>：這個月收入 − 支出。</li><li><b>存款</b>：這個月結束時大概有多少錢（過去＝月底實際、本月＝現在＋還沒發生的、之後＝預估）。</li><li><b>現金／銀行</b>：存款分成身上和銀行各多少（過去和本月）。</li><li><b>點一下格子</b>可以改數字，<b>空的「—」格子也可以點</b>，直接填那個月的金額（例：下個月水電已經知道多少）；固定項目可選「只改這個月」或「這個月起之後都改」；生活費、加班費只改那個月。</li><li><b>點兩下</b>切換已繳／未繳，已繳的格子會<b>填滿顏色</b>（跟著你選的色調）。</li><li>淡色斜體＝預計。</li></ul>`)]},
  bills:{t:'繳費狀態使用說明',steps:()=>[
   gStep(1,'選月份、選分頁',gR(`${gB('◀')}<b>2026年11月</b>${gB('▶')}`)+gR(`${gN(1)}${gB('未繳（2）',{dk:1})}${gB('逾期（1）')}${gB('已繳（8）')}${gB('已延後')}${gB('全部')}`),
    `<p>用 ◀ ▶ 換月份。分頁${gN(1)}可以只看未繳、逾期、已繳、已延後。</p><p>狀態：${gTag('待繳')} 還沒到期、${gTag('今天到期','today')}、${gTag('逾期','late')} 過了期限還沒按完成、${gTag('已繳','done')}、${gTag('已延後 → 12月','moved')}。</p>`),
@@ -2291,7 +2291,7 @@ function ledgerTable(start,n){ const cur=today().slice(0,7), months=[...Array(n)
     if(M<cur){ run=moneyAt(monthEnd(M)).all; return {v:run,act:true,g:moneyAt(monthEnd(M))}; }
     if(M===cur){ const now=moneyAt(), pend=Object.entries(d.rows).filter(([k])=>!d.st[k]).reduce((a,[k,v])=>a+(k==='out|生活費'?-Math.max(0,d.bud-d.liv):v),0); run=now.all+pend; return {v:run,act:false,g:now,now:true}; }
     if(run===null) run=moneyAt().all; run+=d.net; return {v:run,act:false}; });
-  LEDC=[]; const cell=(v,done,M,key,meta)=>{ if(v===undefined) return '<td class="lz">—</td>'; const i=LEDC.push({M,key,meta})-1, tick=meta&&meta.length===1&&(meta[0].t==='rec');
+  LEDC=[]; const cell=(v,done,M,key,meta)=>{ if(v===undefined){ const i=LEDC.push({M,key,meta:null})-1; return `<td class="lz lc" onclick="ledEmpty(${i})" title="點一下填這個月的金額">—</td>`; } const i=LEDC.push({M,key,meta})-1, tick=meta&&meta.length===1&&(meta[0].t==='rec');
     return `<td class="lc ${v<0?'neg':'pos'} ${done?'dn fill':M<cur?'':'pl'}" title="${done?'已發生':'預計'}・點一下修改${tick?'，點兩下切換已繳／未繳':''}" onclick="ledClick(${i})" ondblclick="ledDbl(${i})">${done&&tick?'<span class="lck">✓</span>':''}${v<0?'-':''}${money(Math.abs(Math.round(v)))}</td>`; };
   const head=`<tr><th class="lh">項目</th>${months.map(M=>`<th class="${M===cur?'curm':''}">${M.slice(0,4)-1911}.${+M.slice(5)}${M===cur?'<br><small>本月</small>':''}</th>`).join('')}</tr>`;
   const sec=(t,key)=>`<tr class="lsec"><td class="lh">${t}</td>${months.map(()=>'<td></td>').join('')}</tr>`+order[key].map(nm=>`<tr><td class="lh">${esc(nm)}</td>${data.map((d,i)=>cell(d.rows[key+'|'+nm],d.st[key+'|'+nm],months[i],key+'|'+nm,d.meta[key+'|'+nm])).join('')}</tr>`).join('');
@@ -2312,6 +2312,18 @@ let LEDC=[], LEDT=null;
 function evEdit(M,i){ const e=monthEvents(M)[i]; if(!e) return; let meta;
   if(e.type==='goal'){ go('savings'); return; } if(e.ot) meta={t:'ot'}; else if(/^cc-/.test(e.k||'')) meta={t:'card',k:e.k}; else if(e.k) meta={t:'rec',k:e.k}; else return;
   const idx=LEDC.push({M,key:(e.type==='income'?'in':'out')+'|'+e.name,meta:[meta]})-1; ledEdit(idx); }
+function ledEmpty(i){ const c=LEDC[i]; if(!c) return; const M=c.M, [sec,name]=c.key.split('|');
+  if(name==='生活費'){ LEDC[i].meta=[{t:'liv'}]; ledEdit(i); return; }
+  if(name==='加班費'){ LEDC[i].meta=[{t:'ot'}]; ledEdit(i); return; }
+  if(name==='其他收入'||name==='其他支出'||name==='信用卡繳款'){ alert(`「${name}」是實際記帳加起來的。要預先放一筆，請到「設定 → 每月固定收支」新增；已經發生的，在首頁快速記帳打就好。`); return; }
+  const tpl=S.recurring.filter(x=>x.name===name).sort((a,b)=>b.start.localeCompare(a.start))[0]; if(!tpl) return;
+  const inc=tpl.kind==='income', m=ledModal(`${esc(name)}・${ymLabel(M)}`,`<div class="small muted" style="margin-bottom:8px">這個月原本沒有「${esc(name)}」。填上金額，就會在這個月加一筆${inc?'收入':'要繳的'}（只有這個月），繳費狀態、行事曆和提醒也會出現。</div>
+    <div class="grid" style="grid-template-columns:1fr 110px"><div><label class="f">金額</label><input type="number" id="leA" inputmode="decimal" value="${tpl.amount}"></div><div><label class="f">幾號</label><input type="number" id="leD" inputmode="numeric" value="${tpl.day}"></div></div>`,
+    `<button class="primary" id="leOk">加到 ${ymShort(M)}</button>`);
+  setTimeout(()=>{ const a=$('#leA'); if(a){ a.focus(); a.select(); } },50);
+  m.querySelector('#leOk').onclick=()=>{ const v=Math.round(Number($('#leA').value)*100)/100, d=dayOk($('#leD').value); if(!(v>0)){ alert('金額要大於 0'); return; } if(!d){ alert('「幾號」要是 1～31'); return; }
+    const o=JSON.stringify(S.recurring); S.recurring.push({id:newId(),name:tpl.name,kind:tpl.kind,amount:v,day:d,start:M,end:M,acct:tpl.acct,debt:tpl.debt,every:1});
+    if(!persist()){ S.recurring=JSON.parse(o); return; } m.remove(); rerender(); flash(`已加到 ${ymShort(M)}：${tpl.name} ${money(v)} ✦`); }; }
 function ledClick(i){ clearTimeout(LEDT); LEDT=setTimeout(()=>ledEdit(i),260); }
 function ledDbl(i){ clearTimeout(LEDT); const c=LEDC[i]; if(!c||!c.meta||c.meta.length!==1||c.meta[0].t!=='rec'){ ledEdit(i); return; } ledToggle(c.meta[0].k,c.M); }
 function ledToggle(k,M){ const [id,ym]=String(k).split('|'), x=recById(id); if(!x) return; const done=S.recurDone[k]==='done';
