@@ -432,6 +432,9 @@ table.ledger .lck{display:inline-block;margin-right:4px;font-size:12px;backgroun
 .lrow.lfill{background:var(--brand-soft)}.lrow.lfill .ln b{color:var(--brand-d)}
 table.ledger th.ltot,table.ledger td.ltot{background:#fff4cc;font-weight:800;border-left:2px solid var(--ink)}
 table.ledger tr.lsec td.ltot{color:inherit}
+.ictabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;scrollbar-width:thin}
+.ictabs button{flex:none;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;white-space:nowrap}
+.ictabs button.on{background:var(--brand);border-color:var(--brand);color:#fff}
 </style>
 </head>
 <body>
@@ -544,7 +547,8 @@ const ACCT_TYPES={cash:'💵 現金',bank:'🏦 銀行帳戶',epay:'📱 電子�
 function defType(id){return id==='cash'?'cash':['linepay','applepay','jko','easycard'].includes(id)?'epay':'other';}
 function typeOpts(sel){return Object.entries(ACCT_TYPES).map(([k,n])=>`<option value="${k}" ${k===sel?'selected':''}>${n}</option>`).join('');}
 const ACCT_ALIAS={cash:['現金'],linepay:['line\\s*pay'],applepay:['apple\\s*pay','蘋果\\s*pay'],jko:['街口支付','街口'],easycard:['悠遊卡']};
-const ICONS='🍙 🍜 🍱 🍰 🍩 🍦 🧋 ☕ 🍎 🍓 🥐 🍕 🍔 🍟 🍣 🥗 🍪 🍫 🍉 🍇 🚌 🚇 🚗 🚲 🛵 ⛽ 🚕 ✈️ 🚆 🛴 🧻 🧴 🧼 🛒 🛍️ 🧺 🪥 🧽 🏠 💡 💧 🔥 🎮 🎬 🎤 🎧 🎁 🎈 🎀 🌸 🧸 📚 🎨 ⚽ 💊 🏥 🩹 🦷 🩺 🧾 💳 📱 🌐 🔌 🔑 💰 💵 🪙 🐷 🌟 ✨ 🍀 🐱 🐶 🐰 🐻 🐼 🦊 🐥 🐣 🐸 🦄 🌈 ☁️ 🌙 ⭐ 💖 🎀'.split(' ');
+const ICON_GROUPS=[["⭐", "常用", "🍙 🍜 🍱 🧋 ☕ 🚌 ⛽ 🛒 🧻 🏠 💡 💧 📱 🎮 🎁 💊 🧾 💳 💰 🐷"], ["🍜", "吃的", "🍙 🍜 🍱 🍛 🍝 🍲 🥘 🍳 🥟 🥠 🍢 🍡 🍤 🍣 🍚 🥢 🥡 🍔 🍟 🍕 🌭 🥪 🌮 🌯 🥙 🥗 🥩 🍗 🍖 🥓 🧇 🥞 🥐 🥖 🍞 🥯 🧀 🥚 🍰 🎂 🧁 🍩 🍪 🍫 🍬 🍭 🍮 🍦 🍧 🍨 🍿 🥜"], ["🧋", "喝的", "🧋 ☕ 🍵 🥤 🧃 🥛 🍶 🍺 🍻 🍷 🥂 🍹 🍸 🧉 💧"], ["🍎", "蔬果", "🍎 🍏 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🫐 🍒 🍑 🥭 🍍 🥥 🥝 🍅 🥑 🥦 🥬 🥒 🌽 🥕 🧄 🧅 🥔 🍠 🍄"], ["🚗", "交通", "🚌 🚇 🚆 🚄 🚈 🚊 🚗 🚕 🚙 🏍️ 🛵 🚲 🛴 ⛽ 🅿️ 🚏 ✈️ 🛫 🚢 ⛴️ 🚤 🚁 🚚 🎫 🛣️"], ["🛒", "購物", "🛒 🛍️ 🧺 👕 👖 👗 👚 👔 🧥 🧦 👟 👠 👜 👛 🎒 👓 🕶️ 💍 💄 💅 🧢 👒 ⌚ 🧣 🧤"], ["🏠", "居家", "🏠 🏡 🛋️ 🛏️ 🪑 🚿 🛁 🚽 🧻 🧴 🧼 🧽 🪥 🧹 🧺 🪣 🧯 💡 🔌 🔋 💧 🔥 📺 📶 🌐 📦 🔑 🗝️ 🪴"], ["🎮", "娛樂", "🎮 🕹️ 🎲 🧩 🎬 🍿 🎤 🎧 🎵 🎸 🎹 🎨 📷 🎳 🎯 🎰 🎪 🎢 🎡 ⚽ 🏀 ⚾ 🎾 🏐 🏸 🏓 🏊 🚴 🏃 🧘 🏕️ ⛺ 🏖️ 🎣"], ["💊", "健康", "💊 💉 🩹 🩺 🏥 🦷 👓 🧴 😷 🤧 🌡️ 🧠 ❤️\u200d🩹 🏋️ 💪 🛌"], ["📚", "學習工作", "📚 📖 📝 ✏️ 🖊️ 📒 📓 🎓 🏫 💻 🖥️ ⌨️ 🖨️ 📎 📌 🗂️ 📅 💼 🏢 🧑\u200d💻 🧑\u200d🍳 🧑\u200d🔧 🔧 🛠️ 🧪 🧾"], ["💰", "金錢", "💰 💵 💴 💶 💳 🪙 🏦 🐷 📈 📉 💹 🧾 💸 🤑 💎 🏧 🎟️ 🔖"], ["🐾", "動物", "🐱 🐶 🐰 🐹 🐭 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐔 🐧 🐦 🐤 🐥 🦆 🦉 🦄 🐴 🐢 🦎 🐍 🦖 🐙 🐬 🐳 🐟 🐠 🦀 🦦 🦔 🐾 🦋 🐞 🐝"], ["🌈", "自然", "🌸 🌷 🌹 🌻 🌼 💐 🍀 🌿 🌱 🌲 🌳 🍁 🍂 🌵 🌈 ☀️ 🌤️ ☁️ 🌧️ ⛈️ ❄️ ⛄ 🌙 ⭐ 🌟 ✨ 🌊 🔥"], ["🎉", "節日心情", "🎁 🎈 🎀 🎉 🎊 🧧 🎄 🎃 🎆 🎇 🎐 🏮 🎂 💝 💖 💕 💗 💌 😊 😍 🥰 😋 😎 🥳 😴 😭 😤 🤔 👍 🙏 👏 💯 ✅ ❗ ❓"], ["👨\u200d👩\u200d👧", "人物", "👶 🧒 👧 👦 👩 👨 👵 👴 👪 👫 💑 🤰 🧑\u200d🤝\u200d🧑 💁 🙋 🤗 💏 🧸 🍼 🎒"]];
+const ICONS=[...new Set(ICON_GROUPS.flatMap(g=>g[2].split(' ')))];
 const $=s=>document.querySelector(s);
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const p2=n=>String(n).padStart(2,'0');
@@ -1215,11 +1219,16 @@ function delRecord(){
   if(!persist()){r.deleted=false;delete r.deletedAt;return;}
   dirty=false; cur=null; go2(back); flash('已移到「最近刪除」');
 }
+let ICON_TAB=0;
 function pickIcon(cb,allowReset){
   const m=document.createElement('div'); m.className='modal'; m.onclick=e=>{if(e.target===m)m.remove();};
-  m.innerHTML=`<div class="box"><div class="row" style="margin-bottom:10px"><b>選一個可愛圖示</b><span class="spacer"></span>${allowReset?'<button id="icReset">用分類預設</button>':''}<button id="icClose">關閉</button></div><div class="icgrid">${ICONS.map(i=>`<button data-i="${i}">${i}</button>`).join('')}</div></div>`;
+  const grid=()=>ICON_GROUPS[ICON_TAB][2].split(' ').map(i=>`<button data-i="${i}" aria-label="${i}">${i}</button>`).join('');
+  m.innerHTML=`<div class="box" style="max-width:560px"><div class="row" style="margin-bottom:8px"><b>選一個可愛圖示</b><span class="small muted">（共 ${ICONS.length} 個）</span><span class="spacer"></span>${allowReset?'<button id="icReset">用分類預設</button>':''}<button id="icClose">關閉</button></div>
+    <div class="ictabs">${ICON_GROUPS.map((g,i)=>`<button data-t="${i}" class="${i===ICON_TAB?'on':''}">${g[0]} ${g[1]}</button>`).join('')}</div>
+    <div class="icgrid">${grid()}</div></div>`;
   document.body.appendChild(m);
-  m.querySelectorAll('.icgrid button').forEach(b=>b.onclick=()=>{cb(b.dataset.i);m.remove();});
+  const bind=()=>m.querySelectorAll('.icgrid button').forEach(b=>b.onclick=()=>{cb(b.dataset.i);m.remove();}); bind();
+  m.querySelectorAll('.ictabs button').forEach(t=>t.onclick=()=>{ ICON_TAB=+t.dataset.t; m.querySelectorAll('.ictabs button').forEach(x=>x.classList.toggle('on',x===t)); m.querySelector('.icgrid').innerHTML=grid(); m.querySelector('.icgrid').scrollTop=0; bind(); });
   m.querySelector('#icClose').onclick=()=>m.remove(); const rs=m.querySelector('#icReset'); if(rs) rs.onclick=()=>{cb('');m.remove();};
 }
 
@@ -1988,7 +1997,7 @@ const GUIDES={
    `<p>對象清單：記帳時在最後加名字（例：還錢2000 A同事）會記到這個人。</p><p>常用詞：你改過分類，小帳會記住；記錯了在這裡刪掉。</p>`)]},
  settings:{t:'設定使用說明',steps:()=>[
   gStep(1,'換色調、換字體',gR(`<span class="lookbtn on" style="padding:4px 8px;font-size:11px"><span class="sw"><i style="background:#7fd6ec"></i><i style="background:#1e94c2"></i><i style="background:#16769b"></i></span>海洋藍</span><span class="lookbtn" style="padding:4px 8px;font-size:11px"><span class="sw"><i style="background:#ffc0cb"></i><i style="background:#e0607a"></i><i style="background:#bd4560"></i></span>櫻花粉</span>${gN(1)}`)+gR(`<span class="lookbtn" style="padding:4px 8px;font-size:11px">預設黑體</span><span class="lookbtn" style="padding:4px 8px;font-size:11px">圓體</span><span class="lookbtn" style="padding:4px 8px;font-size:11px">文楷</span>${gN(2)}`),
-   `<p>「🎨 外觀」裡有 6 種色調${gN(1)}，每種都有自己的小吉祥物和背景小圖案：海洋藍・小鯨魚、櫻花粉・小六角恐龍、森林綠・守宮、奶黃黃・球蟒、夜空紫・小貓頭鷹、奶茶棕・小水獺。</p><p>字體有 6 種${gN(2)}：思源黑體（現代乾淨，最推薦）、粗黑體（粗粗醒目）、粉圓體（圓圓可愛）、霞鶩文楷（手寫書法感）、芫荽手寫（活潑筆記風）、思源明體（典雅像書本）。點一下就換，會記住你的選擇。</p>`),
+   `<p>「🎨 外觀」裡有 6 種色調${gN(1)}，每種都有自己的小吉祥物和背景小圖案：海洋藍・小鯨魚、櫻花粉・小六角恐龍、森林綠・守宮、奶黃黃・球蟒、夜空紫・小貓頭鷹、奶茶棕・小水獺。</p><p>字體有 6 種${gN(2)}：思源黑體（現代乾淨，最推薦）、粗黑體（粗粗醒目）、粉圓體（圓圓可愛）、霞鶩文楷（手寫書法感）、芫荽手寫（活潑筆記風）、思源明體（典雅像書本）。點一下就換，會記住你的選擇。</p><p><b>分類圖示</b>（設定頁「🎀 分類圖示」、記帳修改時的圖示）：有 381 個可愛圖示，分成吃的、喝的、交通、購物、居家、娛樂、動物、節日心情…等 15 類，上面點分類就能切換。</p>`),
   gStep(2,'匯入（Excel 或備份檔）',gR(`${gB('下載範本',{n:1})}${gB('選擇檔案匯入',{pr:1,hl:1,n:2})}`)+gC(gR(`<b>📥 匯入預覽</b>`)+gR(`<span class="gx-s">將新增 74 項</span>${gB('確定匯入',{pr:1})}`)),
    `<p>先「下載範本」${gN(1)}，照欄位把資料貼進去；<b>自己做的表直接匯入讀不懂</b>。</p><p>選檔案${gN(2)}後會先預覽，再選：</p><ul><li><b>加進去（不覆蓋）</b>：只加新的，重複的跳過。</li><li><b>清空後匯入（覆蓋）</b>：把帳、帳戶、負債、加班等換成檔案內容；薪資條、常用語會保留。想保險可以勾「先下載備份」。</li></ul><p>選<b>備份檔（.json）</b>會整個換成備份的內容，換手機、換電腦用這個。</p><ul style="display:none"></ul>`),
   gStep(3,'每月固定收支',gC(gR(`<b style="flex:1">房租</b><span class="gx-s">每月 10 號</span><b>-$8,000</b>`)+gR(`${gB('修改')}${gB('刪除',{rd:1})}`),'📅 每月固定收支'),
