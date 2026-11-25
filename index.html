@@ -445,6 +445,7 @@ nav i.ni,.helpbtn i.ni{display:inline-flex;width:24px;align-items:center;justify
 @media (max-width:899px){.kpis.k5 .kpi:nth-child(3){grid-column:1/-1}}
 .fxbar{display:flex;height:16px;border-radius:999px;overflow:hidden;background:var(--line);gap:2px}.fxbar i{display:block;height:100%}
 table.amort tr.pastr td{opacity:.45}
+.phead h1 .hic{display:inline-block;margin-right:10px;font-size:.85em;vertical-align:2px}
 </style>
 </head>
 <body>
@@ -916,7 +917,7 @@ function nav(hk){
   const late=billOpen().filter(b=>b.st==='late').length;
   $('#nav').innerHTML=[['home','layout-dashboard','首頁'],['bills','receipt','繳費狀態'],['cal','calendar-days','行事曆'],['payslip','file-text','薪資條'],['ot','timer','加班'],['accounts','wallet','帳戶'],['debts','landmark','負債'],['savings','target','儲蓄'],['sim','telescope','情境模擬'],['manage','chart-column','帳務管理'],['opts','star','常用選項'],['settings','settings','設定']].map(([k,ic,n])=>`<button class="${page===k?'on':''}" onclick="go('${k}')"><i class="ni">${NAV_E[k]}</i><span>${n}</span>${k==='bills'&&late?`<span class="cnt" title="逾期 ${late} 筆">${late}</span>`:''}</button>`).join('');
   const h=PHEAD[hk||page]||PHEAD.home;
-  $('#phead').innerHTML=`<div class="phead"><div class="ph1"><h1>${h[0]}</h1><span class="badge">● 本機資料模式</span></div><div class="en">${h[1]}</div><div class="desc">${h[2]}</div></div>
+  $('#phead').innerHTML=`<div class="phead"><div class="ph1"><h1>${(()=>{ const e=Object.assign({},NAV_E,{trash:'🗑️',edit:'✏️'})[hk||page]; return e&&PHEAD[hk||page]?`<span class="hic">${e}</span>`:''; })()}${h[0]}</h1><span class="badge">● 本機資料模式</span></div><div class="en">${h[1]}</div><div class="desc">${h[2]}</div></div>
     <div class="nbar"><span class="lab">重要</span><span>本機儲存 · 僅在此裝置此瀏覽器有效 · 請勿用無痕視窗 · 定期下載備份</span><button onclick="openGuide()">查看使用說明</button></div>`;
 }
 function showHelp(){ go('settings'); const d=$('#dataHelp'); if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); } }
