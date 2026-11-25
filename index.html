@@ -15,7 +15,7 @@
   --ok:#3f9d71; --ok-soft:#e5f5ec; --bad:#d9534f; --bad-soft:#fdecea; --info:#8a6bd1;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.6;background-attachment:fixed;background-size:cover;background-position:center}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-weight:var(--fw,400);font-size:16px;line-height:1.6;background-attachment:fixed;background-size:cover;background-position:center}
 /* 背景圖：固定在螢幕上的一層（手機也不會跟著捲、不會被拉扯） */
 body.bgpage::before,body.bgboth::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(rgba(var(--bg-rgb),var(--veilX)),rgba(var(--bg-rgb),var(--veilX))),var(--bgimg) center/cover no-repeat}
 body.bgpage{--veilX:calc(var(--veil) + .3)} body.bgboth{--veilX:var(--veil)}
@@ -520,20 +520,17 @@ function decoSVG(k){ const T=THEMES[k]||THEMES.ocean, c=T.brand, c2=T.sw[1], o='
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><g opacity="${o}">${P[T.deco]||P.ocean}</g></svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`; }
 const FONTS={
-  sans:{n:'預設黑體',ic:'🔤',d:'清楚好讀',css:'"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif',gf:''},
-  round:{n:'粉圓體',ic:'🍡',d:'圓圓可愛',css:'"Huninn","jf-openhuninn","Noto Sans TC",sans-serif',gf:'Huninn'},
-  goround:{n:'昭源圓體',ic:'🫧',d:'圓潤俐落',css:'"Chiron GoRound TC","Noto Sans TC",sans-serif',gf:'Chiron+GoRound+TC:wght@400;700'},
-  choco:{n:'巧克力黑體',ic:'🍫',d:'復古雜誌感',css:'"Chocolate Classical Sans","Noto Sans TC",sans-serif',gf:'Chocolate+Classical+Sans'},
-  kai:{n:'霞鶩文楷',ic:'🖌️',d:'溫柔手寫感',css:'"LXGW WenKai TC","DFKai-SB","BiauKai","標楷體","Noto Sans TC",serif',gf:'LXGW+WenKai+TC:wght@400;700'},
-  iansui:{n:'芫荽手寫',ic:'✏️',d:'活潑筆記風',css:'"Iansui","Noto Sans TC",sans-serif',gf:'Iansui'},
-  serif:{n:'思源明體',ic:'📖',d:'像書本的字',css:'"Noto Serif TC","PMingLiU","新細明體","Songti TC",serif',gf:'Noto+Serif+TC:wght@400;700'},
-  cactus:{n:'古典明體',ic:'📜',d:'古典優雅',css:'"Cactus Classical Serif","Noto Serif TC","PMingLiU",serif',gf:'Cactus+Classical+Serif'}};
+  sans:{n:'預設黑體',ic:'🔤',d:'清楚好讀',css:'"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif',gf:'',w:400},
+  bold:{n:'粗黑體',ic:'💪',d:'粗粗的・很醒目',css:'"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif',gf:'Noto+Sans+TC:wght@700;900',w:700},
+  round:{n:'粉圓體',ic:'🍡',d:'圓圓可愛',css:'"Huninn","jf-openhuninn","Noto Sans TC",sans-serif',gf:'Huninn',w:400},
+  kai:{n:'霞鶩文楷',ic:'🖌️',d:'手寫書法感',css:'"LXGW WenKai TC","DFKai-SB","BiauKai","標楷體","Noto Sans TC",serif',gf:'LXGW+WenKai+TC:wght@400;700',w:400},
+  serif:{n:'思源明體',ic:'📖',d:'像書本的字',css:'"Noto Serif TC","PMingLiU","新細明體","Songti TC",serif',gf:'Noto+Serif+TC:wght@400;700',w:400}};
 const THEME_PET=Object.fromEntries(Object.entries(THEMES).map(([k,T])=>[k,T.pet]));
 function petImg(k){ return `<img src="${PET_IMG[k]||PET_IMG.ocean}" alt="${esc((THEMES[k]||THEMES.ocean).pet)}">`; }
 function fontPreviewLink(){ if(document.getElementById('gf-preview')) return; const fams=Object.values(FONTS).filter(F=>F.gf).map(F=>'family='+F.gf.split(':')[0]).join('&'); const l=document.createElement('link'); l.id='gf-preview'; l.rel='stylesheet'; l.href=`https://fonts.googleapis.com/css2?${fams}&text=${encodeURIComponent('記帳幫手123')}&display=swap`; document.head.appendChild(l); }
 function applyLook(){ const L=(typeof S!=='undefined'&&S&&S.look)||{theme:'ocean',font:'sans'}, T=THEMES[L.theme]||THEMES.ocean, F=FONTS[L.font]||FONTS.sans, st=document.documentElement.style;
   document.documentElement.classList.toggle('hdlight',!!T.hdInk);
-  [['--hdink',T.hdInk||'#fff'],['--bgdeco',decoSVG(L.theme)],['--bg',T.bg],['--bg-rgb',T.rgb],['--ink',T.ink],['--muted',T.muted],['--line',T.line],['--brand',T.brand],['--brand-d',T.brandD],['--brand-soft',T.soft],['--tint',T.tint],['--hd1',T.hd1],['--hd2',T.hd2],['--shadow',T.sh],['--font',F.css]].forEach(([k,v])=>st.setProperty(k,v));
+  [['--hdink',T.hdInk||'#fff'],['--bgdeco',decoSVG(L.theme)],['--bg',T.bg],['--bg-rgb',T.rgb],['--ink',T.ink],['--muted',T.muted],['--line',T.line],['--brand',T.brand],['--brand-d',T.brandD],['--brand-soft',T.soft],['--tint',T.tint],['--hd1',T.hd1],['--hd2',T.hd2],['--shadow',T.sh],['--font',F.css],['--fw',String(F.w||400)]].forEach(([k,v])=>st.setProperty(k,v));
   if(F.gf&&!document.getElementById('gf-'+L.font)){ const l=document.createElement('link'); l.id='gf-'+L.font; l.rel='stylesheet'; l.href=`https://fonts.googleapis.com/css2?family=${F.gf}&display=swap`; document.head.appendChild(l); }
   const mc=document.querySelector('meta[name=theme-color]'); if(mc) mc.content=T.brand;
   const src=PET_IMG[L.theme]||PET_IMG.ocean; ['hdMascot','sdMascot'].forEach(id=>{ const el=document.getElementById(id); if(el&&el.dataset.k!==L.theme){ el.innerHTML=`<image href="${src}" x="${id==='hdMascot'?-100:-62}" y="-122" width="184" height="184" preserveAspectRatio="xMidYMid meet"/>`; el.dataset.k=L.theme; } }); }
@@ -1990,7 +1987,7 @@ const GUIDES={
    `<p>對象清單：記帳時在最後加名字（例：還錢2000 A同事）會記到這個人。</p><p>常用詞：你改過分類，小帳會記住；記錯了在這裡刪掉。</p>`)]},
  settings:{t:'設定使用說明',steps:()=>[
   gStep(1,'換色調、換字體',gR(`<span class="lookbtn on" style="padding:4px 8px;font-size:11px"><span class="sw"><i style="background:#7fd6ec"></i><i style="background:#1e94c2"></i><i style="background:#16769b"></i></span>海洋藍</span><span class="lookbtn" style="padding:4px 8px;font-size:11px"><span class="sw"><i style="background:#ffc0cb"></i><i style="background:#e0607a"></i><i style="background:#bd4560"></i></span>櫻花粉</span>${gN(1)}`)+gR(`<span class="lookbtn" style="padding:4px 8px;font-size:11px">預設黑體</span><span class="lookbtn" style="padding:4px 8px;font-size:11px">圓體</span><span class="lookbtn" style="padding:4px 8px;font-size:11px">文楷</span>${gN(2)}`),
-   `<p>「🎨 外觀」裡有 6 種色調${gN(1)}，每種都有自己的小吉祥物和背景小圖案：海洋藍・小鯨魚、櫻花粉・小六角恐龍、森林綠・守宮、奶黃黃・球蟒、夜空紫・小貓頭鷹、奶茶棕・小水獺。</p><p>字體有 8 種${gN(2)}：預設黑體、粉圓體、昭源圓體、巧克力黑體、霞鶩文楷、芫荽手寫、思源明體、古典明體。點一下就換，會記住你的選擇。</p>`),
+   `<p>「🎨 外觀」裡有 6 種色調${gN(1)}，每種都有自己的小吉祥物和背景小圖案：海洋藍・小鯨魚、櫻花粉・小六角恐龍、森林綠・守宮、奶黃黃・球蟒、夜空紫・小貓頭鷹、奶茶棕・小水獺。</p><p>字體有 5 種${gN(2)}，每種長得都不一樣：預設黑體（清楚）、粗黑體（粗粗醒目）、粉圓體（圓圓可愛）、霞鶩文楷（手寫書法感）、思源明體（像書本）。點一下就換，會記住你的選擇。</p>`),
   gStep(2,'匯入（Excel 或備份檔）',gR(`${gB('下載範本',{n:1})}${gB('選擇檔案匯入',{pr:1,hl:1,n:2})}`)+gC(gR(`<b>📥 匯入預覽</b>`)+gR(`<span class="gx-s">將新增 74 項</span>${gB('確定匯入',{pr:1})}`)),
    `<p>先「下載範本」${gN(1)}，照欄位把資料貼進去；<b>自己做的表直接匯入讀不懂</b>。</p><p>選檔案${gN(2)}後會先預覽，再選：</p><ul><li><b>加進去（不覆蓋）</b>：只加新的，重複的跳過。</li><li><b>清空後匯入（覆蓋）</b>：把帳、帳戶、負債、加班等換成檔案內容；薪資條、常用語會保留。想保險可以勾「先下載備份」。</li></ul><p>選<b>備份檔（.json）</b>會整個換成備份的內容，換手機、換電腦用這個。</p><ul style="display:none"></ul>`),
   gStep(3,'每月固定收支',gC(gR(`<b style="flex:1">房租</b><span class="gx-s">每月 10 號</span><b>-$8,000</b>`)+gR(`${gB('修改')}${gB('刪除',{rd:1})}`),'📅 每月固定收支'),
@@ -2608,7 +2605,7 @@ function renderSettings(){
    <div class="card"><h2>🎨 外觀：色調與字體</h2>
      <div class="small muted" style="margin-bottom:8px">點一下就換，馬上看得到效果。</div>
      <label class="f">色調（每種都有自己的小吉祥物）</label><div class="looks">${Object.entries(THEMES).map(([k,T])=>`<button class="lookbtn theme ${S.look.theme===k?'on':''}" onclick="setLook('theme','${k}')" aria-pressed="${S.look.theme===k}"><span class="pet" style="background:${T.tint}">${petImg(k)}</span><b style="color:${T.brandD}">${T.n}</b><span class="pettag" style="background:${T.soft};color:${T.brandD}">${T.pet}</span><span class="sw">${T.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span><span class="small muted">🐾 ${T.tag}</span></button>`).join('')}</div>
-     <label class="f" style="margin-top:10px">字體</label><div class="looks">${Object.entries(FONTS).map(([k,F])=>`<button class="lookbtn font ${S.look.font===k?'on':''}" onclick="setLook('font','${k}')" aria-pressed="${S.look.font===k}"><span class="fic">${F.ic}</span><b class="fsample" style="font-family:${F.css.replace(/"/g,"'")}">記帳幫手 123</b><b>${F.n}</b><span class="small muted">${F.d}</span></button>`).join('')}</div>
+     <label class="f" style="margin-top:10px">字體</label><div class="looks">${Object.entries(FONTS).map(([k,F])=>`<button class="lookbtn font ${S.look.font===k?'on':''}" onclick="setLook('font','${k}')" aria-pressed="${S.look.font===k}"><span class="fic">${F.ic}</span><b class="fsample" style="font-family:${F.css.replace(/"/g,"'")};font-weight:${F.w||400}">記帳幫手 123</b><b>${F.n}</b><span class="small muted">${F.d}</span></button>`).join('')}</div>
      <div class="small muted" style="margin-top:8px">除了預設黑體，其他字體第一次選的時候會從 Google Fonts 下載字型（要網路）；沒有網路時會先用電腦內建的字體代替。只會下載字型，不會傳出你的資料。</div></div>
    <div class="card"><h2>🖼️ 背景圖</h2>
      <div class="row"><button onclick="$('#bgFile').click()">上傳圖片</button><input type="file" id="bgFile" accept="image/*" hidden onchange="uploadBg(this)">
