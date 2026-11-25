@@ -446,6 +446,8 @@ nav i.ni,.helpbtn i.ni{display:inline-flex;width:30px;align-items:center;justify
 .fxbar{display:flex;height:16px;border-radius:999px;overflow:hidden;background:var(--line);gap:2px}.fxbar i{display:block;height:100%}
 table.amort tr.pastr td{opacity:.45}
 .phead h1 .hic{display:inline-block;margin-right:10px;font-size:1.1em;vertical-align:-1px}
+.dayh .h2i{font-size:1.3em}
+.h2i{display:inline-block;font-size:1.45em;line-height:1;margin-right:8px;vertical-align:-3px}
 </style>
 </head>
 <body>
@@ -2511,7 +2513,7 @@ function amortShow(id){ const d=debtById(id); if(!d) return; const a=amortInfo(d
     const past=[]; if(a.i>0){ let B=a.A*(1-Math.pow(1+a.i,-a.n))/a.i; for(let k=1;k<=a.k0;k++){ const int=B*a.i, prin=a.A-int; B-=prin; past.push({k,ym:ymAdd(a.start,k-a.k0-1),pay:a.A,int,prin,bal:B}); } }
     const rows=(sc||base), body=[...past.map(r=>`<tr class="pastr"><td>${r.k}</td><td>${ymLabel(r.ym)}</td><td>${money(Math.round(r.prin))}</td><td>${money(Math.round(r.int))}</td><td>${money(r.pay)}</td><td>${money(Math.round(r.bal))}</td></tr>`),
       ...rows.map((r,j)=>`<tr class="${r.ym===today().slice(0,7)?'curm':''}"><td>${a.k0+j+1}</td><td>${ymLabel(r.ym)}${r.extra?` <span class="pill moved">提前還 ${money(r.extra)}</span>`:''}</td><td>${money(Math.round(r.prin))}</td><td>${money(Math.round(r.int))}</td><td>${money(Math.round(r.pay))}</td><td>${money(Math.round(r.bal))}</td></tr>`)].join('');
-    $('#apSum').innerHTML=`<div class="kpis" style="margin:8px 0">${kpi('剩餘本金',money(Math.round(a.principal)),`年利率 ${d.rate||0}%`,'⚖️','var(--brand)','var(--brand-soft)')}${kpi('之後還要付的利息',money(Math.round(tI(base))),`每月 ${money(a.A)}・剩 ${base.length} 期`,'📈','var(--bad)','var(--bad-soft)')}${kpi('預計還清',ymLabel(last(base)),`共 ${a.n} 期・已繳 ${a.k0} 期`,'⏰','var(--ok)','var(--ok-soft)')}</div>
+    $('#apSum').innerHTML=`<div class="kpis" style="margin:8px 0">${kpi('剩餘本金',money(Math.round(a.principal)),`年利率 ${d.rate||0}%`,'⚖️','var(--brand)','var(--brand-soft)')}${kpi('之後還要付的利息',money(Math.round(tI(base))),`每月 ${money(a.A)}・剩 ${base.length} 期`,'📈','var(--bad)','var(--bad-soft)')}${kpi('預計還清',last(base).replace('-','/').replace('/0','/'),`共 ${a.n} 期・已繳 ${a.k0} 期`,'⏰','var(--ok)','var(--ok-soft)')}</div>
       ${sc?`<div class="notice" style="background:var(--ok-soft);color:#1f5f3f">💡 ${ymLabel(em)}提前還 <b>${money(ey)}</b>：提早 <b>${base.length-sc.length} 個月</b>還清（${ymLabel(last(sc))}），<b>省下利息約 ${money(Math.round(tI(base)-tI(sc)))}</b>。月付一樣是 ${money(a.A)}。</div>`:''}`;
     $('#apTb').innerHTML=`<table class="ledger amort"><tr><th>期數</th><th>月份</th><th>本金</th><th>利息</th><th>月付</th><th>剩餘本金</th></tr>${body}</table>`; };
   m.innerHTML=`<div class="box" style="max-width:720px;max-height:92vh;overflow:auto"><div class="row"><h2 style="margin:0;font-size:18px">📄 ${esc(d.name)} 攤還表</h2><span class="spacer"></span><button onclick="this.closest('.modal').remove()">關閉</button></div>
@@ -2875,6 +2877,11 @@ window.addEventListener('beforeunload',e=>{ if(dirty){e.preventDefault();e.retur
 document.addEventListener('click',e=>{});
 window.go2=go2;
 const _go2=go2; window.go2=function(k){ if(k==='trash'){ selT=new Set(); renderTrash(); window.scrollTo(0,0); return; } _go2(k); };
+
+/* 卡片小標題前面的彩色圖示放大 */
+(function(){ const RE=/^\s*((?:\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}])(?:️|‍(?:\p{Extended_Pictographic})|\p{Emoji_Modifier})*)\s*/u;
+  const fix=root=>{ (root.querySelectorAll?root.querySelectorAll('.card h2,.box h2,.dayh>span:first-child'):[]).forEach(h=>{ if(h.dataset.ei) return; h.dataset.ei=1; const t=h.firstChild; if(!t||t.nodeType!==3) return; const m=t.nodeValue.match(RE); if(!m) return; t.nodeValue=t.nodeValue.slice(m[0].length); const sp=document.createElement('span'); sp.className='h2i'; sp.textContent=m[1]; h.insertBefore(sp,t); }); };
+  new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType===1){ if(n.matches&&n.matches('.card h2,.box h2,.dayh>span:first-child')) fix(n.parentNode); else fix(n); } }))).observe(document.body,{childList:true,subtree:true}); fix(document); })();
 </script>
 </body>
 </html>
