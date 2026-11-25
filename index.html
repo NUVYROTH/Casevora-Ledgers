@@ -451,6 +451,7 @@ table.amort tr.pastr td{opacity:.45}
 button .h2i{font-size:1.35em;margin-right:6px;vertical-align:-2px}
 .h2i{display:inline-block;font-size:1.45em;line-height:1;margin-right:8px;vertical-align:-3px}
 .tei{display:inline-block;font-size:1.3em;line-height:1;vertical-align:-2px;margin:0 1px}
+button.phb{white-space:nowrap;flex:none;padding-left:10px;padding-right:10px}
 </style>
 </head>
 <body>
@@ -926,7 +927,7 @@ function nav(hk){
     <div class="nbar"><span class="lab">重要</span><span>本機儲存 · 僅在此裝置此瀏覽器有效 · 請勿用無痕視窗 · 定期下載備份</span><button onclick="openGuide()">查看使用說明</button></div>`;
 }
 function showHelp(){ go('settings'); const d=$('#dataHelp'); if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); } }
-function go(k){ if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,bills:renderBills,cal:renderCal,sim:renderSim,payslip:renderPayslip,ot:renderOT,opts:renderOpts,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
+function go(k){ if(k!=='opts') optsFrom=''; if(dirty&&!confirm('有尚未儲存的修改，確定要離開嗎？')) return; dirty=false; cur=null; page=k; ({home:renderHome,bills:renderBills,cal:renderCal,sim:renderSim,payslip:renderPayslip,ot:renderOT,opts:renderOpts,accounts:renderAccounts,debts:renderDebts,savings:renderSavings,manage:renderManage,settings:renderSettings}[k])(); window.scrollTo(0,0); }
 function applyBg(){
   const b=S.bg||{}, st=document.documentElement.style, ca=Number.isFinite(+b.cardA)?Math.min(1,Math.max(.3,+b.cardA)):1, ve=Number.isFinite(+b.veil)?Math.min(.9,Math.max(0,+b.veil)):.5;
   st.setProperty('--cardA',b.url?ca:1); st.setProperty('--veil',ve); document.body.classList.toggle('glass',!!b.url&&ca<1);
@@ -976,7 +977,7 @@ function renderHome(){
     <div class="card o1"><h2>✏️ 快速記帳</h2>
       <div class="quick"><input type="text" id="qin" placeholder="例如：吃飯100" onkeydown="if(event.key==='Enter')quickAdd()"><button class="primary" onclick="quickAdd()">記</button></div>
       <div class="paysel"><label class="f" for="paySel" style="margin:0">付款方式</label><select id="paySel" onchange="this.dataset.t='1'">${acctOpts('cash')}</select><button class="addph" onclick="addPhrase()" title="把輸入框裡的字存成常用語">⭐ 加入常用</button></div>
-      <div class="phr">${S.phrases.map((t,i)=>`<span class="chip"><button onclick="usePhrase(${i})" title="點一下就記">${esc(t)}</button><a href="#" onclick="delPhrase(${i});return false" title="刪除這個常用語" aria-label="刪除 ${esc(t)}">×</a></span>`).join('')}<a href="#" class="small" onclick="go('opts');return false" style="color:var(--brand-d);font-weight:700">編輯</a></div>
+      <div class="phr">${S.phrases.map((t,i)=>`<span class="chip"><button onclick="usePhrase(${i})" title="點一下就記">${esc(t)}</button><a href="#" onclick="delPhrase(${i});return false" title="刪除這個常用語" aria-label="刪除 ${esc(t)}">×</a></span>`).join('')}<a href="#" class="small" onclick="optsFrom='home';go('opts');return false" style="color:var(--brand-d);font-weight:700">編輯</a></div>
       <div class="muted small" style="margin-top:6px">試試看：早餐65、午餐120 LINE Pay、薪水50000 台新、悠遊卡加值500、<b>平日加班2H</b>、<b>事假4H</b>　（沒說日期就記今天；沒說付款方式就算現金）</div></div>
     <div class="o2">${dueReminders()}${recurCard()}</div>
     <div class="o3">${S.acctInitDone?'':`<div class="card ask"><div style="font-weight:700">💡 先告訴小帳：每個帳戶現在有多少錢？</div><div class="small muted" style="margin:4px 0 10px">輸入起始餘額後，小帳才能幫你算出每個帳戶還剩多少。</div>
@@ -2039,7 +2040,7 @@ const GUIDES={
    `<p>打關鍵字（項目、分類、對象、帳戶都可以），也可以選類型和日期範圍。點結果就能修改或刪除。</p><p><b>一次刪很多筆</b>：右上按「☑ 多選刪除」，打勾後按「🗑 刪除選取的」，會放進「最近刪除」30 天內可救回。</p><p>要匯出給 Excel，到「設定 → 匯出 CSV」。</p>`)]},
  opts:{t:'常用選項使用說明',steps:()=>[
   gStep(1,'快速記帳常用語',gC(gR(`${gIn('平日加班2H')}${gB('↑')}${gB('↓')}${gB('儲存',{n:1})}${gB('刪除',{rd:1,n:2})}`)),
-   `<p>直接改字按「儲存」${gN(1)}；↑↓ 調整在首頁出現的順序；不要的按「刪除」${gN(2)}。</p>`),
+   `<p>直接改字按「儲存」${gN(1)}；↑↓ 調整在首頁出現的順序；不要的按「刪除」${gN(2)}。</p><p>從首頁常用語旁邊的「編輯」進來的話，<b>新增完會自動回到首頁</b>；上面也有「← 返回首頁」。</p>`),
   gStep(2,'對象清單與常用詞',gC(gR(`<span class="gx-chip">A同事 ×</span><span class="gx-chip">2姊 ×</span>`),'👥 對象清單')+gC(gR(`<span>咖啡</span><span>→ 餐飲</span>${gB('刪除',{rd:1})}`),'🏷️ 常用詞'),
    `<p>對象清單：記帳時在最後加名字（例：還錢2000 A同事）會記到這個人。</p><p>常用詞：你改過分類，小帳會記住；記錯了在這裡刪掉。</p>`)]},
  settings:{t:'設定使用說明',steps:()=>[
@@ -2090,14 +2091,15 @@ function delPhrase(i){ const t=S.phrases[i]; if(t===undefined||!confirm(`確定�
 function editPhrase(i){ const v=$('#ph'+i).value.trim().slice(0,30); if(!v){ alert('常用語不能是空的，要刪除請按「刪除」'); return; } if(S.phrases.some((x,j)=>j!==i&&x===v)){ alert('已經有一樣的常用語了'); return; }
   const o=JSON.stringify(S.phrases); S.phrases[i]=v; if(!persist()){ S.phrases=JSON.parse(o); return; } renderOpts(); flash('已儲存'); }
 function movePhrase(i,d){ const j=i+d; if(j<0||j>=S.phrases.length) return; const a=S.phrases; [a[i],a[j]]=[a[j],a[i]]; persist(); renderOpts(); }
+let optsFrom='';
 function addPhraseOpts(){ const el=$('#phNew'), v=el.value.trim().slice(0,30); if(!v) return; if(S.phrases.includes(v)){ flash('已經有了'); return; }
-  if(S.phrases.length>=40){ alert('常用語最多 40 個'); return; } const o=JSON.stringify(S.phrases); S.phrases.push(v); if(!persist()){ S.phrases=JSON.parse(o); return; } renderOpts(); flash('已新增 ✦'); }
+  if(S.phrases.length>=40){ alert('常用語最多 40 個'); return; } const o=JSON.stringify(S.phrases); S.phrases.push(v); if(!persist()){ S.phrases=JSON.parse(o); return; } if(optsFrom){ const b=optsFrom; optsFrom=''; go(b); flash(`已新增「${v}」，回到首頁 ✦`); return; } renderOpts(); flash('已新增 ✦'); }
 function renderOpts(){ page='opts'; nav();
-  $('#app').innerHTML=`<div class="card"><h2>⭐ 快速記帳常用語</h2><div class="muted small" style="margin-bottom:8px">會出現在首頁快速記帳下面，點一下就記。有數字的（例：平日加班2H、早餐65）點了直接記；沒數字的（例：早餐）會先放進輸入框，讓你補金額。</div>
+  $('#app').innerHTML=`${optsFrom?`<button style="margin-bottom:10px" onclick="optsFrom='';go('home')">← 返回首頁</button>`:''}<div class="card"><h2>⭐ 快速記帳常用語</h2><div class="muted small" style="margin-bottom:8px">會出現在首頁快速記帳下面，點一下就記。有數字的（例：平日加班2H、早餐65）點了直接記；沒數字的（例：早餐）會先放進輸入框，讓你補金額。</div>
      ${S.phrases.length?S.phrases.map((t,i)=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><input type="text" id="ph${i}" maxlength="30" value="${esc(t)}" onkeydown="if(event.key==='Enter')editPhrase(${i})">
-       <button onclick="movePhrase(${i},-1)" ${i?'':'disabled'} aria-label="往上">↑</button><button onclick="movePhrase(${i},1)" ${i<S.phrases.length-1?'':'disabled'} aria-label="往下">↓</button>
-       <button onclick="editPhrase(${i})">儲存</button><button class="danger" onclick="delPhrase(${i})">刪除</button></div>`).join(''):'<div class="small muted">還沒有常用語</div>'}
-     <div class="quick" style="margin-top:10px"><input type="text" id="phNew" maxlength="30" placeholder="例如：平日加班2H、早餐65、事假8H" onkeydown="if(event.key==='Enter')addPhraseOpts()"><button class="primary" onclick="addPhraseOpts()" style="font-size:15px">新增</button></div>
+       <button onclick="movePhrase(${i},-1)" ${i?'':'disabled'} aria-label="往上" class="phb">↑</button><button onclick="movePhrase(${i},1)" ${i<S.phrases.length-1?'':'disabled'} aria-label="往下" class="phb">↓</button>
+       <button class="phb" onclick="editPhrase(${i})">儲存</button><button class="danger phb" onclick="delPhrase(${i})">刪除</button></div>`).join(''):'<div class="small muted">還沒有常用語</div>'}
+     <div class="quick" style="margin-top:10px"><input type="text" id="phNew" maxlength="30" placeholder="例如：平日加班2H、早餐65、事假8H" onkeydown="if(event.key==='Enter')addPhraseOpts()"><button class="primary phb" onclick="addPhraseOpts()" style="font-size:15px">新增</button></div>
      <div class="muted small" style="margin-top:6px">加班、請假也可以：平日加班2H、休息日加班8H、11/20 平日加班1.5H、事假4H、病假1天。會記到「⏱️ 加班」頁，不算花錢。</div></div>
    <div class="card"><h2>🏷️ 常用詞（小帳記住的）</h2><div class="muted small" style="margin-bottom:6px">你在修改紀錄時改過分類或對象，小帳會記住。記錯了可以在這裡刪掉。</div>
      ${S.rules.length?`<table><tbody>${S.rules.map((x,i)=>`<tr><td>${esc(x.word)}</td><td>→ ${iconOf(x.category)} ${esc(x.category)}${x.who?`<span class="tag">${esc(x.who)}</span>`:''}</td><td><button class="danger" onclick="delRule(${i})">刪除</button></td></tr>`).join('')}</tbody></table>`:'<div class="muted small">還沒有記住任何詞</div>'}</div>
