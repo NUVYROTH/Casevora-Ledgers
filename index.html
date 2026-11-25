@@ -447,6 +447,7 @@ nav i.ni,.helpbtn i.ni{display:inline-flex;width:34px;align-items:center;justify
 table.amort tr.pastr td{opacity:.45}
 .phead h1 .hic{display:inline-block;margin-right:10px;font-size:1.1em;vertical-align:-1px}
 .dayh .h2i{font-size:1.3em}
+.gcard summary .h2i{font-size:1.4em;vertical-align:-3px}.mg-h .h2i{font-size:1.35em;margin-right:2px}.gx-b .h2i,.gx-in .h2i,.gx-t .h2i,.gx-row>b .h2i{font-size:1.35em;margin-right:4px;vertical-align:-2px}
 button .h2i{font-size:1.35em;margin-right:6px;vertical-align:-2px}
 .h2i{display:inline-block;font-size:1.45em;line-height:1;margin-right:8px;vertical-align:-3px}
 </style>
@@ -2881,8 +2882,8 @@ const _go2=go2; window.go2=function(k){ if(k==='trash'){ selT=new Set(); renderT
 
 /* 卡片小標題前面的彩色圖示放大 */
 (function(){ const RE=/^\s*((?:\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}])(?:️|‍(?:\p{Extended_Pictographic})|\p{Emoji_Modifier})*)\s*/u;
-  const fix=root=>{ if(!root) return; (root.querySelectorAll?root.querySelectorAll('.card h2,.box h2,.dayh>span:first-child,button'):[]).forEach(h=>{ if(h.dataset.ei) return; h.dataset.ei=1; const t=h.firstChild; if(!t||t.nodeType!==3) return; const m=t.nodeValue.match(RE); if(!m) return; t.nodeValue=t.nodeValue.slice(m[0].length); const sp=document.createElement('span'); sp.className='h2i'; sp.textContent=m[1]; h.insertBefore(sp,t); }); };
-  new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType===1){ if(n.matches&&n.matches('.card h2,.box h2,.dayh>span:first-child,button')) fix(n.parentNode); else fix(n); } }))).observe(document.body,{childList:true,subtree:true}); fix(document); })();
+  const fix=root=>{ if(!root) return; (root.querySelectorAll?root.querySelectorAll('.card h2,.box h2,.dayh>span:first-child,button,.gcard summary b,.mg-h,.gx-b,.gx-t,.gx-in,.gx-row>b'):[]).forEach(h=>{ if(h.dataset.ei) return; h.dataset.ei=1; let t=h.firstChild; while(t&&t.nodeType===1&&t.classList&&(t.classList.contains('no')||t.classList.contains('gx-n'))) t=t.nextSibling; if(!t||t.nodeType!==3) return; const m=t.nodeValue.match(RE); if(!m) return; t.nodeValue=t.nodeValue.slice(m[0].length); const sp=document.createElement('span'); sp.className='h2i'; sp.textContent=m[1]; h.insertBefore(sp,t); }); };
+  new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType===1){ if(n.matches&&n.matches('.card h2,.box h2,.dayh>span:first-child,button,.gcard summary b,.mg-h,.gx-b,.gx-t,.gx-in,.gx-row>b')) fix(n.parentNode); else fix(n); } }))).observe(document.body,{childList:true,subtree:true}); fix(document); })();
 </script>
 </body>
 </html>
