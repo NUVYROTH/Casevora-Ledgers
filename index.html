@@ -949,7 +949,7 @@ function monthTotals(ym){
 }
 const KPI_IC={'💰':'trending-up','💸':'trending-down','🧾':'receipt','📈':'scale','✅':'circle-check','⏳':'clock','⏰':'calendar-clock','🍙':'utensils-crossed','🐷':'piggy-bank','⏱️':'timer','🧮':'calculator','📄':'file-text','⚖️':'scale'};
 function pctChg(cur,prev,goodUp){ if(!prev) return cur?'上月 $0':'和上月一樣'; const d=Math.round((cur-prev)/Math.abs(prev)*100); if(!d) return '和上月差不多'; const good=(d>0)===goodUp; return `<b style="color:${good?'var(--ok)':'var(--bad)'}">${d>0?'↑':'↓'}${Math.abs(d)}%</b> 比上月`; }
-function kpi(t,v,sub,ic,c,cs,full,cls,click){ ic=KPI_IC[ic]?LI(KPI_IC[ic],18):ic; return `<div class="kpi ${cls||''} ${click?'click':''}" style="--c:${c};--cs:${cs}" ${click?`onclick="${click}" role="button" tabindex="0" onkeydown="if(event.key==='Enter')this.click()" title="點一下看明細"`:''}><div class="t">${t}</div><div class="v" title="${esc(full||'')}">${v}</div><div class="s">${sub}</div><div class="i">${ic}</div></div>`; }
+function kpi(t,v,sub,ic,c,cs,full,cls,click){ return `<div class="kpi ${cls||''} ${click?'click':''}" style="--c:${c};--cs:${cs}" ${click?`onclick="${click}" role="button" tabindex="0" onkeydown="if(event.key==='Enter')this.click()" title="點一下看明細"`:''}><div class="t">${t}</div><div class="v" title="${esc(full||'')}">${v}</div><div class="s">${sub}</div><div class="i">${ic}</div></div>`; }
 function billHead(){ return `<div class="brow bhead"><div class="cn">項目名稱</div><div class="ca">金額</div><div class="cs">狀態</div><div class="cd">期限</div><div class="cf">附件</div><div class="cx"></div></div>`; }
 function renderHome(){
   page='home'; nav();
