@@ -450,6 +450,7 @@ table.amort tr.pastr td{opacity:.45}
 .gcard summary .h2i{font-size:1.4em;vertical-align:-3px}.mg-h .h2i{font-size:1.35em;margin-right:2px}.gx-b .h2i,.gx-in .h2i,.gx-t .h2i,.gx-row>b .h2i{font-size:1.35em;margin-right:4px;vertical-align:-2px}
 button .h2i{font-size:1.35em;margin-right:6px;vertical-align:-2px}
 .h2i{display:inline-block;font-size:1.45em;line-height:1;margin-right:8px;vertical-align:-3px}
+.tei{display:inline-block;font-size:1.3em;line-height:1;vertical-align:-2px;margin:0 1px}
 </style>
 </head>
 <body>
@@ -2883,7 +2884,10 @@ const _go2=go2; window.go2=function(k){ if(k==='trash'){ selT=new Set(); renderT
 /* 卡片小標題前面的彩色圖示放大 */
 (function(){ const RE=/^\s*((?:\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}])(?:️|‍(?:\p{Extended_Pictographic})|\p{Emoji_Modifier})*)\s*/u;
   const fix=root=>{ if(!root) return; (root.querySelectorAll?root.querySelectorAll('.card h2,.box h2,.dayh>span:first-child,button,.gcard summary b,.mg-h,.gx-b,.gx-t,.gx-in,.gx-row>b'):[]).forEach(h=>{ if(h.dataset.ei) return; h.dataset.ei=1; let t=h.firstChild; while(t&&t.nodeType===1&&t.classList&&(t.classList.contains('no')||t.classList.contains('gx-n'))) t=t.nextSibling; if(!t||t.nodeType!==3) return; const m=t.nodeValue.match(RE); if(!m) return; t.nodeValue=t.nodeValue.slice(m[0].length); const sp=document.createElement('span'); sp.className='h2i'; sp.textContent=m[1]; h.insertBefore(sp,t); }); };
-  new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType===1){ if(n.matches&&n.matches('.card h2,.box h2,.dayh>span:first-child,button,.gcard summary b,.mg-h,.gx-b,.gx-t,.gx-in,.gx-row>b')) fix(n.parentNode); else fix(n); } }))).observe(document.body,{childList:true,subtree:true}); fix(document); })();
+  const RG=new RegExp(RE.source.replace(/^\^\\s\*\(/,'(').replace(/\)\\s\*$/,')'),'gu');
+  const fixTxt=root=>{ if(!root||!root.querySelectorAll) return; const els=root.matches&&root.matches('.mg-txt')?[root]:root.querySelectorAll('.mg-txt'); els.forEach(el=>{ if(el.dataset.ei) return; el.dataset.ei=1; const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT), ns=[]; while(w.nextNode()) ns.push(w.currentNode);
+    ns.forEach(t=>{ if(t.parentNode.classList&&t.parentNode.classList.contains('h2i')) return; const v=t.nodeValue; RG.lastIndex=0; if(!RG.test(v)) return; RG.lastIndex=0; const f=document.createDocumentFragment(); let last=0, m; while((m=RG.exec(v))){ if(m.index>last) f.appendChild(document.createTextNode(v.slice(last,m.index))); const sp=document.createElement('span'); sp.className='tei'; sp.textContent=m[1]; f.appendChild(sp); last=m.index+m[0].length; } if(last<v.length) f.appendChild(document.createTextNode(v.slice(last))); t.parentNode.replaceChild(f,t); }); }); };
+  new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType===1){ if(n.matches&&n.matches('.card h2,.box h2,.dayh>span:first-child,button,.gcard summary b,.mg-h,.gx-b,.gx-t,.gx-in,.gx-row>b')) fix(n.parentNode); else fix(n); fixTxt(n); } }))).observe(document.body,{childList:true,subtree:true}); fix(document); fixTxt(document.body); })();
 </script>
 </body>
 </html>
