@@ -544,7 +544,7 @@ const FONTS={
 const THEME_PET=Object.fromEntries(Object.entries(THEMES).map(([k,T])=>[k,T.pet]));
 function petImg(k){ return `<img src="${PET_IMG[k]||PET_IMG.ocean}" alt="${esc((THEMES[k]||THEMES.ocean).pet)}">`; }
 function fontPreviewLink(){ if(document.getElementById('gf-preview')) return; const fams=[...new Set(Object.values(FONTS).filter(F=>F.gf).map(F=>F.gf.split(':')[0]))].map(f=>'family='+f+(f==='Noto+Sans+TC'?':wght@400;700':'')).join('&'); const l=document.createElement('link'); l.id='gf-preview'; l.rel='stylesheet'; l.href=`https://fonts.googleapis.com/css2?${fams}&text=${encodeURIComponent('記帳幫手123')}&display=swap`; document.head.appendChild(l); }
-function applyLook(){ const L=(typeof S!=='undefined'&&S&&S.look)||{theme:'ocean',font:'sans'}, T=THEMES[L.theme]||THEMES.ocean, F=FONTS[L.font]||FONTS.sans, st=document.documentElement.style;
+function applyLook(){ const L=(typeof S!=='undefined'&&S&&S.look)||{theme:'banana',font:'sans'}, T=THEMES[L.theme]||THEMES.banana, F=FONTS[L.font]||FONTS.sans, st=document.documentElement.style;
   document.documentElement.classList.toggle('hdlight',!!T.hdInk);
   [['--hdink',T.hdInk||'#fff'],['--bgdeco',decoSVG(L.theme)],['--bg',T.bg],['--bg-rgb',T.rgb],['--ink',T.ink],['--muted',T.muted],['--line',T.line],['--brand',T.brand],['--brand-d',T.brandD],['--brand-soft',T.soft],['--tint',T.tint],['--hd1',T.hd1],['--hd2',T.hd2],['--shadow',T.sh],['--font',F.css],['--fw',String(F.w||400)]].forEach(([k,v])=>st.setProperty(k,v));
   if(F.gf&&!document.getElementById('gf-'+L.font)){ const l=document.createElement('link'); l.id='gf-'+L.font; l.rel='stylesheet'; l.href=`https://fonts.googleapis.com/css2?family=${F.gf}&display=swap`; document.head.appendChild(l); }
@@ -582,7 +582,7 @@ function download(content,name,type){const a=document.createElement('a');a.href=
 
 /* ---------- 資料 ---------- */
 let R=loadR(), S=loadS();
-function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{},ot:{bases:[],days:[],paid:{},allow:[],bonusFrom:''},phrases:['吃飯','平日加班','休息加班'],lastBackup:'',budget:{living:0,cats:{}},plans:[],look:{theme:'ocean',font:'sans'},recurAmt:{},livMonth:{},otEst:{},sim:{}};}
+function defaultS(){return {rules:[],people:[],catIcons:{},bg:{url:'',mode:'both'},recentN:10,accounts:JSON.parse(JSON.stringify(DEF_ACCTS)),acctInitDone:false,debts:[],goals:[],recurring:[],recurDone:{},recurMove:{},att:{},payslips:{},ot:{bases:[],days:[],paid:{},allow:[],bonusFrom:''},phrases:['吃飯','平日加班','休息加班'],lastBackup:'',budget:{living:0,cats:{}},plans:[],look:{theme:'banana',font:'sans'},recurAmt:{},livMonth:{},otEst:{},sim:{}};}
 function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stringify(DEF_ACCTS));
   s.accounts=s.accounts.filter(a=>a&&/^[\w-]{1,40}$/.test(String(a.id))&&String(a.name||'').trim()).map(a=>({id:String(a.id),name:String(a.name).trim().slice(0,20),icon:typeof a.icon==='string'?a.icon.slice(0,8):'💳',init:Number.isFinite(Number(a.init))?Number(a.init):0,dueDay:dayOk(a.dueDay),atype:ACCT_TYPES[a.atype]?a.atype:defType(a.id)})); if(!s.accounts.some(a=>a&&a.id==='cash')) s.accounts.unshift({id:'cash',name:'現金',icon:'💵',init:0,dueDay:0});
   s.accounts.forEach(a=>{ if(a.name==='薪轉帳戶'){ a.name='薪資帳戶'; } else if(/領|轉|加值|\+值/.test(a.name)){ a.name=a.name.replace(/領|轉|加值|\+值/g,'')||'帳戶'; } });
@@ -606,7 +606,7 @@ function fixS(s){ if(!Array.isArray(s.accounts)) s.accounts=JSON.parse(JSON.stri
   s.lastBackup=/^\d{4}-\d{2}-\d{2}$/.test(String(s.lastBackup||''))?s.lastBackup:'';
   { const ob=isObj(s.budget)?s.budget:{}, cats={}; if(isObj(ob.cats)) Object.entries(ob.cats).forEach(([c,v])=>{ if(EXP.includes(c)&&Number(v)>0) cats[c]=Math.round(Number(v)); });
     s.budget={living:Number(ob.living)>0?Math.round(Number(ob.living)):0,cats}; }
-  s.look={theme:isObj(s.look)&&THEMES[s.look.theme]?s.look.theme:'ocean',font:isObj(s.look)&&FONTS[s.look.font]?s.look.font:'sans'};
+  s.look={theme:isObj(s.look)&&THEMES[s.look.theme]?s.look.theme:'banana',font:isObj(s.look)&&FONTS[s.look.font]?s.look.font:'sans'};
   s.plans=(Array.isArray(s.plans)?s.plans:[]).filter(x=>x&&/^[\w-]{1,40}$/.test(String(x.id))&&/^\d{4}-\d{2}-\d{2}$/.test(String(x.start))).map(x=>({id:String(x.id),name:String(x.name||'我的計畫').slice(0,20),start:String(x.start),days:Math.max(1,Math.min(62,Math.round(Number(x.days)||7))),base:Math.round(Number(x.base)||0),
     items:(Array.isArray(x.items)?x.items:[]).slice(0,20).map(i=>({n:String(i&&i.n||'').slice(0,20),e:String(i&&i.e||'').slice(0,40),v:Math.round(Number(i&&i.v)||0)}))})).slice(-10);
   { const ra={}; if(isObj(s.recurAmt)) Object.entries(s.recurAmt).forEach(([k,v])=>{ if(KEYRE.test(k)&&Number(v)>0) ra[k]=Math.round(Number(v)*100)/100; }); s.recurAmt=ra;
