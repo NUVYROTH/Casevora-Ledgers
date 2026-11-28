@@ -1844,7 +1844,7 @@ function otEdit(id){ const d=S.ot.days.find(x=>x.id===id); if(!d) return; const 
     <div><label class="f">日期</label><input type="date" id="oeDate" value="${d.date}"></div><div><label class="f">類型</label><select id="oeKind">${Object.entries(OT_KIND).map(([k,n])=>`<option value="${k}" ${k===d.kind?'selected':''}>${n}</option>`).join('')}</select></div>
     <div><label class="f">申報時數</label><input type="number" id="oeHrs" step="0.5" value="${d.hrs}"></div><div><label class="f">核准時數</label><input type="number" id="oeAppr" step="0.5" value="${d.appr===null?'':d.appr}" placeholder="同申報"></div>
     <div style="grid-column:1/-1"><label class="f">備註</label><input type="text" id="oeNote" maxlength="40" value="${esc(d.note)}"></div></div>
-    <div class="row" style="margin-top:12px"><button class="primary" id="oeOk">儲存</button><button id="oeNo">取消</button><span class="spacer"></span><button class="danger" id="oeDel">刪除</button></div></div>`;
+    <div class="row" style="margin-top:12px"><button class="danger" id="oeDel">刪除</button><span class="spacer"></span><button id="oeNo">取消</button><button class="primary" id="oeOk">儲存</button></div></div>`;
   document.body.appendChild(m); m.querySelector('#oeNo').onclick=()=>m.remove();
   m.querySelector('#oeDel').onclick=()=>{ if(!confirm(`確定刪除 ${fmtMD(d.date)} 的${OT_KIND[d.kind]}紀錄嗎？`)) return; const o=JSON.stringify(S.ot); S.ot.days=S.ot.days.filter(x=>x.id!==id); if(!persist()){ S.ot=JSON.parse(o); return; } m.remove(); renderOT(); flash('已刪除'); };
   m.querySelector('#oeOk').onclick=()=>{ const f=otRead('oe'); if(!f) return; const o=JSON.stringify(S.ot); Object.assign(d,f); if(!persist()){ S.ot=JSON.parse(o); return; } m.remove(); renderOT(); flash('已儲存 ✦'); }; }
